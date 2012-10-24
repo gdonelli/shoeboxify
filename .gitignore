@@ -1,2 +1,5 @@
 # Facebook Application Secret ID
 secret/
+
+# OS X stuff
+.DS_Store
