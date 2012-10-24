@@ -19,34 +19,30 @@ var MemStore = require('connect/lib/middleware/session/memory');
 
 var app = express();
 
-app.configure(function(){
-	app.set('port', process.env.PORT || 3000);
-	app.set('views', __dirname + '/views');
-	app.set('view engine', 'ejs');
+app.configure(
+	function(){
+		app.set('port', process.env.PORT || 3000);
+		app.set('views', __dirname + '/views');
+		app.set('view engine', 'jade');
+		app.use(express.favicon(__dirname + '/public/images/favicon.ico') );
+		app.use(express.logger('dev'));
+		app.use(express.bodyParser());
+		app.use(express.methodOverride());
+		app.use(express.cookieParser('com.shoeboxify.secret.for.hashing.session.data'));
+		app.use(express.session(
+			{	store:	MemStore({
+						reapInterval: 60000 * 10
+					})
+			}));
+		app.use(app.router);
+		app.use(require('stylus').middleware(__dirname + '/public'));
+		app.use(express.static(path.join(__dirname, 'public')));
+	});
 
-	app.use(express.favicon(__dirname + '/public/images/favicon.ico') );
-
-	app.use(express.logger('dev'));
-	app.use(express.bodyParser());
-	app.use(express.methodOverride());
-	
-	app.use(express.cookieParser('com.shoeboxify.secret.for.hashing.session.data'));
-	app.use(express.session(
-		{	store:	MemStore({
-					reapInterval: 60000 * 10
-				})
-		}));
-
-	app.use(app.router);
-	
-	app.use(require('stylus').middleware(__dirname + '/public'));
-
-	app.use(express.static(path.join(__dirname, 'public')));
-});
-
-app.configure('development', function(){
-	app.use(express.errorHandler());
-});
+app.configure('development',
+	function(){
+		app.use(express.errorHandler());
+	});
 
 app.get('/', routes.index);
 app.get('/users', user.list);

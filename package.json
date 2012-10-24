@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "express": "3.0.0rc5",
-    "ejs": "*",
+    "jade": "*",
     "stylus": "*",
     "connect": "2.6.x",
     "MD5": "*",

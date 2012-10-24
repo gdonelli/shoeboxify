@@ -1,5 +1,43 @@
+
+
+/* Colors */
+TextColor		= #263c4a
+LightYellowBG	= #fffbf1
+
+DebugRed	= rgba( 255, 0, 0, 0.3 )
+DebugGreen	= rgba( 0, 255, 0, 0.3 )
+DebugBlue	= rgba( 0, 0, 255, 0.3 )
+
+DefaultFont(size)
+	font-weight:400
+	font-stretch:normal
+	font-size: size
+	font-family:	"HelveticaNeue",
+					"Helvetica Neue", 
+					"HelveticaNeueRoman", 
+					"HelveticaNeue-Roman", 
+					"Helvetica Neue Roman", 
+					"Trebuchet MS",
+					"Tahoma", 
+					"Helvetica", 
+					sans-serif
+
+
+DefaultBoldFont(size)
+	DefaultFont(size)
+	font-weight:600
+
 body
-  padding: 50px
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif
+	color: TextColor
+	background-color: LightYellowBG
+
+	padding: 50px
+	text-align: center
+	DefaultFont(12px)
+	margin: 0
+	border: 0
+	padding: 0
+
 a
-  color: #00B7FF
+	color: #00B7FF;
+

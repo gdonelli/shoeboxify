@@ -1,6 +1,16 @@
+/* Colors */
 body {
+  color: #263c4a;
+  background-color: #fffbf1;
   padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
+  text-align: center;
+  font-weight: 400;
+  font-stretch: normal;
+  font-size: 12px;
+  font-family: "HelveticaNeue", "Helvetica Neue", "HelveticaNeueRoman", "HelveticaNeue-Roman", "Helvetica Neue Roman", "Trebuchet MS", "Tahoma", "Helvetica", sans-serif;
+  margin: 0;
+  border: 0;
+  padding: 0;
 }
 a {
   color: #00b7ff;

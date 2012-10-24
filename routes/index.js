@@ -3,6 +3,7 @@
  * GET home page.
  */
 
-exports.index = function(req, res){
-  res.render('index', { title: 'Shoeboxify' });
+exports.index = function(req, res)
+{
+  res.render('index', { title: 'Shoeboxify App (Development Site)' });
 };
