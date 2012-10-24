@@ -1,0 +1,53 @@
+
+
+debug-text-color= #263c4a 
+debug-yellow-bg = #fff5c2
+
+debug-yellow-light-bg = lighten(debug-yellow-bg, 80%)
+
+
+.debug-object-dump-title
+	color: debug-text-color
+	background-color: debug-yellow-bg
+	font-size: 13px
+	font-weight: bold
+	font-family: "Lucida Grande" , sans-serif
+	padding: 8px
+	text-align: center
+
+.debug-object-dump
+	background-color: debug-yellow-light-bg
+	font-family: monaco, sans-serif
+	font-size: 12px
+	padding: 16px;
+
+div[class="array"]:nth-child(even)
+	background-color: white
+
+div[class="array"]:nth-child(odd)
+	background-color: debug-yellow-light-bg
+
+
+.key
+	color: #3f6e74
+
+.string
+	color: #c51a16
+
+.number
+	color: #1c00cf
+
+.boolean
+	color: #aa0d91
+
+.key-value-pair
+	margin-left: 24px
+
+.plus
+	cursor: pointer;
+
+.id,
+.link
+	cursor: pointer
+	text-decoration: underline
+	color: gray

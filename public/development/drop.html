@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+	
+	<head>
+
+		<style>
+			#drag-destination
+			{
+				width: 200px;
+				height: 200px;
+				background-color: orange;
+				border: 3px solid black;
+			}
+		</style>
+
+
+	</head>
+
+	<body>
+
+		<div id="drag-destination"></div>
+
+
+		<script>
+			function receive(event, element) {
+
+				console.log('---------------');
+
+				console.log('receive event:');
+				console.log(event);
+
+				console.log('receive element:');
+				console.log(element);
+				
+				return false;
+
+			}
+
+			var target = document.getElementById("drag-destination");
+
+			if (target.addEventListener) {
+
+                    // Firefox, Google Chrome, Safari, Internet Exlorer
+                target.addEventListener ("dragenter", DumpInfo, false);
+                    // Firefox, Google Chrome, Safari, Internet Exlorer
+                target.addEventListener ("dragover", DumpInfo, false);
+                    // Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
+                target.addEventListener ("dragleave", DumpInfo, false);
+                    // Firefox
+                target.addEventListener ("dragexit", DumpInfo, false);
+                    // Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
+                target.addEventListener ("drop", DumpInfo, false);
+                    // Firefox before version 3.5
+                target.addEventListener ("dragdrop", DumpInfo, false);
+
+			}
+
+			function DumpInfo(theEvent)
+			{
+				event.dataTransfer.setData('text', 'Customized text');
+				event.dataTransfer.effectAllowed = 'copy';
+
+				console.log( theEvent.type + '->' + event.dataTransfer.getData('text/plain') );
+				// console.log( event.dataTransfer.getData() );
+
+				if (event.preventDefault) {
+					event.preventDefault ();
+				}
+			}
+
+		</script>
+
+	</body>
+
+</html>

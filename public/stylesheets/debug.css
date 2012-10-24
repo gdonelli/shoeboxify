@@ -1,0 +1,45 @@
+.debug-object-dump-title {
+  color: #263c4a;
+  background-color: #fff5c2;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: "Lucida Grande", sans-serif;
+  padding: 8px;
+  text-align: center;
+}
+.debug-object-dump {
+  background-color: #fffdf3;
+  font-family: monaco, sans-serif;
+  font-size: 12px;
+  padding: 16px;
+}
+div[class="array"]:nth-child(even) {
+  background-color: #fff;
+}
+div[class="array"]:nth-child(odd) {
+  background-color: #fffdf3;
+}
+.key {
+  color: #3f6e74;
+}
+.string {
+  color: #c51a16;
+}
+.number {
+  color: #1c00cf;
+}
+.boolean {
+  color: #aa0d91;
+}
+.key-value-pair {
+  margin-left: 24px;
+}
+.plus {
+  cursor: pointer;
+}
+.id,
+.link {
+  cursor: pointer;
+  text-decoration: underline;
+  color: #808080;
+}
