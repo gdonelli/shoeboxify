@@ -3,32 +3,23 @@
  * Facebook
  */
 
-var https = require('https');
-var querystring = require('querystring');
-var md5 = require('MD5');
-var url = require('url');
 
-var utils = require('../lib/utils-lib');
 
-var secret = require('../secret/secret');
 
-var facebookAuthInfo = 
-	{
-		 'appID'          : '299942050094388'
-		,'appSecret'      : secret.appSecret()
-		,'appPermissions' : 'email, user_photos, friends_photos'
-	};
+var 	https		= require('https')
+	,	querystring	= require('querystring')
+	,	md5			= require('MD5')
+	,	url			= require('url')
 
-function DialogRedirectURL(req)
-{
-	var reqHeaders = req.headers;
-	var reqHost    = reqHeaders.host;
-	
-	if (reqHost == "127.0.0.1:3000")
-		return 'http://beta.shoeboxify.com/login-127001.php';
-	else
-		return 'http://shoeboxify.jit.su/facebook-response';
-}
+	/* libs */
+
+	,	utils		= require('../lib/utils-lib')
+	,	shoeboxify	= require('../lib/shoeboxify')
+	;
+
+
+
+
 
 /* ================================ EXPORTS ==================================== */
 /* ============================================================================= */
@@ -45,7 +36,7 @@ exports.requiresAuthentication =
 		{
 			var encodedURL = utils.ASCIItoBase64(req.url);
 
-			res.redirect('/facebook-login?source=' + encodedURL);
+			res.redirect( shoeboxify.facebookLoginPath() + '?source=' + encodedURL);
 		}
 	}
 
@@ -66,10 +57,10 @@ exports.login =
 		var state = JSON.stringify(stateObject);
 
 		var query = {
-				'client_id'		: facebookAuthInfo['appID']
-				, 'redirect_uri': DialogRedirectURL(req)
-				, 'scope'		: facebookAuthInfo['appPermissions']
-				, 'state'		: state
+				  'client_id'		: shoeboxify.appID()
+				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(req)
+				, 'scope'			: shoeboxify.appPermissions()
+				, 'state'			: state
 			};
 
 		var fbAuthURL = 'https://www.facebook.com/dialog/oauth?' + querystring.stringify(query);
@@ -189,9 +180,9 @@ exports.response =
 			console.log('AccessTokenFromCode: '+ code);
 
 			var query = {
-				'client_id'			: facebookAuthInfo['appID']
-				, 'redirect_uri'	: DialogRedirectURL(req)
-				, 'client_secret'	: facebookAuthInfo['appSecret']
+				'client_id'			: shoeboxify.appID()
+				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(req)
+				, 'client_secret'	: shoeboxify.appSecret()
 				, 'code'			: code
 			};
 
@@ -339,11 +330,11 @@ exports.graph =
 
 
 exports.batch =
-	function( paths, req, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
+	function( paths, req, consumeFunction/* (fbObject) */, errorFunction/* (error) */)
 	{
 		var options = {
-			host: 'graph.facebook.com'
-			, method: 'POST'
+				host:		'graph.facebook.com'
+			,	method:		'POST'
 		};
 
 		var batchAPI = [];
