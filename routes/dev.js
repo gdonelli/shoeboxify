@@ -405,13 +405,13 @@ exports.myphotos =
 		}
 	};
 
-exports.sockets = 
+exports.session = 
 	function(req, res)
 	{
 		res.writeHead(200, {'Content-Type': 'text/html'});
 		res.write('<html><body>');
 
-		res.write( debug.ObjectToHTML( http.sockets,  'agent.sockets' ) );
+		res.write( debug.ObjectToHTML( req.session,  'agent.sockets' ) );
 
 		res.end('</body></html>');
 

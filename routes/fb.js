@@ -26,12 +26,7 @@ var 	https		= require('https')
 exports.requiresAuthentication = 
 	function(req, res, next)
 	{
-		/*
-		console.log('------------ auth ----------->');
-		console.log("req.session.accessToken: " + req.session.accessToken + " req.url:" + req.url );
-		*/
-
-		if (req.session.accessToken)
+		if ( req.session.hasOwnProperty('accessToken') )
 		{
 			next();
 		}
@@ -39,8 +34,8 @@ exports.requiresAuthentication =
 		{
 			var encodedURL = utils.ASCIItoBase64(req.url);
 
-			res.redirect( shoeboxify.facebookLoginPath() + '?source=' + encodedURL);
-		}
+			 res.redirect( shoeboxify.facebookLoginPath() + '?source=' + encodedURL);		
+		}			
 	}
 
 
@@ -118,15 +113,6 @@ exports.response =
 		{
 			RespondWithError('Login Error', error);
 		}
-		/*
-
-		// According to facebook docs we need to verify the state to avoid cross site forgery
-
-		else if ( req.session.loginState && req.session.loginState['id'] != state['id']) 
-		{
-			RespondWithError('login state missmatch - req.session.loginState:' + req.session.loginState +  ' - state:' + state );	
-		}
-		*/
 		else if ( code && code.length > 1 ) //Exchange code for Access Token
 		{
 			AccessTokenFromCode(
@@ -174,8 +160,8 @@ exports.response =
 			res.write('<body>');
 			res.write('<h1>' + title + '</h1>');
 
-			res.write('<p><strong>accessToken: </strong>' + req.session.accessToken + '</p>');
-			res.write('<p><strong>expires: </strong>' + req.session.expires + ' seconds (' + req.session.expires/(60*60*24) + ' days)</p>');
+			res.write('<p><strong>accessToken: </strong>' + _accessToken(req) + '</p>');
+			res.write('<p><strong>expires: </strong>' + _expiresToken(req) + ' seconds (' + _expiresToken(req)/(60*60*24) + ' days)</p>');
 
 			res.write('</body>');
 			
@@ -247,6 +233,12 @@ exports.response =
 	    						var accessToken      = bufferElements['query']['access_token'];
 								var expiresInSeconds = bufferElements['query']['expires'];
 
+								if ( !accessToken || !expiresInSeconds )
+								{
+									if (errorFunction)
+										errorFunction( 'accessToken:' + accessToken +' expiresInSeconds:' + expiresInSeconds);
+								}
+									
 								consumeTokenFunction(accessToken, expiresInSeconds);
 							}
 							else
@@ -254,7 +246,7 @@ exports.response =
 								console.error('tokenRes.statusCode: ' + tokenRes.statusCode);
 
 								if (errorFunction)
-									errorFunction(resBuffer);
+									errorFunction('tokenRes.statusCode: ' + tokenRes.statusCode + ' resBuffer:' + resBuffer);
 							}
   						} );
 				} );
@@ -272,8 +264,8 @@ exports.response =
 		/* ============================= */
 		function StartSession(accessToken, expiresInSeconds, nextFunction, errorFunction)
 		{
-			req.session.accessToken = accessToken;
-			req.session.cookie.maxAge = Math.floor(expiresInSeconds);
+			 _setAccessToken(req, accessToken, expiresInSeconds ); 
+			req.session.cookie.maxAge = Math.floor(expiresInSeconds) * 1000; 
 
 			// Store me information in the Session
 			exports.graph('me', req,
@@ -283,10 +275,17 @@ exports.response =
 
 					var meInfo = DictionaryWithOnlyKeys(fbObject, meKeys);
 
-					req.session.me = meInfo;
+					req.session.regenerate(
+						function (err) {
+							_setAccessToken(req, accessToken, expiresInSeconds ); 
+							req.session.cookie.maxAge = Math.floor(expiresInSeconds) * 1000;
+							req.session.me = meInfo;
 
-					if (nextFunction)
-						nextFunction();
+							if (nextFunction)
+								nextFunction();
+						});
+				
+
 				},
 				function(error)
 				{
@@ -298,6 +297,22 @@ exports.response =
 
 	};
 
+function _accessToken(req)
+{
+	return req.session.accessToken;	
+}
+
+function _expiresToken(req)
+{
+	return req.session.expiresToken;	
+}
+
+
+function _setAccessToken(req, token, expires )
+{
+	req.session.accessToken = token;
+	req.session.expiresToken = expires;
+}
 
 function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 {
@@ -338,7 +353,7 @@ exports.graph =
 			var reqPath = ( path.startsWith('/') ? '' : '/');
 			reqPath += path;
 			reqPath += (path.indexOf('?') < 0 ? '?' : '&');
-			reqPath += 'access_token='+ srcReq.session.accessToken;
+			reqPath += 'access_token='+ _accessToken(srcReq);
 
 			reqOptions['hostname']	= 'graph.facebook.com';
 			reqOptions['path']		= reqPath;
@@ -383,7 +398,7 @@ exports.graph =
 					{
 						var jsonObject = JSON.parse(bufferString);
 						if (consumeFunction)
-							consumeFunction(jsonObject);
+							consumeFunction(jsonObject);						
 					}
 					catch(e)
 					{
@@ -428,7 +443,7 @@ exports.batch =
 			});
 
 		// the data to POST needs to be a string or a buffer
-		request.write( 'access_token=' + req.session.accessToken );
+		request.write( 'access_token=' + _accessToken(req) );
 		request.write( '&' );
 		request.write( 'batch=' + JSON.stringify(batchAPI) ) ;
 		

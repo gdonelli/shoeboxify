@@ -39,11 +39,13 @@ app.configure(
 		app.use(express.cookieParser());
 
 		app.use(express.session({
-		    secret: shoeboxify.sessionSecret(),
+		    secret: shoeboxify.sessionSecret()
+		    ,
 		    store: new MongoStore({
-					 db: shoeboxify.sessionDatabaseName()
-				,	url: shoeboxify.sessionDatabaseURL()
-			})
+		    	cookie: { maxAge: 60000 * 60 },
+				url: shoeboxify.sessionDatabaseURL()
+			} )
+
 		  }));
 
 		app.use(app.router);
@@ -82,7 +84,7 @@ app.get('/dev/test-email',		fb.requiresAuthentication, dev.testEmail);
 app.get('/dev/whoami',		fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
-app.get('/dev/sockets',	dev.sockets);
+app.get('/dev/session',	dev.session);
 
 
 /**********/
