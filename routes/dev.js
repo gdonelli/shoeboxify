@@ -20,15 +20,7 @@ function _goToGraph(req, res, path)
 exports.whoami = 
 	function(req, res)
 	{
-		/*
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
-
-		res.write( debug.ObjectToHTML( req,  'req' ) ) ;
-
-		res.end('</body></html>');
-*/
-		 return _goToGraph(req, res, 'me?metadata=1');
+		_respondWithGraphInfoPage(req, res, 'me?metadata=1');
 	};
 
 exports.testEmail = 
@@ -297,6 +289,19 @@ exports.checkfriends =
 
 	};
 
+function _respondWithGraphInfoPage(req, res, graphURL)
+{
+	fb.graph(graphURL, req, 
+		function(fbObject)
+		{
+			res.writeHead(200, {'Content-Type': 'text/html'});
+			res.write('<html><body>');
+
+			res.write( debug.ObjectToHTML( fbObject,  graphURL ) );
+
+			res.end('</body></html>');
+		});
+}
 
 exports.exploreGraph = 
 	function(req, res)
@@ -307,26 +312,31 @@ exports.exploreGraph =
 
 		var queryElements = urlElements['query'];
 
+		if (!queryElements)
+			return RespondError('queryElements is null');
+
 		// console.log('queryElements: ' + queryElements ) ;
 
 		var apiCall = queryElements['api'];
 
-		// console.log('apiCall: ' + apiCall);
+		if (!apiCall)
+			return RespondError('apiCall is null');
 
 		var graphURL = utils.Base64toASCII(apiCall);
 
-		fb.graph(graphURL, req, 
-			function(fbObject)
-			{
-				res.writeHead(200, {'Content-Type': 'text/html'});
-				res.write('<html><body>');
+		_respondWithGraphInfoPage(req, res, graphURL);
 
-				res.write( debug.ObjectToHTML( fbObject,  graphURL ) );
+		function RespondError(e)
+		{
+			res.writeHead(200, {'Content-Type': 'text/html'});
+			res.write('<html><body>');
 
-				res.end('</body></html>');
-			});
+			res.write('<h1>' + e + '</h1>');
 
+			res.end('</body></html>');
+		}
 	}
+
 
 /* ============================================================================= */
 
@@ -337,7 +347,7 @@ exports.myphotos =
 		res.writeHead(200, {'Content-Type': 'text/html'});
 		res.write('<html><body>');
 
-		LoadPhotos( 'me/photos', 2 );
+		LoadPhotos( 'me/photos', 10 );
 
 
 		function LoadPhotos( path, maxDepth)
@@ -348,7 +358,7 @@ exports.myphotos =
 			}
 
 			fb.graph(path, req, 
-				function(fbObject)
+				function success(fbObject)
 				{
 					var data	= fbObject['data'];
 					var paging	= fbObject['paging'];
@@ -364,7 +374,14 @@ exports.myphotos =
 						LoadPhotos( next, maxDepth - 1);
 					else
 						endResponse();
-				});
+				},
+				function error(e)
+				{
+					res.write('failed with error: ' + e);
+
+					endResponse();
+				}
+				);
 
 			function endResponse()
 			{
@@ -388,6 +405,17 @@ exports.myphotos =
 		}
 	};
 
+exports.sockets = 
+	function(req, res)
+	{
+		res.writeHead(200, {'Content-Type': 'text/html'});
+		res.write('<html><body>');
+
+		res.write( debug.ObjectToHTML( http.sockets,  'agent.sockets' ) );
+
+		res.end('</body></html>');
+
+	}
 
 function AssertArray(obj)
 {

@@ -19,8 +19,6 @@ var 	https		= require('https')
 
 
 
-
-
 /* ================================ EXPORTS ==================================== */
 /* ============================================================================= */
 
@@ -28,6 +26,11 @@ var 	https		= require('https')
 exports.requiresAuthentication = 
 	function(req, res, next)
 	{
+		/*
+		console.log('------------ auth ----------->');
+		console.log("req.session.accessToken: " + req.session.accessToken + " req.url:" + req.url );
+		*/
+
 		if (req.session.accessToken)
 		{
 			next();
@@ -55,6 +58,8 @@ exports.login =
 		}
 
 		var state = JSON.stringify(stateObject);
+
+		req.session.loginState = state;
 
 		var query = {
 				  'client_id'		: shoeboxify.appID()
@@ -108,88 +113,120 @@ exports.response =
 				source = utils.Base64toASCII(sourceInState);
 		}
 
-		console.log('fb-response -> code: ' + code + ' state:' + state + ' error:' + error + ' source:' + source );
-	
-		//TODO: verify state to avoid cross site forgery
 
 		if (error)
 		{
-			res.writeHead(200, {'Content-Type': 'text/html'});
-
-			res.write('<html><body>');
-			res.write('<h1>Facebook Login Failed (' + error +')</h1>');
-			res.end('</body></html>');
-
+			RespondWithError('Login Error', error);
 		}
-		if ( code && code.length > 1 ) //Exchange code for Access Token
+		/*
+
+		// According to facebook docs we need to verify the state to avoid cross site forgery
+
+		else if ( req.session.loginState && req.session.loginState['id'] != state['id']) 
+		{
+			RespondWithError('login state missmatch - req.session.loginState:' + req.session.loginState +  ' - state:' + state );	
+		}
+		*/
+		else if ( code && code.length > 1 ) //Exchange code for Access Token
 		{
 			AccessTokenFromCode(
-				function consumeToken(token, expiration)
+				function ConsumeToken(token, expiration)
 				{
-					StartSession(
-						token,
-						expiration,
+					StartSession( token, expiration,
 						function success() {
 							if (source)
 								res.redirect(source);
 							else
 							{
-								res.writeHead(200, {'Content-Type': 'text/html'});
-
-								res.write('<html><body>');
-
-								res.write('<p><strong>accessToken: </strong>' + token + '</p>');
-								res.write('<p><strong>expiresInSeconds: </strong>' + expiration + '</p>');
-					
-								res.write('<p><strong>source: </strong>' + source + '</p>');
-
-								res.end('</body></html>');
+								RespondWithLoginSuccess();
 							}
 						},
 						function failure(e) {
-								res.writeHead(200, {'Content-Type': 'text/html'});
+								var errorToReport = 'error:' + e;
+								errorToReport += ', Token:' + token;
+								errorToReport += ', Expiration:' + expiration;
 
-								res.write('<html><body>');
-								res.write('<p>Session Start Failure</p>');
-								res.end('</body></html>');
+								RespondWithError( 'StartSession() failed', errorToReport );
 						} );
 
 				}
-				, function authError(errString)
+				, function AccessTokenError(errString)
 				{
-					res.writeHead(200, {'Content-Type': 'text/html'});
-					res.write('<html><body>');
-
-					res.write('<h1>Facebook Login Error</h1>');
-
-					if (errString)
-					{
-						res.write('<p>' + errString + '</p>');
-					}
-
-					res.end('</body></html>');
+					RespondWithError( 'AccessTokenFromCode() failed', errString );
 				} );
 		}
 
 
 		/* ============================= */
-		function AccessTokenFromCode(
-									consumeTokenFunction /* (token, expiration) */
+
+		function RespondWithLoginSuccess()
+		{
+			var title = req.session.me.name +' - Login Successful';
+
+			res.writeHead(200, {'Content-Type': 'text/html'});
+
+			res.write('<html>');
+
+			res.write('<head>');
+			res.write('<title>' + title + '</title>');
+			res.write('</head>');
+
+			res.write('<body>');
+			res.write('<h1>' + title + '</h1>');
+
+			res.write('<p><strong>accessToken: </strong>' + req.session.accessToken + '</p>');
+			res.write('<p><strong>expires: </strong>' + req.session.expires + ' seconds (' + req.session.expires/(60*60*24) + ' days)</p>');
+
+			res.write('</body>');
+			
+			res.end('</html>');
+		}
+
+		
+		function RespondWithError(title, e)
+		{
+			shoeboxify.error('Login: ' + e);
+
+			res.writeHead(200, {'Content-Type': 'text/html'});
+
+			res.write('<html>');
+
+			res.write('<head>');
+			res.write('<title>' + title + '</title>');
+			res.write('</head>');
+
+			res.write('<body>');
+			res.write('<h1>' + title + '</h1>');
+			res.write('<p> Error: ' + e +'</p><br>');
+			res.write('<p style="color:red">Please report this error at error[at]shoeboxify.com</p>');
+			res.write('</body>');
+			
+			res.end('</html>');
+		}
+
+		function AccessTokenFromCode( consumeTokenFunction /* (token, expiration) */ 
 									, errorFunction /* errString */) 
 		{
 			console.log('AccessTokenFromCode: '+ code);
 
 			var query = {
-				'client_id'			: shoeboxify.appID()
-				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(req)
+				  'code'			: code
+				, 'client_id'		: shoeboxify.appID()
 				, 'client_secret'	: shoeboxify.appSecret()
-				, 'code'			: code
+				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(req)
+				
 			};
 
-			var accessTokenURL ='https://graph.facebook.com/oauth/access_token?'+ querystring.stringify(query);
+			var accessTokenPath ='/oauth/access_token?'+ querystring.stringify(query);
 
-			var tokenReq = https.get( 
-				accessTokenURL,
+			var tokenOptions = {
+					method:		'GET'
+				,	hostname:	'graph.facebook.com'
+				,	path:		accessTokenPath
+			}
+
+			var tokenReq = https.request( 
+				tokenOptions,
 				
 				function(tokenRes)
 				{			
@@ -228,7 +265,7 @@ exports.response =
   					if (errorFunction)
 	  					errorFunction('AccessTokenFromCode -> tokenReq.on(error):' + e + ' for URL: ' + accessTokenURL);
 				} );
-		
+
 			tokenReq.end();
 		}
 
@@ -236,6 +273,7 @@ exports.response =
 		function StartSession(accessToken, expiresInSeconds, nextFunction, errorFunction)
 		{
 			req.session.accessToken = accessToken;
+			req.session.cookie.maxAge = Math.floor(expiresInSeconds);
 
 			// Store me information in the Session
 			exports.graph('me', req,
@@ -253,12 +291,13 @@ exports.response =
 				function(error)
 				{
 					if (errorFunction)
-						errorFunction();
+						errorFunction(error);
 				} );
 
 		}
 
 	};
+
 
 function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 {
@@ -279,52 +318,82 @@ function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 
 
 exports.graph = 
-	function(path, req, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
+	function( path, srcReq, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
 	{
-		var url;
+		shoeboxify.debug('GRAPH: ' + path );
 
+		var reqOptions = { method: 'GET' };
+
+		// This is full URL graph request
 		if (path.startsWith('http'))
-			url = path;
+		{
+			var urlElements = url.parse(path);
+
+			reqOptions['hostname']	= urlElements['hostname'];
+			reqOptions['path']		= urlElements['path'];
+		}
 		else
 		{
-			url = 'https://graph.facebook.com/' + path;
-			
-			if ( path.indexOf('?') >=0 )
-				url += '&';
-			else				
-				url += '?';
+			// if there is no leading / we will add it
+			var reqPath = ( path.startsWith('/') ? '' : '/');
+			reqPath += path;
+			reqPath += (path.indexOf('?') < 0 ? '?' : '&');
+			reqPath += 'access_token='+ srcReq.session.accessToken;
 
-			url +=  'access_token='+req.session.accessToken;
+			reqOptions['hostname']	= 'graph.facebook.com';
+			reqOptions['path']		= reqPath;
 		}
 
+		// shoeboxify.debug('reqOptions: ' + JSON.stringify(reqOptions) );
 
-		console.log('GRAPH API: ' + url);
+		var apiReq = https.request( reqOptions, _processGraphResponse );
 
-		https.get( url,
-			function(graphRes) {
-				var bufferString = '';
+		_setupErrorHander(apiReq);
 
-				graphRes.on('data',
-					function (chunk) {
-						bufferString += chunk;
-					} );
+		apiReq.end();
 
-				graphRes.on('end',
-					function () {
+
+		
+ 		/* ============================== */
+
+		function _setupErrorHander(apiReq)
+		{
+			apiReq.on('error', 
+				function(e)
+				{
+					shoeboxify.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
+
+					if (errorFunction)
+						errorFunction(e);
+				});			
+		}
+
+		function _processGraphResponse(apiReq)
+		{
+			var bufferString = '';
+
+			apiReq.on('data',
+				function (chunk) {
+					bufferString += chunk;
+				} );
+
+			apiReq.on('end',
+				function () {
+					try
+					{
+						var jsonObject = JSON.parse(bufferString);
 						if (consumeFunction)
-							consumeFunction( JSON.parse(bufferString) );
-					} );
-			} )
-		.on('error', 
-			function(e)
-			{
-				console.error('GET Failed: ' + url + " err:" + e);
+							consumeFunction(jsonObject);
+					}
+					catch(e)
+					{
+						console.error('Failed to process graph response:' + bufferString);
 
-				if (errorFunction)
-					errorFunction(e);
-			}
-
-		);
+						if (errorFunction)
+							errorFunction(e);
+					}
+				} );
+		}
 
 	}
 

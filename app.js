@@ -22,7 +22,7 @@ var		express	= require('express')
 	;
 
 
-var MemStore = require('connect/lib/middleware/session/memory');
+var MongoStore = require('connect-mongo')(express);
 
 var app = express();
 
@@ -35,12 +35,17 @@ app.configure(
 		app.use(express.logger('dev'));
 		app.use(express.bodyParser());
 		app.use(express.methodOverride());
-		app.use(express.cookieParser( shoeboxify.cookieParserHashString() ));
-		app.use(express.session(
-			{	store:	MemStore({
-						reapInterval: 60000 * 10
-					})
-			}));
+
+		app.use(express.cookieParser());
+
+		app.use(express.session({
+		    secret: shoeboxify.sessionSecret(),
+		    store: new MongoStore({
+					 db: shoeboxify.sessionDatabaseName()
+				,	url: shoeboxify.sessionDatabaseURL()
+			})
+		  }));
+
 		app.use(app.router);
 		app.use(require('stylus').middleware(__dirname + '/public'));
 		app.use(express.static(path.join(__dirname, 'public')));
@@ -50,6 +55,8 @@ app.configure('development',
 	function(){
 		app.use(express.errorHandler());
 	});
+
+app.settings['x-powered-by'] = false;
 
 app.get('/', routes.index);
 app.get('/users', user.list);
@@ -75,6 +82,15 @@ app.get('/dev/test-email',		fb.requiresAuthentication, dev.testEmail);
 app.get('/dev/whoami',		fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
+app.get('/dev/sockets',	dev.sockets);
+
+
+/**********/
+/* Server */
+/**********/
+
+/* Self Test */
+shoeboxify.validateEnviroment();
 
 http.createServer(app).listen(app.get('port'), function(){
 	console.log("Shoeboxify Server listening on port " + app.get('port'));
