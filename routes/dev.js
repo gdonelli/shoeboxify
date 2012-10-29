@@ -426,3 +426,9 @@ function AssertArray(obj)
 	assert(isArray, 'object is not an array as expected ' + objectType);
 }
 
+exports.drop = 
+	function(req, res)
+	{
+		 res.render('drop');
+	}
+

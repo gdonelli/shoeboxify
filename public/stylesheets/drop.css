@@ -1,0 +1,51 @@
+body {
+  color: #263c4a;
+  background-color: #fffbf1;
+  padding: 50px;
+  text-align: center;
+  font-weight: 400;
+  font-stretch: normal;
+  font-size: 12px;
+  font-family: "HelveticaNeue", "Helvetica Neue", "HelveticaNeueRoman", "HelveticaNeue-Roman", "Helvetica Neue Roman", "Trebuchet MS", "Tahoma", "Helvetica", sans-serif;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+a {
+  color: #00b7ff;
+}
+#droparea {
+  width: 250px;
+  height: 250px;
+  position: relative;
+  margin-left: 50%;
+  left: -125px;
+  background-color: #eee;
+  border: 2px solid #999;
+  margin-bottom: 16px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+#sourceURL {
+  display: inline-block;
+  background-color: #eee;
+  color: #bbb;
+  padding: 16px;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}
+#facebookObjectID {
+  display: inline-block;
+  background-color: #0ee;
+  color: #666;
+  padding: 16px;
+}
+#objectInfo {
+  width: 600px;
+  position: relative;
+  margin-left: 50%;
+  left: -300px;
+  background-color: #ffedbf;
+  margin-bottom: 16px;
+  margin-top: 16px;
+}

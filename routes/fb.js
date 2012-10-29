@@ -437,7 +437,7 @@ exports.batch =
 
 				response.on('end',
 					function () {
-		    			if (consumeFunction)
+						if (consumeFunction)
 							consumeFunction( JSON.parse(str) );
 					} );
 			});
@@ -450,4 +450,116 @@ exports.batch =
 		request.end();
 	}
 
+
+//
+// Example:
+//		http://shoeboxify.jit.su/o4u?u=something_base64
+//
+
+function _extractFacebookObjectID( srcString )
+{
+	if (srcString.startsWith('http'))
+	{
+		// https://www.facebook.com/photo.php?fbid=426454000747131&set=a.156277567764777.33296.100001476042600&type=1&ref=nf
+
+		if (srcString.indexOf('photo.php?') > 0 && srcString.indexOf('fbid=') > 0 )
+		{
+			var stringElements = url.parse(srcString, true);
+			var stringQuery = stringElements['query'];
+			var fbid = stringQuery['fbid'];
+
+			return fbid;
+		}
+
+		// https://sphotos-b.xx.fbcdn.net/hphotos-ash3/599016_10151324834642873_1967677028_n.jpg
+		
+		var last4chars = srcString.substring((srcString.length-4), srcString.length );
+
+		if ( last4chars == '.jpg')
+		{
+			var srcStringSpliyElements = srcString.split('/');
+
+			var lastPathComponent = srcStringSpliyElements[srcStringSpliyElements.length-1];
+
+			var numbers = lastPathComponent.split('_');
+
+			var canditateResult = numbers[1];
+
+			var isnum = /^\d+$/.test(canditateResult);
+
+			if (isnum)
+				return canditateResult;
+		}
+	}
+
+	return undefined;
+}
+
+exports.objectForURL = 
+	function(req, res)
+	{
+		var urlElements = url.parse(req.url, true);
+		var urlQuery = urlElements['query'];
+
+		res.writeHead(200, { 'Content-Type': 'application/json' } );
+
+		var jsonResult;
+
+		if (urlQuery && urlQuery['u'])
+		{
+			console.log(urlQuery);
+			
+			var sourceURI = urlQuery['u'];
+			var fbID =  _extractFacebookObjectID(sourceURI);
+
+			if (fbID)
+			{
+				exports.graph( fbID, req,
+					function success(fbObject)
+					{
+						ExitWithResult(	{
+								status: 0
+							,   source: sourceURI
+							,     data: fbID
+							, graphObject: fbObject
+							} );
+					},
+					function error(error)
+					{
+						ExitWithResult(	{
+								status: 1
+							,   source: sourceURI
+							,     data: 'failed to lookup: ' + fbID + ' error:'+error
+							} );
+
+					}
+
+					)
+
+			}
+			else
+			{
+				ExitWithResult({ status: 1
+							,  source: sourceURI
+							,    data: 'Cannot find object id for source'
+							} );				
+			}
+
+
+		}
+		else
+		{
+			ExitWithResult({	status: 400
+							,	  data: 'malformed request expecting ?u=...' 
+						} );
+
+			console.error('No query passed');
+		}
+
+		function ExitWithResult(result)
+		{
+			res.end( JSON.stringify(result) );
+		}
+		
+	}
 

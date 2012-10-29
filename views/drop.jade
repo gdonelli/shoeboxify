@@ -1,0 +1,137 @@
+doctype 5
+html
+	head
+		title Drop
+		link(rel='stylesheet', href='/stylesheets/drop.css')
+
+		script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js")
+
+		script
+			$('body').ready(
+				function() {
+					InstallDropListener();
+				});
+
+			function InstallDropListener()
+			{
+				var target = document.getElementById("droparea");
+
+				if (target.addEventListener) 
+				{
+					// Firefox, Google Chrome, Safari, Internet Exlorer
+					target.addEventListener ("dragenter", PerformDragEnter, false);
+					// Firefox, Google Chrome, Safari, Internet Exlorer
+					target.addEventListener ("dragover", PerformDragEnter, false);
+					
+					// Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
+					target.addEventListener ("dragleave", PerformDragExit, false);
+					// Firefox
+					target.addEventListener ("dragexit", PerformDragExit, false);
+					
+					// Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
+					target.addEventListener ("drop", PerformDrop, false);
+					// Firefox before version 3.5
+					target.addEventListener ("dragdrop", PerformDrop, false);
+				}
+
+				function PerformDrop(theEvent) {
+					console.log("--> PerformDrop");
+
+					var url = event.dataTransfer.getData('text/plain');
+
+					console.log( theEvent.type + '->' +  url );
+
+	
+
+					if (event.preventDefault)
+						event.preventDefault();
+
+					PerformDragExit(theEvent);
+
+					var urlEncoded = encodeURIComponent(url);
+
+					var request = $.ajax( 'http://127.0.0.1:3000/o4u?u=' + urlEncoded);
+
+					LoadingUI();
+
+					request.done(
+						function(responseObject) {
+							console.log("ajax request sucess:");
+							
+							var responseSource = responseObject['source'];
+							var responseData = responseObject['data'];
+
+							if (!responseSource)
+								responseSource = '???';
+
+							$('#sourceURL').text(responseSource);
+
+							if (!responseData)
+								responseData = '#?';
+
+							$('#facebookObjectID').text(responseData);
+
+							console.log(responseObject);
+
+							var graphObject = responseObject['graphObject'];
+
+							$('#objectInfo').text( JSON.stringify(graphObject) );
+
+							$('#dropimage').attr('src', graphObject['picture']);
+
+							if (graphObject['error'])
+								$('#droparea').css('background-color', '#AA3333');
+
+						});
+
+					request.fail(
+						function(jqXHR, textStatus) {
+							console.log("ajax request fail:");
+							console.log('jqXHR: ' + jqXHR);
+							console.log('textStatus: ' + textStatus);
+						});
+				
+				}
+
+				function PerformDragEnter(theEvent) {
+					console.log("--> DragEnter");
+					
+					$('#droparea').css('background-color', 'yellow');
+
+					if (event.preventDefault)
+						event.preventDefault ();
+				}
+
+				function PerformDragExit(theEvent) {
+					console.log("--> DragExit");
+
+					$('#droparea').css('background-color', '#EEE');
+
+					if (event.preventDefault)
+						event.preventDefault ();
+				}
+
+				function LoadingUI()
+				{
+					$('#dropimage').attr('src', '');	
+					$('#sourceURL').text('Loading...');	
+					$('#objectInfo').text('');
+
+					$('#droparea').attr('background-color', '#EEE');
+					
+					$('#dropimage').remove();
+					$('#droparea').html('<img id="dropimage"> </img>');
+				}
+
+			}
+
+	body
+		h1 Drag from Facebook and drop below
+
+		#droparea
+			img#dropimage
+
+		#sourceURL Source of image
+		#facebookObjectID ####
+		
+		#objectInfo

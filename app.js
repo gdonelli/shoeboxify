@@ -60,8 +60,6 @@ app.configure('development',
 
 app.settings['x-powered-by'] = false;
 
-app.get('/', routes.index);
-app.get('/users', user.list);
 
 
 /*****************/
@@ -70,6 +68,12 @@ app.get('/users', user.list);
 
 app.get(shoeboxify.facebookLoginPath(),		fb.login);
 app.get(shoeboxify.facebookResponsePath(),	fb.response);
+
+app.get(shoeboxify.objectForURL(),	fb.requiresAuthentication,	fb.objectForURL);
+
+
+app.get('/', routes.index);
+app.get('/users', user.list);
 
 
 /**********************/
@@ -86,6 +90,7 @@ app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
 app.get('/dev/session',	dev.session);
 
+app.get('/dev/drop',	dev.drop);
 
 /**********/
 /* Server */
