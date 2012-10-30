@@ -69,7 +69,7 @@ app.settings['x-powered-by'] = false;
 app.get(shoeboxify.facebookLoginPath(),		fb.login);
 app.get(shoeboxify.facebookResponsePath(),	fb.response);
 
-app.get(shoeboxify.objectForURL(),	fb.requiresAuthentication,	fb.objectForURL);
+app.get(shoeboxify.objectForURL(),	fb.objectForURL);
 
 
 app.get('/', routes.index);

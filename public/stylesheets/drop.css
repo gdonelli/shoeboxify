@@ -41,11 +41,13 @@ a {
   padding: 16px;
 }
 #objectInfo {
-  width: 600px;
+  width: 90%;
   position: relative;
   margin-left: 50%;
-  left: -300px;
+  left: -45%;
   background-color: #ffedbf;
   margin-bottom: 16px;
   margin-top: 16px;
+  text-align: left;
+  overflow: hidden;
 }

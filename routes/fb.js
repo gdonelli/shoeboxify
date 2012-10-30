@@ -39,6 +39,13 @@ exports.requiresAuthentication =
 	}
 
 
+exports.isAuthenticated = 
+	function(req)
+	{
+		return req.session.hasOwnProperty('accessToken');
+	}
+
+
 exports.login = 
 	function(req, res)
 	{
@@ -495,6 +502,20 @@ function _extractFacebookObjectID( srcString )
 	return undefined;
 }
 
+
+/*  === objectForURL ===
+ *
+ * 	returns json:
+ *		{
+ *			status:	  0 : success
+ *					  1 : malformed request
+ *					  2 : Failed to look up Facebook Object
+ *					403 : User not logged-in in Shoeboxify
+ *		}
+ *   
+ * 
+ */
+
 exports.objectForURL = 
 	function(req, res)
 	{
@@ -503,11 +524,32 @@ exports.objectForURL =
 
 		res.writeHead(200, { 'Content-Type': 'application/json' } );
 
+		shoeboxify.debug(req.url);
+
 		var jsonResult;
 
-		if (urlQuery && urlQuery['u'])
+		if ( !urlQuery || urlQuery['u'].length <= 0 )
 		{
-			console.log(urlQuery);
+			ExitWithResult({
+					status: 1
+				,   source: sourceURI
+				,	  error: 'malformed request ?u= is empty' 
+			} );
+
+			shoeboxify.error('urlQuery is malformed');
+		}
+		else if ( !exports.isAuthenticated(req) )
+		{
+			ExitWithResult({
+					status: 403
+				,   source: sourceURI
+				,	  error: 'User not logged-in in Shoeboxify' 
+			} );
+
+		}
+		else
+		{
+			shoeboxify.log(urlQuery);
 			
 			var sourceURI = urlQuery['u'];
 			var fbID =  _extractFacebookObjectID(sourceURI);
@@ -527,33 +569,21 @@ exports.objectForURL =
 					function error(error)
 					{
 						ExitWithResult(	{
-								status: 1
+								status: 2
 							,   source: sourceURI
-							,     data: 'failed to lookup: ' + fbID + ' error:'+error
+							,    error: 'Failed to lookup: ' + fbID + ' error:' + error
 							} );
 
-					}
-
-					)
-
+					} );
 			}
 			else
 			{
-				ExitWithResult({ status: 1
-							,  source: sourceURI
-							,    data: 'Cannot find object id for source'
+				ExitWithResult({
+						status: 2
+					,	source: sourceURI
+					,	 error: 'Cannot find object id for source'
 							} );				
 			}
-
-
-		}
-		else
-		{
-			ExitWithResult({	status: 400
-							,	  data: 'malformed request expecting ?u=...' 
-						} );
-
-			console.error('No query passed');
 		}
 
 		function ExitWithResult(result)
