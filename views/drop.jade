@@ -7,17 +7,16 @@ html
 		script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js")
 		script(src="/javascripts/common.js")
 		script(src="/javascripts/drop.js")
-
+		script(src="/javascripts/ui.js")
+		
 		script
-
 			$('body').ready(
-				function() {
-					InstallDropListener();
+				function()
+				{
+					// var target = 
+					InstallDropListener( document.body /* document.getElementById("body") */ );
 					ClearUI();
 				});
-
-
-
 
 	body
 		h1 Drag from Facebook and drop below

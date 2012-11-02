@@ -1,4 +1,10 @@
 
+drag and drop code from:
+http://slides.html5rocks.com/#drag-and-drop
+
+----------------------------------------------------
+
+
             (function() {
               var dragZone = document.querySelector('#drag-zone');
               var dropZone = document.querySelector('#drop-zone');

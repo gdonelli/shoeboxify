@@ -5,6 +5,7 @@ var url		= require('url')
 	, fb	= require('./fb')
 	, debug	= require('../lib/debug-lib')
 	, utils	= require('../lib/utils-lib')
+	, shoeboxify = require('../lib/shoeboxify')
 	;
 
 /* ================================ EXPORTS ==================================== */
@@ -12,27 +13,26 @@ var url		= require('url')
 /* ============================================================================= */
 
 
-function _goToGraph(req, res, path)
+function _goToGraph(quest, ponse, path)
 {
-	res.redirect('/dev/exploreGraph?api=' + utils.ASCIItoBase64(path) );
+	ponse.redirect('/dev/exploreGraph?api=' + utils.ASCIItoBase64(path) );
 }
 
 exports.whoami = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		_respondWithGraphInfoPage(req, res, 'me?metadata=1');
+		_respondWithGraphInfoPage(quest, ponse, 'me?metadata=1');
 	};
 
 exports.testEmail = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
 
 		EmailStarts('<html><body> <h1 style="color: green;">Ciao!</h1> </body></html>');
 
-		res.end('</body></html>');
-		
+		ponse.end('</body></html>');
 	}
 
 function SendTextEmail( toAddress, subject, textMessage )
@@ -92,36 +92,20 @@ function SendHTMLEmail( toAddress, subject, htmlMessage )
 			} );
 }
 
-exports.checkfriends_OFF = 
-	function(req, res)
-	{
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
-		
-		fb.batch( ['me', 'me/friends'], req, 
-			function(fbObject) {
-				res.write( debug.ObjectToHTML( fbObject,  'Batch' ) ) ;
-
-				res.end('</body></html>');
-			} )
-
-	
-	}
-
 exports.me = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
 
-		res.write( debug.ObjectToHTML(req.session.me, 'req.session.me') ) ;
+		ponse.write( debug.ObjectToHTML(quest.session.me, 'quest.session.me') ) ;
 
-		res.end('</body></html>');	
+		ponse.end('</body></html>');	
 	}
 
 
 exports.checkfriends = 
-	function(req, res)
+	function(quest, ponse)
 	{
 		var path = 'me/friends';
 
@@ -130,20 +114,20 @@ exports.checkfriends =
 		function ResWrite(string)
 		{
 			finalHTMLMessage+=string;
-			return res.write(string);
+			return ponse.write(string);
 		}
 
-		SendTextEmail( 'stats@shoeboxify.com', req.session.me.username + ' checkfriends', req.session.me.link );
+		SendTextEmail( 'stats@shoeboxify.com', quest.session.me.username + ' checkfriends', quest.session.me.link );
 
-		fb.graph( 'me/friends', req, 
+		fb.graph( 'me/friends', quest, 
 			function(fbFriends)
 			{
 				var friendsInfoArray = fbFriends['data'];
 
-				res.writeHead(200, {'Content-Type': 'text/html'});
+				ponse.writeHead(200, {'Content-Type': 'text/html'});
 				ResWrite('<html><body>');
 
-				ResWrite('<h1>' + req.session.me.name + ' these are your friends photo permissions</h1>');
+				ResWrite('<h1>' + quest.session.me.name + ' these are your friends photo permissions</h1>');
 				ResWrite('<div>Green indicates friends whose photos are accessibile by 3rd party applications <br>');
 				
 				ResWrite('It takes a while...<br>');
@@ -226,10 +210,10 @@ exports.checkfriends =
 
 					ResWrite('</body></html>');
 
-					res.end();
+					ponse.end();
 
 
-					SendHTMLEmail( req.session.me.email, 'About your friends', finalHTMLMessage );
+					SendHTMLEmail( quest.session.me.email, 'About your friends', finalHTMLMessage );
 				}
 
 
@@ -251,7 +235,7 @@ exports.checkfriends =
 
 					function processFriend(name, id)
 					{
-						fb.graph( id + '/photos', req,
+						fb.graph( id + '/photos', quest,
 							function (fbObject)
 							{
 								var shouldContinue = true;
@@ -289,24 +273,33 @@ exports.checkfriends =
 
 	};
 
-function _respondWithGraphInfoPage(req, res, graphURL)
+function _respondWithGraphInfoPage(quest, ponse, graphURL)
 {
-	fb.graph(graphURL, req, 
-		function(fbObject)
+	fb.graph(graphURL, quest, 
+		function success(fbObject)
 		{
-			res.writeHead(200, {'Content-Type': 'text/html'});
-			res.write('<html><body>');
+			shoeboxify.debug('_ponsepondWithGraphInfoPage - sucess');
 
-			res.write( debug.ObjectToHTML( fbObject,  graphURL ) );
+			if ( !fb.sanitizeObject(quest, ponse, fbObject) )
+				return;
 
-			res.end('</body></html>');
-		});
+			ponse.writeHead(200, {'Content-Type': 'text/html'});
+			ponse.write('<html><body>');
+			ponse.write(debug.ObjectToHTML(fbObject,  graphURL));
+			ponse.end('</body></html>');
+		},
+		function fail(error)
+		{
+			shoeboxify.debug('_respondWithGraphInfoPage - error:' + error);
+
+			return;
+		} );
 }
 
 exports.exploreGraph = 
-	function(req, res)
-	{
-		var urlElements	  = url.parse(req.url, true);
+	function(quest, ponse)
+	{		
+		var urlElements	  = url.parse(quest.url, true);
 
 		// console.log('urlElements: ' + JSON.stringify(urlElements) );
 
@@ -321,20 +314,34 @@ exports.exploreGraph =
 
 		if (!apiCall)
 			return RespondError('apiCall is null');
+		else
+		{
+			var graphURL = utils.Base64toASCII(apiCall);
 
-		var graphURL = utils.Base64toASCII(apiCall);
+			_respondWithGraphInfoPage(quest, ponse, graphURL);
 
-		_respondWithGraphInfoPage(req, res, graphURL);
+		}
 
 		function RespondError(e)
 		{
-			res.writeHead(200, {'Content-Type': 'text/html'});
-			res.write('<html><body>');
-
-			res.write('<h1>' + e + '</h1>');
-
-			res.end('</body></html>');
+			ponse.writeHead(200, {'Content-Type': 'text/html'});
+			ponse.write('<html><body>');
+			ponse.write('<h1>' + e + '</h1>');
+			ponse.end('</body></html>');
 		}
+
+	}
+
+
+exports.criticalError = 
+	function(quest, ponse)
+	{
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
+
+		ponse.write('<h1>' + 'Critical error' + '</h1>');
+
+		ponse.end('</body></html>');
 	}
 
 
@@ -342,10 +349,10 @@ exports.exploreGraph =
 
 
 exports.myphotos = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
 
 		LoadPhotos( 'me/photos', 10 );
 
@@ -357,7 +364,7 @@ exports.myphotos =
 				return endResponse();
 			}
 
-			fb.graph(path, req, 
+			fb.graph(path, quest, 
 				function success(fbObject)
 				{
 					var data	= fbObject['data'];
@@ -369,7 +376,7 @@ exports.myphotos =
 
 					WriteIMGwithData(data);
 
-					// res.write('<div>' + next + '</div>\n');
+					// ponse.write('<div>' + next + '</div>\n');
 					if (next)
 						LoadPhotos( next, maxDepth - 1);
 					else
@@ -377,7 +384,7 @@ exports.myphotos =
 				},
 				function error(e)
 				{
-					res.write('failed with error: ' + e);
+					ponse.write('failed with error: ' + e);
 
 					endResponse();
 				}
@@ -385,7 +392,7 @@ exports.myphotos =
 
 			function endResponse()
 			{
-				res.end('</body></html>');
+				ponse.end('</body></html>');
 			}
 
 		}
@@ -400,20 +407,20 @@ exports.myphotos =
 
 				var pictureURL = pictureInfo_i['picture'];
 
-				res.write('<img src="' + pictureURL + '"></img>\n');
+				ponse.write('<img src="' + pictureURL + '"></img>\n');
 			}
 		}
 	};
 
 exports.session = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		res.writeHead(200, {'Content-Type': 'text/html'});
-		res.write('<html><body>');
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
 
-		res.write( debug.ObjectToHTML( req.session,  'agent.sockets' ) );
+		ponse.write( debug.ObjectToHTML( quest.session,  'agent.sockets' ) );
 
-		res.end('</body></html>');
+		ponse.end('</body></html>');
 
 	}
 
@@ -427,8 +434,8 @@ function AssertArray(obj)
 }
 
 exports.drop = 
-	function(req, res)
+	function(quest, ponse)
 	{
-		 res.render('drop');
+		 ponse.render('drop');
 	}
 

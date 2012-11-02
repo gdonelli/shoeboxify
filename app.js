@@ -71,7 +71,6 @@ app.get(shoeboxify.facebookResponsePath(),	fb.response);
 
 app.get(shoeboxify.objectForURL(),	fb.objectForURL);
 
-
 app.get('/', routes.index);
 app.get('/users', user.list);
 
@@ -90,7 +89,7 @@ app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
 app.get('/dev/session',	dev.session);
 
-app.get('/dev/drop',	dev.drop);
+app.get('/dev/drop',	fb.requiresAuthentication,	dev.drop);
 
 /**********/
 /* Server */

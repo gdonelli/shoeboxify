@@ -1,46 +1,59 @@
 
 
-function InstallDropListener()
+function InstallDropListener( target )
 {
-	var target = /*document.getElementsByTagName("body")[0]; */  document.getElementById("droparea"); 
-
-	if (target.addEventListener) 
+	if (target && target.addEventListener) 
 	{
-		// Firefox, Google Chrome, Safari, Internet Exlorer
-		target.addEventListener ("dragenter", PerformDragEnter, false);
-		// Firefox, Google Chrome, Safari, Internet Exlorer
-		target.addEventListener ("dragover", PerformDragEnter, false);
+		var dragEventHandlers = {
+			'dragenter'	:	PerformDragEnter
+		,	'dragover'	:	PerformDragEnter
 		
-		// Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
-		target.addEventListener ("dragleave", PerformDragExit, false);
-		// Firefox
-		target.addEventListener ("dragexit", PerformDragExit, false);
-		
-		// Firefox from version 3.5, Google Chrome, Safari, Internet Exlorer
-		target.addEventListener ("drop", PerformDrop, false);
-		// Firefox before version 3.5
-		target.addEventListener ("dragdrop", PerformDrop, false);
+		,	'dragleave'	:	PerformDragExit
+		,	'dragexit'	:	PerformDragExit
+
+		,	'drop'		:	PerformDrop
+		,	'dragdrop'	:	PerformDrop
+		}
+
+
+		for (eventName in dragEventHandlers)
+		{
+			target.addEventListener(eventName,	dragEventHandlers[eventName], false);
+		}
 	}
-	
-	function PreventDropToCascade(theEvent)
+	else
 	{
-		if (theEvent.preventDefault)
-			theEvent.preventDefault();
-
-		return false;
+		ui.error('target or target.addEventListener is undefined');
 	}
 
-	function ExtractDropInfoForEvent(theEvent)
+	/* ================================================ */
+
+	function ExtractDropInfoForEvent(dropEvent)
 	{
+		if (!dropEvent) {
+			ui.error('dropEvent is undefined');
+			return undefined;
+		}
+
+		var dropTransfer = dropEvent.dataTransfer;
+		if (!dropTransfer) {
+			ui.error('dropEvent.dataTransfer is undefined');
+			return undefined;
+		}
+
+		var types = dropEvent.dataTransfer.types;
+		if (!types) {
+			ui.error('dropEvent.dataTransfer.types is undefined');
+			return undefined;
+		}
+
 		var result = [];
-
-		var types = theEvent.dataTransfer.types;
 
 		for (var i = 0; i < types.length; i++) 
 		{
 			if (types[i] == 'Files')
 			{
-				var files = event.dataTransfer.files;
+				var files = dropEvent.dataTransfer.files;
 				for (var j = 0; j < files.length; j++) {
 
 					result.push({
@@ -52,12 +65,12 @@ function InstallDropListener()
 			}
 			else 
 			{
-				if (typeof event.dataTransfer.getData(theEvent[i]) !== 'undefined') 
+				if (typeof dropEvent.dataTransfer.getData(dropEvent[i]) !== 'undefined') 
 				{
-					var dataForType = theEvent.dataTransfer.getData(types[i]);
+					var dataForType = dropEvent.dataTransfer.getData(types[i]);
 
-					console.log('type: ' + types[i] );
-					console.log('dataForType: ' + dataForType );
+					ui.log('type: ' + types[i] );
+					ui.log('dataForType: ' + dataForType );
 
 					result.push({
 						type: types[i],
@@ -71,41 +84,51 @@ function InstallDropListener()
 		return result;
 	}
 
-	function PerformDrop(theEvent) 
+
+	function PerformDrop(dropEvent) 
 	{
-		var dropInfo = ExtractDropInfoForEvent(theEvent);
+		// Important we do this first, in case exceptions are thrown 
+		if (dropEvent.preventDefault)
+			dropEvent.preventDefault();
 
-		console.log('DropInfo:');
-		console.log(dropInfo);
+		var dropInfo = ExtractDropInfoForEvent(dropEvent);
 
-		var types = event.dataTransfer.types;
+		if (!dropInfo){
+			ui.error('dropInfo is undefined');
+			return PreventDropToCascade(dropEvent);
+		}
 
-		console.log('types:');
-		console.log(types);
+		ui.log('DropInfo:');
+		ui.log(dropInfo);
 
-		var files = theEvent.dataTransfer.files;
+		var types = dropEvent.dataTransfer.types;
 
-		console.log('files:');
-		console.log(files);
+		ui.log('types:');
+		ui.log(types);
 
-		var url = theEvent.dataTransfer.getData('text/uri-list');
+		var files = dropEvent.dataTransfer.files;
+
+		ui.log('files:');
+		ui.log(files);
+
+		var url = dropEvent.dataTransfer.getData('text/uri-list');
 
 		if (!url || url.length < 5) {
 			ClearUI();
-			console.error('drop URL is empty');
-			return PreventDropToCascade(theEvent);		
+			ui.error('drop URL is empty');
+			return PreventDropToCascade(dropEvent);		
 		}
 		else
-			console.log( theEvent.type + ' url: ' +  url );
+			ui.log( dropEvent.type + ' url: ' +  url );
 
-		PerformDragExit(theEvent);
+		PerformDragExit(dropEvent);
 
 		var urlEncoded = encodeURIComponent(url);
 
 		var theCurrentHost = window.location.host;
 		var o4u = 'http://' + theCurrentHost + '/o4u?u=' + urlEncoded;
 
-		console.log('o4u: ' + o4u );
+		ui.log('o4u: ' + o4u );
 
 		var request = $.ajax( o4u );
 
@@ -113,7 +136,7 @@ function InstallDropListener()
 
 		request.done(
 			function(responseObject) {
-				console.log("ajax request sucess:");
+				ui.log("ajax request sucess:");
 
 				var responseStatus = responseObject['status'];
 
@@ -131,7 +154,7 @@ function InstallDropListener()
 
 					$('#facebookObjectID').text(responseData);
 
-					console.log(responseObject);
+					ui.log(responseObject);
 
 					var graphObject = responseObject['graphObject'];
 
@@ -145,41 +168,50 @@ function InstallDropListener()
 				else
 				{
 					$('#sourceURL').text('o4u response withs status: ' + responseStatus);
-					console.error('responseObject with error:');
-					console.error(responseObject);
+					ui.error('responseObject with error:');
+					ui.error(responseObject);
 				}
 				
 
 			});
 
 		request.fail(
-			function(jqXHR, textStatus, thrownError) {
-				console.log("ajax request fail: " + textStatus + " jqXHR:");
-				console.log(jqXHR);
-				console.log('thrownError: ' + thrownError);
+			function(jqXHR, textStatus) {
+				ui.log("ajax request fail: " + textStatus + " jqXHR:");
+				ui.log(jqXHR);
 			});
 
-		return PreventDropToCascade(theEvent);
+		return false;
 	}
 
-	function PerformDragEnter(theEvent)
-	{
-		theEvent.dataTransfer.dropEffect = 'copy';
 
-		console.log("--> DragEnter");
+	function PerformDragEnter(dropEvent)
+	{
+		if (dropEvent.preventDefault)
+			dropEvent.preventDefault();
+
+		dropEvent.dataTransfer.dropEffect = 'copy';
+
+		ui.log("--> DragEnter");
 		
 		$('#droparea').css('background-color', 'yellow');
 
-		return PreventDropToCascade(theEvent);
+		return false;
 	}
 
-	function PerformDragExit(theEvent) {
-		console.log("--> DragExit");
+
+	function PerformDragExit(dropEvent)
+	{
+		if (dropEvent.preventDefault)
+			dropEvent.preventDefault();
+
+		ui.log("--> DragExit");
 
 		$('#droparea').css('background-color', '#EEE');
 
-		return PreventDropToCascade(theEvent);
+		return false;
 	}
+
 
 	function LoadingUI()
 	{
@@ -201,7 +233,7 @@ function ClearUI()
 	$('#facebookObjectID').text('#');
 	$('#objectInfo').text('');
 
-	$('#droparea').attr('background-color', '#EEE');
+	$('#droparea').css('background-color', '#EEE');
 	
 	$('#dropimage').remove();
 	$('#droparea').html('<img id="dropimage"> </img>');
@@ -216,5 +248,5 @@ function ClearButtonAction()
 
 function ShoeboxifyButtonAction()
 {
-	console.log('ShoeboxifyButtonAction');
+	ui.log('ShoeboxifyButtonAction');
 }
