@@ -91,6 +91,9 @@ app.get('/dev/session',	dev.session);
 
 app.get('/dev/drop',	fb.requiresAuthentication,	dev.drop);
 
+app.get('/dev/s3test',	dev.s3test);
+
+
 /**********/
 /* Server */
 /**********/

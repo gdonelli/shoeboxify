@@ -2,10 +2,12 @@
 var url		= require('url')
 	, assert= require('assert')
 	, email = require("emailjs/email")
+	, knox  = require('knox')
+
+	, shoeboxify = require('../lib/shoeboxify')
 	, fb	= require('./fb')
 	, debug	= require('../lib/debug-lib')
 	, utils	= require('../lib/utils-lib')
-	, shoeboxify = require('../lib/shoeboxify')
 	;
 
 /* ================================ EXPORTS ==================================== */
@@ -18,11 +20,13 @@ function _goToGraph(quest, ponse, path)
 	ponse.redirect('/dev/exploreGraph?api=' + utils.ASCIItoBase64(path) );
 }
 
+
 exports.whoami = 
 	function(quest, ponse)
 	{
 		_respondWithGraphInfoPage(quest, ponse, 'me?metadata=1');
 	};
+
 
 exports.testEmail = 
 	function(quest, ponse)
@@ -34,6 +38,7 @@ exports.testEmail =
 
 		ponse.end('</body></html>');
 	}
+
 
 function SendTextEmail( toAddress, subject, textMessage )
 {
@@ -91,6 +96,7 @@ function SendHTMLEmail( toAddress, subject, htmlMessage )
 				console.log(err || message); 
 			} );
 }
+
 
 exports.me = 
 	function(quest, ponse)
@@ -296,6 +302,7 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
 		} );
 }
 
+
 exports.exploreGraph = 
 	function(quest, ponse)
 	{		
@@ -412,6 +419,7 @@ exports.myphotos =
 		}
 	};
 
+
 exports.session = 
 	function(quest, ponse)
 	{
@@ -424,6 +432,7 @@ exports.session =
 
 	}
 
+
 function AssertArray(obj)
 {
 	var objectType = Object.prototype.toString.call( obj );
@@ -433,9 +442,38 @@ function AssertArray(obj)
 	assert(isArray, 'object is not an array as expected ' + objectType);
 }
 
+
 exports.drop = 
 	function(quest, ponse)
 	{
 		 ponse.render('drop');
+	}
+
+
+exports.s3test =	
+	function(quest, ponse)
+	{
+		var clientS3 = shoeboxify.s3.client.test.RW();
+
+		var object = { foo: "Hello Shoeboxify 2!" };
+		var string = JSON.stringify(object);
+		var questToS3 = clientS3.put('/test/obj.json',	{
+					'Content-Length': string.length
+			  	,	'Content-Type': 'application/json'
+				,	'x-amz-acl': 'public-read'
+			});
+		
+		questToS3.on('response', 
+			function(res){
+				if (200 == res.statusCode) {
+					console.log('saved to %s', questToS3.url);
+				}
+				else
+				{
+					console.log('res.statusCode: ' + res.statusCode );	
+				}
+			});
+		
+		questToS3.end(string);
 	}
 
