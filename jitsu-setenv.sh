@@ -1,5 +1,7 @@
 #!/bin/bash
 
+source ../setenv.sh
+
 ####################
 ### Facebook App ###
 ####################
@@ -21,7 +23,12 @@ jitsu env set SESSION_DB_NAME $SESSION_DB_NAME
 
 jitsu env set S3_R_KEY $S3_R_KEY
 jitsu env set S3_R_SECRET $S3_R_SECRET
+
 jitsu env set S3_RW_KEY $S3_RW_KEY
 jitsu env set S3_RW_SECRET $S3_RW_SECRET
-jitsu env set S3_OBJECTS_BUCKET $S3_OBJECTS_BUCKET
 
+jitsu env set S3_URL $S3_URL
+
+jitsu env set S3_OBJECT_BUCKET $S3_OBJECT_BUCKET
+jitsu env set S3_CACHE_BUCKET $S3_CACHE_BUCKET
+jitsu env set S3_TEST_BUCKET $S3_TEST_BUCKET

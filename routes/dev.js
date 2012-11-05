@@ -8,6 +8,7 @@ var url		= require('url')
 	, fb	= require('./fb')
 	, debug	= require('../lib/debug-lib')
 	, utils	= require('../lib/utils-lib')
+	, s3 = require('../lib/s3')
 	;
 
 /* ================================ EXPORTS ==================================== */
@@ -453,27 +454,8 @@ exports.drop =
 exports.s3test =	
 	function(quest, ponse)
 	{
-		var clientS3 = shoeboxify.s3.client.test.RW();
-
-		var object = { foo: "Hello Shoeboxify 2!" };
-		var string = JSON.stringify(object);
-		var questToS3 = clientS3.put('/test/obj.json',	{
-					'Content-Length': string.length
-			  	,	'Content-Type': 'application/json'
-				,	'x-amz-acl': 'public-read'
-			});
-		
-		questToS3.on('response', 
-			function(res){
-				if (200 == res.statusCode) {
-					console.log('saved to %s', questToS3.url);
-				}
-				else
-				{
-					console.log('res.statusCode: ' + res.statusCode );	
-				}
-			});
-		
-		questToS3.end(string);
+		var object = { foo: "reduced storage" };
+	
+		s3.writeJSON( s3.client.test.RW(), object, '/test/reduced.json' );
 	}
 
