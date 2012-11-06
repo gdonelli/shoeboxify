@@ -1,5 +1,4 @@
 
-
 function InstallDropListener( target )
 {
 	if (target && target.addEventListener) 
@@ -111,38 +110,22 @@ function InstallDropListener( target )
 		ui.log('files:');
 		ui.log(files);
 
-		var url = dropEvent.dataTransfer.getData('text/uri-list');
+		var droppedURL = dropEvent.dataTransfer.getData('text/uri-list');
 
-		if (!url || url.length < 5) {
+		if (!droppedURL || droppedURL.length < 5) {
 			ClearUI();
-			ui.error('drop URL is empty');
+			ui.error('droppedURL is empty');
 			return PreventDropToCascade(dropEvent);		
 		}
 		else
-			ui.log( dropEvent.type + ' url: ' +  url );
+			ui.log( dropEvent.type + ' droppedURL: ' +  droppedURL );
 
 		PerformDragExit(dropEvent);
 
-		var urlEncoded = encodeURIComponent(url);
-
-		var theCurrentHost = window.location.host;
-		var o4u = 'http://' + theCurrentHost + '/o4u?u=' + urlEncoded;
-
-		ui.log('o4u: ' + o4u );
-
-		var request = $.ajax( o4u );
-
-		LoadingUI();
-
-		request.done(
-			function(responseObject) {
-				ui.log("ajax request sucess:");
-
-				var responseStatus = responseObject['status'];
-
-				if (responseStatus == 0) {
-					var responseSource = responseObject['source'];
-					var responseData = responseObject['data'];
+		serviceUI.objectForURL(droppedURL
+			,	function success(ponse) {
+					var responseSource = ponse['source'];
+					var responseData = ponse['data'];
 
 					if (!responseSource)
 						responseSource = '???';
@@ -154,32 +137,26 @@ function InstallDropListener( target )
 
 					$('#facebookObjectID').text(responseData);
 
-					ui.log(responseObject);
+					ui.log(ponse);
 
-					var graphObject = responseObject['graphObject'];
+					var graphObject = ponse['graphObject'];
 
 					$('#objectInfo').html( common.objectToHTML(graphObject, 'Facebook Object') );
-
 					$('#dropimage').attr('src', graphObject['picture']);
 
-					if (graphObject['error'])
+					if (graphObject['error']) {
 						$('#droparea').css('background-color', '#AA3333');
-				}
-				else
-				{
-					$('#sourceURL').text('o4u response withs status: ' + responseStatus);
-					ui.error('responseObject with error:');
-					ui.error(responseObject);
-				}
-				
+						$('#shoeboxify').attr('disabled', 'disabled');
+					}
+					else
+						$('#shoeboxify').removeAttr('disabled');
 
-			});
-
-		request.fail(
-			function(jqXHR, textStatus) {
-				ui.log("ajax request fail: " + textStatus + " jqXHR:");
-				ui.log(jqXHR);
-			});
+					window.droppedURL = droppedURL;
+				}
+			,	function error(error) {
+					ui.error('ponse with error:');
+					ui.error(error);
+				} );
 
 		return false;
 	}
@@ -239,6 +216,8 @@ function ClearUI()
 	$('#droparea').html('<img id="dropimage"> </img>');
 
 	$('#shoeboxify').attr('disabled', 'disabled');
+
+	window.droppedURL = undefined;
 }
 
 function ClearButtonAction()
@@ -249,4 +228,16 @@ function ClearButtonAction()
 function ShoeboxifyButtonAction()
 {
 	ui.log('ShoeboxifyButtonAction');
+
+		serviceUI.copyObject(window.droppedURL
+			,	function success(ponse) {
+					console.log('ponse:');
+					console.log(ponse);
+				}
+			,	function error(error) {
+					console.log('error:');
+					console.log(error);
+				
+				} );
+
 }

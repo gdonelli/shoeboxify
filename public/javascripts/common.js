@@ -16,9 +16,9 @@ var _common = (function ()
 
     // prototype
     common.prototype = {
-        constructor: common,
-        objectToHTML: _objectToHTML
-    };
+        	constructor		: common
+        ,	objectToHTML	: _objectToHTML
+    	};
 
 
     /* ================================= */
@@ -28,16 +28,13 @@ var _common = (function ()
 		var html = '';
 
 		html += '<div class="debug-object-dump">\n';
-
 		html += '<link href="/stylesheets/debug.css"	type="text/css"	rel="stylesheet" />\n';
 		html += '<script src="/javascripts/debug.js"></script>';
-
 
 		if (title)
 			html += '<div class="debug-object-dump-title">' + title + '</div>\n';
 
 		html += _compose(object, '', 0);
-
 		html += '</div>\n';
 
 		return html;

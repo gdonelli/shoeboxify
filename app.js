@@ -11,9 +11,9 @@ var		express	= require('express')
 	/* routes */
 
 	,	routes	= require('./routes')
-	,	user	= require('./routes/user')
 	,	fb		= require('./routes/fb')
 	,	dev		= require('./routes/dev')
+	,	service	= require('./routes/service')
 
 	/* libs */
 
@@ -66,13 +66,16 @@ app.settings['x-powered-by'] = false;
 /* Public Routes */
 /*****************/
 
-app.get(shoeboxify.facebookLoginPath(),		fb.login);
-app.get(shoeboxify.facebookResponsePath(),	fb.response);
-
-app.get(shoeboxify.objectForURL(),	fb.objectForURL);
-
 app.get('/', routes.index);
-app.get('/users', user.list);
+
+// FB Module Routes
+app.get(fb.route.login,		fb.login);
+app.get(fb.route.response,	fb.response);
+app.get(fb.route.logout,	fb.logout);
+
+// Service Module Routes
+app.get( service.route.objectForURL, service.objectForURL );
+app.get( service.route.copyObject, service.copyObject );
 
 
 /**********************/
@@ -88,11 +91,10 @@ app.get('/dev/whoami',		fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
 app.get('/dev/session',	dev.session);
-
 app.get('/dev/drop',	fb.requiresAuthentication,	dev.drop);
-
+app.get('/dev/permissions',	dev.permissions);
 app.get('/dev/s3test',	dev.s3test);
-
+app.get('/dev/rmsession',	dev.rmsession);
 
 /**********/
 /* Server */

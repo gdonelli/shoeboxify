@@ -12,41 +12,18 @@ var 	https		= require('https')
 
 	,	utils		= require('../lib/utils-lib')
 	,	shoeboxify	= require('../lib/shoeboxify')
+	,	stacktrace	= require('../lib/stacktrace')
 	;
 
 
-exports.redirectToAuthentication =
-	function(quest, ponse)
-	{
-		var encodedURL = utils.ASCIItoBase64(quest.url);
-		var redirectURL = shoeboxify.facebookLoginPath() + '?source=' + encodedURL;
 
-		ponse.redirect(redirectURL);
+exports.route = {};
 
-		shoeboxify.debug('AUTH-Redirect: ' + redirectURL);
-	}
+/*	PAGE:	Start Facebook Login	
+ * 	URL:	/facebook-login
+ */ 
 
-
-exports.requiresAuthentication = 
-	function(quest, ponse, next)
-	{
-		if ( quest.session.hasOwnProperty('accessToken') )
-		{
-			next();
-		}
-		else
-		{
-			exports.redirectToAuthentication(quest);
-		}
-	}
-
-
-exports.isAuthenticated = 
-	function(quest)
-	{
-		return quest.session.hasOwnProperty('accessToken');
-	}
-
+exports.route.login = '/facebook-login';
 
 exports.login = 
 	function(quest, ponse)
@@ -77,25 +54,11 @@ exports.login =
 		ponse.redirect(fbAuthURL);
 	};
 
+/*	PAGE:	Facebook Authentication Callback Page
+ * 	URL:	/facebook-login
+ */ 
+exports.route.response = '/facebook-response';
 
-function WriteObject(quest, ponse)
-{
-	ponse.writeHead(200, {'Content-Type': 'text/html'});
-
-	ponse.write('<html><body>');
-
-	for(var aKey in quest)
-		if (quest.hasOwnProperty(aKey))
-  		{
-			ponse.write( aKey + ": " + quest[aKey] );
-			ponse.write('<br>');
-		}
-
-	ponse.end('</body></html>');
-}
-
-
-/* ============================================================================= */
 exports.response = 
 	function(quest, ponse)
 	{
@@ -305,6 +268,101 @@ exports.response =
 
 	};
 
+/*	PAGE:	Facebook App Logout
+ * 	URL:	/logout
+ */ 
+exports.route.logout = '/logout';
+
+function _returnResponseWithMessage(ponse, message)
+{
+	ponse.writeHead(200, {'Content-Type': 'text/html'});
+	ponse.write('<html><body>');
+	ponse.write('<html><body> ' + message + ' </body></html>');
+	ponse.end('</body></html>');
+}
+
+exports.logout = 
+	function(quest, ponse)
+	{
+		if (!exports.isAuthenticated(quest)) {
+			return _returnResponseWithMessage(ponse, 'Already Logged-out');
+		}
+
+		_graphCall(	'DELETE', '/me/permissions', quest
+			,	function success(fbObject)
+				{
+					console.log('Delete success: ');
+					console.log(fbObject);
+
+					if (fbObject == true)
+						_returnResponseWithMessage(ponse, 'logout OK');
+					else
+						_returnResponseWithMessage(ponse, 'logout failed: ' + JSON.stringify(fbObject) );
+
+				}
+			,	function error(e) 
+				{	
+					console.log('Delete error: ');
+					console.log(e);
+
+					_returnResponseWithMessage(ponse, 'logout Error');
+				});
+
+
+	}
+
+
+function WriteObject(quest, ponse)
+{
+	ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+	ponse.write('<html><body>');
+
+	for(var aKey in quest)
+		if (quest.hasOwnProperty(aKey))
+  		{
+			ponse.write( aKey + ": " + quest[aKey] );
+			ponse.write('<br>');
+		}
+
+	ponse.end('</body></html>');
+}
+
+exports.redirectToAuthentication =
+	function(quest, ponse)
+	{
+		var encodedURL = utils.ASCIItoBase64(quest.url);
+		var redirectURL = exports.route.login + '?source=' + encodedURL;
+
+		ponse.redirect(redirectURL);
+
+		shoeboxify.debug('AUTH-Redirect: ' + redirectURL);
+	}
+
+
+exports.requiresAuthentication = 
+	function(quest, ponse, next)
+	{
+		if ( quest.session.hasOwnProperty('accessToken') )
+		{
+			next();
+		}
+		else
+		{
+			exports.redirectToAuthentication(quest, ponse);
+		}
+	}
+
+
+exports.isAuthenticated = 
+	function(quest)
+	{
+		return quest.session.hasOwnProperty('accessToken');
+	}
+
+
+
+
 function _accessToken(quest)
 {
 	return quest.session.accessToken;	
@@ -339,87 +397,95 @@ function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 	return result;
 }
 
+function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
+{
+	shoeboxify.debug(method + ' GRAPH: ' + path);
+
+	var questOptions = { method: method };
+
+	// This is full URL graph request
+	if (path.startsWith('http'))
+	{
+		var urlElements = url.parse(path);
+
+		questOptions['hostname']	= urlElements['hostname'];
+		questOptions['path']		= urlElements['path'];
+	}
+	else
+	{
+		// if there is no leading / we will add it
+		var questPath = ( path.startsWith('/') ? '' : '/');
+		questPath += path;
+		questPath += (path.indexOf('?') < 0 ? '?' : '&');
+		questPath += 'access_token='+ _accessToken(srcQuest);
+
+		questOptions['hostname']	= 'graph.facebook.com';
+		questOptions['path']		= questPath;
+	}
+
+	// shoeboxify.debug('questOptions: ' + JSON.stringify(questOptions) );
+
+	var apiQuest = https.request( questOptions, _processGraphResponse );
+
+	_setupErrorHander(apiQuest);
+
+	apiQuest.end();
+	
+	/* ============================== */
+
+	function _setupErrorHander(apiQuest)
+	{
+		apiQuest.on('error', 
+			function(e)
+			{
+				shoeboxify.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
+
+				if (errorFunction)
+					errorFunction(e);
+			});			
+	}
+
+	function _processGraphResponse(apiQuest)
+	{
+		var bufferString = '';
+
+		apiQuest.on('data',
+			function (chunk) {
+				bufferString += chunk;
+			} );
+
+		apiQuest.on('end',
+			function () {
+				try
+				{
+					var jsonObject = JSON.parse(bufferString);
+					if (consumeFunction)
+						consumeFunction(jsonObject);						
+				}
+				catch(e)
+				{
+					console.error('**** Caught exception while processing Graph response');
+					console.error('**** Exception:' + e);
+
+					var trace = stacktrace.process({ e : e });
+					
+					console.error('**** Stacktrace:');
+					console.error(trace);
+
+					console.error('**** Buffer String:\n' + bufferString);
+
+
+					if (errorFunction)
+						errorFunction(e);
+				}
+			} );
+	}
+}
 
 exports.graph = 
 	function( path, srcQuest, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
 	{
-		shoeboxify.debug('GRAPH: ' + path );
-
-		var questOptions = { method: 'GET' };
-
-		// This is full URL graph request
-		if (path.startsWith('http'))
-		{
-			var urlElements = url.parse(path);
-
-			questOptions['hostname']	= urlElements['hostname'];
-			questOptions['path']		= urlElements['path'];
-		}
-		else
-		{
-			// if there is no leading / we will add it
-			var questPath = ( path.startsWith('/') ? '' : '/');
-			questPath += path;
-			questPath += (path.indexOf('?') < 0 ? '?' : '&');
-			questPath += 'access_token='+ _accessToken(srcQuest);
-
-			questOptions['hostname']	= 'graph.facebook.com';
-			questOptions['path']		= questPath;
-		}
-
-		// shoeboxify.debug('questOptions: ' + JSON.stringify(questOptions) );
-
-		var apiQuest = https.request( questOptions, _processGraphResponse );
-
-		_setupErrorHander(apiQuest);
-
-		apiQuest.end();
-
-
-		
- 		/* ============================== */
-
-		function _setupErrorHander(apiQuest)
-		{
-			apiQuest.on('error', 
-				function(e)
-				{
-					shoeboxify.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
-
-					if (errorFunction)
-						errorFunction(e);
-				});			
-		}
-
-		function _processGraphResponse(apiQuest)
-		{
-			var bufferString = '';
-
-			apiQuest.on('data',
-				function (chunk) {
-					bufferString += chunk;
-				} );
-
-			apiQuest.on('end',
-				function () {
-					try
-					{
-						var jsonObject = JSON.parse(bufferString);
-						if (consumeFunction)
-							consumeFunction(jsonObject);						
-					}
-					catch(e)
-					{
-						console.error('**** exception: ' + e );
-
-						console.error('Failed to process graph response:' + bufferString);
-
-						if (errorFunction)
-							errorFunction(e);
-					}
-				} );
-		}
-
+		return _graphCall( 'GET', path, srcQuest, consumeFunction, errorFunction );
 	}
 
 
@@ -461,49 +527,6 @@ exports.batch =
 	}
 
 
-//
-// Example:
-//		http://shoeboxify.jit.su/o4u?u=something_base64
-//
-
-function _extractFacebookObjectID( srcString )
-{
-	if (srcString.startsWith('http'))
-	{
-		// https://www.facebook.com/photo.php?fbid=426454000747131&set=a.156277567764777.33296.100001476042600&type=1&ref=nf
-
-		if (srcString.indexOf('photo.php?') > 0 && srcString.indexOf('fbid=') > 0 )
-		{
-			var stringElements = url.parse(srcString, true);
-			var stringQuery = stringElements['query'];
-			var fbid = stringQuery['fbid'];
-
-			return fbid;
-		}
-
-		// https://sphotos-b.xx.fbcdn.net/hphotos-ash3/599016_10151324834642873_1967677028_n.jpg
-		
-		var last4chars = srcString.substring((srcString.length-4), srcString.length );
-
-		if ( last4chars == '.jpg')
-		{
-			var srcStringSpliyElements = srcString.split('/');
-
-			var lastPathComponent = srcStringSpliyElements[srcStringSpliyElements.length-1];
-
-			var numbers = lastPathComponent.split('_');
-
-			var canditateResult = numbers[1];
-
-			var isnum = /^\d+$/.test(canditateResult);
-
-			if (isnum)
-				return canditateResult;
-		}
-	}
-
-	return undefined;
-}
 
 exports.sanitizeObject = 
 	function(quest, ponse, object)
@@ -537,94 +560,3 @@ exports.sanitizeObject =
 			return false;
 		}
 	}
-
-/*  === objectForURL ===
- *
- * 	returns json:
- *		{
- *			status:	  0 : success
- *					  1 : malformed request
- *					  2 : Failed to look up Facebook Object
- *					403 : User not logged-in in Shoeboxify
- *		}
- *   
- * 
- */
-
-exports.objectForURL = 
-	function(quest, ponse)
-	{
-		var urlElements = url.parse(quest.url, true);
-		var urlQuery = urlElements['query'];
-
-		ponse.writeHead(200, { 'Content-Type': 'application/json' } );
-
-		shoeboxify.debug(quest.url);
-
-		var jsonResult;
-
-		if ( !urlQuery || urlQuery['u'].length <= 0 )
-		{
-			ExitWithResult({
-					status: 1
-				,   source: sourceURI
-				,	  error: 'malformed request ?u= is empty' 
-			} );
-
-			shoeboxify.error('urlQuery is malformed');
-		}
-		else if ( !exports.isAuthenticated(quest) )
-		{
-			ExitWithResult({
-					status: 403
-				,   source: sourceURI
-				,	  error: 'User not logged-in in Shoeboxify' 
-			} );
-
-		}
-		else
-		{
-			shoeboxify.log(urlQuery);
-			
-			var sourceURI = urlQuery['u'];
-			var fbID =  _extractFacebookObjectID(sourceURI);
-
-			if (fbID)
-			{
-				exports.graph( fbID, quest,
-					function success(fbObject)
-					{
-						ExitWithResult(	{
-								status: 0
-							,   source: sourceURI
-							,     data: fbID
-							, graphObject: fbObject
-							} );
-					},
-					function error(error)
-					{
-						ExitWithResult(	{
-								status: 2
-							,   source: sourceURI
-							,    error: 'Failed to lookup: ' + fbID + ' error:' + error
-							} );
-
-					} );
-			}
-			else
-			{
-				ExitWithResult({
-						status: 2
-					,	source: sourceURI
-					,	 error: 'Cannot find object id for source'
-							} );				
-			}
-		}
-
-		function ExitWithResult(result)
-		{
-			ponse.end( JSON.stringify(result) );
-		}
-		
-	}
-

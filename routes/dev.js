@@ -459,3 +459,27 @@ exports.s3test =
 		s3.writeJSON( s3.client.test.RW(), object, '/test/reduced.json' );
 	}
 
+
+exports.permissions =
+	function(quest, ponse)
+	{
+		_respondWithGraphInfoPage(quest, ponse, '/me/permissions');
+	}
+
+function _outMessage(quest, ponse, message)
+{
+	ponse.writeHead(200, {'Content-Type': 'text/html'});
+	ponse.write('<html><body>');
+
+	ponse.write('<html><body>'+ message + '</body></html>');
+
+	ponse.end('</body></html>');
+}
+
+exports.rmsession =
+	function(quest, ponse)
+	{
+		quest.session.destroy();
+
+		_outMessage(quest, ponse, 'session removed');
+	}

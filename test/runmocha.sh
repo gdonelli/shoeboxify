@@ -2,4 +2,4 @@
 
 source ../../setenv.sh
 
-mocha s3-test.js
+mocha s3-test.js -t 15000
