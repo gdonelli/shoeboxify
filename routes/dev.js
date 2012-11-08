@@ -7,7 +7,7 @@ var url		= require('url')
 	, shoeboxify = require('../lib/shoeboxify')
 	, fb	= require('./fb')
 	, debug	= require('../lib/debug-lib')
-	, utils	= require('../lib/utils-lib')
+	, utils	= require('../lib/utils')
 	, s3 = require('../lib/s3')
 	;
 

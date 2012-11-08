@@ -117,7 +117,7 @@ var _serviceUI = (function ()
 				 */
 
 				var error = new Error( 'AJAX request to ' + o4u + ' failed with status:' + textStatus);
-				error.code = responseStatus;
+				error.code = 3;
 				error.response = ponse;
 				if (errorF)
 					errorF(error);

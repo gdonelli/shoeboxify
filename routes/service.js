@@ -5,9 +5,12 @@
 
 var 	https = require('https')
 	,	url = require('url')
+	,	path = require('path')
 
+	,	s3 = require('../lib/s3')
 	,	fb = require('./fb')
 	,	shoeboxify = require('../lib/shoeboxify')
+	, 	StringExtension = require('../lib/String-extension')
 	;
 
 exports.route = {}; 
@@ -89,42 +92,242 @@ function _extractFacebookObjectID( srcString )
 
 exports.route.copyObject = '/cp';
 
-
 exports.copyObject = 
 	function(quest, ponse)
 	{
 		_sevice_processURL(quest, ponse, 
 			function(photoObject, exitFunction, jsonPartialResult)
 			{
-				// validate that this is a photo object
-				if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
 
-					jsonPartialResult.status = 10;
+				_copyPhotoObject(quest, photoObject
+					,	function success(copyID, copyURL) {
+							jsonPartialResult.copyID  = copyID;
+							jsonPartialResult.copyURL = copyURL;
 
-					return exitFunction(jsonPartialResult);
-				};
+							console.log('copyID:  ' + copyID);
+							console.log('copyURL: ' + copyURL);
 
-				var copyFileName = _copyFileName(photoObject);
+							return exitFunction(jsonPartialResult);
+						} 
+					,	function error(e) {
+							jsonPartialResult.error = e.message;
+							jsonPartialResult.status = 10;
+							return exitFunction(jsonPartialResult);
+						});
 
-				console.log(copyFileName);
 
-				return exitFunction(jsonPartialResult);
 			} );
 
-		/* ====================== */
 
-		function _copyFileName(photoObject)
+	}
+
+/*
+ *	successF(copyID, copyURL)
+ */
+
+function _copyPhotoObject(quest, photoObject, successF, errorF)
+{
+	// validate that this is a photo object
+	if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
+		if (errorF)
+			errorF( new Error('photoObject failed validation') );
+
+		return;
+	};
+
+	var newName = _generatePhotoName( fb.me(quest, 'id'), photoObject.id, 'A', 'F' );
+
+	var imageDictionary = _collectAllImages(photoObject);
+
+	var s3client = s3.object.readwrite();
+
+	var imageIndex = 0;
+
+	var totCount 	 = 0;
+	var successCount = 0;
+	var errorCount	 = 0;
+
+	for (var imageURL in imageDictionary)
+	{
+		// console.log(imageIndex);
+		
+		var meta = imageDictionary[imageURL];
+		var newFilePath = _generateFilePath(newName, imageIndex++, meta, path.extname(imageURL));
+		
+		// console.log('original: ' + imageURL);
+		// console.log('copy:     ' + s3.object.URL(newFilePath) );
+		
+		_copy2s3( s3client, imageURL, newFilePath);
+		
+		totCount++;
+	}
+
+	// console.log(imageDictionary);
+
+	/* ============================================ */
+	var totalBytesWrittenToS3 = 0;
+
+	function _copy2s3( client, srcURL, path)
+	{
+		s3.copyURL( client, srcURL, path
+			,	function success(total) {
+					var s3copyURL = s3.object.URL(path);
+					imageDictionary[srcURL].s3copyURL = s3copyURL
+
+					// console.log('S3 -> ' +  s3copyURL + ' ('  + total/1024 + ' KB)' );			
+
+					totalBytesWrittenToS3 += total;
+
+					successCount++;
+					_shouldEnd();
+				}
+			,	function error(e) {
+					console.log('Failed -> ' +  imageURL);
+					errorCount++;
+					_shouldEnd();
+				} 
+			);			
+	}
+
+	function _copyObject()
+	{
+		var newObject = {};
+
+		newObject.picture = imageDictionary[photoObject.picture].s3copyURL;
+		newObject.source = imageDictionary[photoObject.source].s3copyURL;
+		newObject.images = [];
+
+		for (var index in photoObject.images)
 		{
-			var now = new Date();
-			
-			var dateSuffix = now.getUTCFullYear() + '_' + now.getUTCMonth() + '_' + now.getUTCDate() + '_' + now.getUTCHours() + '_' + now.getUTCMinutes();
-			var version = 'A';
+			var imageInfo = photoObject.images[index];
 
-			return photoObject.from.id + '_' + version + '_' + photoObject.id + '_' + dateSuffix;
+			newObject.images[index] = {};
+			newObject.images[index].source = imageDictionary[imageInfo.source].s3copyURL;
+		}
+
+		return newObject;
+	}
+
+	function _shouldEnd()
+	{
+		if (totCount == (successCount + errorCount))
+		{
+			console.log('Total bytes written to S3: ' + totalBytesWrittenToS3/1024 + ' KB' );
+
+			if (errorCount == 0)
+			{
+				console.log( imageDictionary );
+				
+				var copyObject = _copyObject();
+
+				console.log( copyObject );
+
+				var finalObject = {};
+
+				finalObject.source = photoObject;
+				finalObject.copy   = copyObject;
+
+				var jsonPath = '/json/' + newName + '.json';
+				s3.writeJSON( s3client, finalObject, jsonPath 
+					,	function success() {
+
+							var jsonURL = s3.object.URL(jsonPath);
+
+							if (successF)
+								successF(newName, jsonURL);
+						}
+					,	function error() {
+							if (errorF)
+								errorF();
+						} );
+
+			}
+			else
+				if (errorF)
+					errorF();
+		}
+	}
+
+	function _collectAllImages(photoObject)
+	{
+		var result = {};
+
+		var pictureURL = photoObject.picture;
+
+		result[pictureURL] = {};
+
+		__addSource(photoObject);
+
+		for (var i in photoObject.images) {
+			var image_i = photoObject.images[i];
+			__addSource(image_i);
+		}
+
+		return result;
+
+		/* ===== */
+
+		function __addSource(imageInfo)
+		{
+			var sourceURL = imageInfo.source;
+			var sourceWidth	= imageInfo.width;
+			var sourceHeight= imageInfo.height;
+		
+			if (result[sourceURL]) // Does it exist already?
+			{
+				var hitWidth  = result[sourceURL].width;
+				var hitHeight = result[sourceURL].height;
+
+				if ( hitWidth == imageInfo.width && 
+					 hitHeight == imageInfo.height )
+				{
+					// all good, nothing to do
+					return;
+				}
+				if (hitWidth == undefined && hitHeight == undefined)
+				{
+					// we have more information about a picture we saw already, we will add it
+				}
+				else
+				{
+					shoeboxify.error(	'Duplicate image with size not matching: ' + 
+										hitWidth + 'x' + hitHeight + ' vs ' +
+										sourceWidth + 'x' + sourceHeight);
+				}
+			}
+
+			result[sourceURL] = { width:sourceWidth, height:sourceHeight };
+		}
+	}
+
+}
+
+function _generatePhotoName(ownerID, photoID, version, type)
+{
+	return ownerID + '_' + version + '_' + type + '_' + photoID;
+}
+
+function _generateFilePath(photoName, index, options, extension)
+{
+	var directory = 'picture'; // default directory
+
+	var optionString = '';
+	if (options && options.width && options.height)
+	{
+		var max = Math.max(options.width, options.height);		
+		directory = '' + max
+
+		if (directory.length <= 0) {
+			directory = 'picture';
 		}
 
 	}
 
+	var now = new Date();
+	var datePiece = now.getUTCFullYear() + 'M' + now.getUTCMonth() + 'D' + now.getUTCDate() + 'H' + now.getUTCHours() + 'M' + now.getUTCMinutes();
+	
+	return '/' + directory + '/' + photoName + '_' + datePiece + '_i' + index + extension;
+}
 
 /*
  * Given a URL extracts the facebook ID

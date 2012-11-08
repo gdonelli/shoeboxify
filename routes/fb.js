@@ -7,12 +7,14 @@ var 	https		= require('https')
 	,	querystring	= require('querystring')
 	,	md5			= require('MD5')
 	,	url			= require('url')
+	,	assert		= require('assert')
 
 	/* libs */
 
-	,	utils		= require('../lib/utils-lib')
+	,	utils		= require('../lib/utils')
 	,	shoeboxify	= require('../lib/shoeboxify')
 	,	stacktrace	= require('../lib/stacktrace')
+	, 	StringExtension = require('../lib/String-extension')
 	;
 
 
@@ -267,6 +269,25 @@ exports.response =
 		}
 
 	};
+
+
+exports.me = function(quest, field)
+	{
+		assert(quest != undefined,				arguments.callee.name + ' quest is undefined');
+		assert(quest.session != undefined,		arguments.callee.name + ' quest.session is undefined');
+		assert(quest.session.me != undefined,	arguments.callee.name + ' quest.session.me is undefined');
+
+		if (field) {
+			assert(quest.session.me[field] != undefined, arguments.callee.name +' quest.session.me[field] is undefined');			
+			return quest.session.me[field];
+		}
+		else
+		{
+			return quest.session.me;
+		}
+	}
+
+
 
 /*	PAGE:	Facebook App Logout
  * 	URL:	/logout

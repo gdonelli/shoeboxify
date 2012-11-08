@@ -216,6 +216,7 @@ function ClearUI()
 	$('#droparea').html('<img id="dropimage"> </img>');
 
 	$('#shoeboxify').attr('disabled', 'disabled');
+	$('#shoeboxify').css('background-color', '');
 
 	window.droppedURL = undefined;
 }
@@ -227,17 +228,24 @@ function ClearButtonAction()
 
 function ShoeboxifyButtonAction()
 {
+	$('#shoeboxify').attr('disabled', 'disabled');
+	$('#shoeboxify').css('background-color', '');
+	
 	ui.log('ShoeboxifyButtonAction');
 
-		serviceUI.copyObject(window.droppedURL
-			,	function success(ponse) {
-					console.log('ponse:');
-					console.log(ponse);
-				}
-			,	function error(error) {
-					console.log('error:');
-					console.log(error);
-				
-				} );
+	serviceUI.copyObject(window.droppedURL
+		,	function success(ponse) {
+				console.log('ponse:');
+				console.log(ponse);
 
+				$('#shoeboxify').css('background-color', 'green');
+				$('#shoeboxify').removeAttr('disabled');
+			}
+		,	function error(error) {
+				console.log('error:');
+				console.log(error);
+			
+				$('#shoeboxify').css('background-color', 'red');
+				$('#shoeboxify').removeAttr('disabled');
+			} );
 }

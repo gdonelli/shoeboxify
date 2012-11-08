@@ -14,6 +14,7 @@ var		express	= require('express')
 	,	fb		= require('./routes/fb')
 	,	dev		= require('./routes/dev')
 	,	service	= require('./routes/service')
+	,	view	= require('./routes/view')
 
 	/* libs */
 
@@ -77,6 +78,7 @@ app.get(fb.route.logout,	fb.logout);
 app.get( service.route.objectForURL, service.objectForURL );
 app.get( service.route.copyObject, service.copyObject );
 
+app.get( view.route.viewObject, view.viewObject );
 
 /**********************/
 /* Development Routes */
