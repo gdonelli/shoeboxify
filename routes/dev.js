@@ -9,6 +9,7 @@ var url		= require('url')
 	, debug	= require('../lib/debug-lib')
 	, utils	= require('../lib/utils')
 	, s3 = require('../lib/s3')
+	, mongo = require('../lib/mongo')
 	;
 
 /* ================================ EXPORTS ==================================== */
@@ -457,14 +458,14 @@ exports.s3test =
 		var object = { foo: "reduced storage" };
 	
 		s3.writeJSON( s3.client.test.RW(), object, '/test/reduced.json' );
-	}
+	};
 
 
 exports.permissions =
 	function(quest, ponse)
 	{
 		_respondWithGraphInfoPage(quest, ponse, '/me/permissions');
-	}
+	};
 
 function _outMessage(quest, ponse, message)
 {
@@ -482,4 +483,51 @@ exports.rmsession =
 		quest.session.destroy();
 
 		_outMessage(quest, ponse, 'session removed');
-	}
+	};
+
+
+//
+// ===============================================================
+//
+
+
+
+exports.shoeboxified=
+	function(quest, ponse)
+	{
+		console.log("mongotest");
+
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.write('<html><body>');
+
+		ponse.write('<h1>' + 'Shoeboxified' + '</h1><div>');
+
+		mongo.object.allByUser( fb.me(quest, 'id')
+			,	function success(r)
+				{
+					for (var i in r)
+					{
+						var object_i = r[i];
+						
+						var sourcePict	= object_i.source.picture;
+						var copyPict	= object_i.copy.picture;
+/*
+						console.log('sourcePict: ' + sourcePict);
+						console.log('  copyPict: ' + copyPict);
+*/
+
+						ponse.write('<img src="' + sourcePict + '"></img>\n');
+						// ponse.write('<img src="' + copyPict + '"></img>\n');
+					}
+
+					ponse.end('</div></body></html>');
+
+				}
+			,	function error(e){
+					console.log('find returned error:');
+					console.log(e);
+				});		
+
+
+	};
+

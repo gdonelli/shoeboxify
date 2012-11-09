@@ -32,3 +32,15 @@ jitsu env set S3_URL $S3_URL
 jitsu env set S3_OBJECT_BUCKET $S3_OBJECT_BUCKET
 jitsu env set S3_CACHE_BUCKET $S3_CACHE_BUCKET
 jitsu env set S3_TEST_BUCKET $S3_TEST_BUCKET
+
+################
+### Database ###
+################
+
+jitsu env set DB_SERVER_HOST $DB_SERVER_HOST
+jitsu env set DB_SERVER_PORT $DB_SERVER_PORT
+
+jitsu env set DB_SERVER_USERNAME $DB_SERVER_USERNAME
+jitsu env set DB_SERVER_PASSWORD $DB_SERVER_PASSWORD
+
+jitsu env set DB_NAME $DB_NAME

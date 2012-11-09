@@ -9,6 +9,8 @@ var 	https = require('https')
 
 	,	s3 = require('../lib/s3')
 	,	fb = require('./fb')
+
+	,	shoebox = require('../lib/shoebox')
 	,	shoeboxify = require('../lib/shoeboxify')
 	, 	StringExtension = require('../lib/String-extension')
 	;
@@ -95,6 +97,73 @@ exports.route.copyObject = '/cp';
 exports.copyObject = 
 	function(quest, ponse)
 	{
+		var urlElements = url.parse(quest.url, true);
+		var urlQuery = urlElements['query'];
+
+		ponse.writeHead(200, { 'Content-Type': 'application/json' } );
+
+		shoeboxify.debug(quest.url);
+
+		var jsonResult;
+
+		if ( !urlQuery || urlQuery['u'].length <= 0 )
+		{
+			ExitWithResult({	status: 1
+							,   source: sourceURI
+							,	 error: 'malformed request ?u= is empty' });
+
+			shoeboxify.error('urlQuery is malformed');
+		}
+		else if ( !fb.isAuthenticated(quest) )
+		{
+			ExitWithResult({	status: 403
+							,   source: sourceURI
+							,	 error: 'User not logged-in in Shoeboxify' });
+		}
+		else
+		{
+			shoeboxify.log(urlQuery);
+			
+			var sourceURI = urlQuery['u'];
+			var fbID =  _extractFacebookObjectID(sourceURI);
+
+			if (fbID)
+			{
+				shoebox.add(fbID, fb.me(quest, 'id'), quest 
+						,	function success(r)
+							{
+								ExitWithResult({	status: 0
+												,	source: sourceURI
+												,	  data: r });
+							}
+						,	function error(e)
+							{
+								ExitWithResult({	status: 1
+												,	source: sourceURI
+												,	 error: 'shoebox.add failed' });				
+							}
+
+					);
+			}
+			else
+			{
+				ExitWithResult({	status: 2
+								,	source: sourceURI
+								,	 error: 'Cannot find object id for source' });				
+			}
+		}
+
+		function ExitWithResult(result)
+		{
+			ponse.end( JSON.stringify(result) );
+		}
+		
+	}
+
+
+/*
+	function(quest, ponse)
+	{
 		_sevice_processURL(quest, ponse, 
 			function(photoObject, exitFunction, jsonPartialResult)
 			{
@@ -120,6 +189,9 @@ exports.copyObject =
 
 
 	}
+*/
+
+
 
 /*
  *	successF(copyID, copyURL)
@@ -330,7 +402,7 @@ function _generateFilePath(photoName, index, options, extension)
 }
 
 /*
- * Given a URL extracts the facebook ID
+ * Scafolding for a service which given an URL extracts the facebook ID
  */
 
 function _sevice_processURL(quest, ponse, processObjectF)

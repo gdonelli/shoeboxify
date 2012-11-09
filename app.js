@@ -1,8 +1,6 @@
-
-/**
- * Module dependencies.
- */
-
+/**************************/
+/*   SHOEBOXIFY: App.js   */
+/**************************/
 
 var		express	= require('express')
 	,	http	= require('http')
@@ -19,7 +17,7 @@ var		express	= require('express')
 	/* libs */
 
 	,	shoeboxify = require('./lib/shoeboxify')
-
+	,	mongo = require('./lib/mongo')
 	;
 
 
@@ -61,11 +59,20 @@ app.configure('development',
 
 app.settings['x-powered-by'] = false;
 
+/****************/
+/*   Database   */
+/****************/
+
+mongo.init(	shoeboxify.dbServerHost(), 
+			shoeboxify.dbServerPort(), 
+			shoeboxify.dbName(), 
+			shoeboxify.dbServerUsername(), 
+			shoeboxify.dbServerPassword() );
 
 
-/*****************/
-/* Public Routes */
-/*****************/
+/*********************/
+/*   Public Routes   */
+/*********************/
 
 app.get('/', routes.index);
 
@@ -80,9 +87,9 @@ app.get( service.route.copyObject, service.copyObject );
 
 app.get( view.route.viewObject, view.viewObject );
 
-/**********************/
-/* Development Routes */
-/**********************/
+/**************************/
+/*   Development Routes   */
+/**************************/
 
 app.get('/dev/exploreGraph',	fb.requiresAuthentication, dev.exploreGraph);
 app.get('/dev/me',				fb.requiresAuthentication, dev.me);
@@ -96,14 +103,18 @@ app.get('/dev/session',	dev.session);
 app.get('/dev/drop',	fb.requiresAuthentication,	dev.drop);
 app.get('/dev/permissions',	dev.permissions);
 app.get('/dev/s3test',	dev.s3test);
+
 app.get('/dev/rmsession',	dev.rmsession);
 
-/**********/
-/* Server */
-/**********/
+app.get('/dev/shoeboxified',	dev.shoeboxified);
+
 
 /* Self Test */
 shoeboxify.validateEnviroment();
+
+/*******************/
+/*   HTTP Server   */
+/*******************/
 
 http.createServer(app).listen(app.get('port'), function(){
 	console.log("Shoeboxify Server listening on port " + app.get('port'));
