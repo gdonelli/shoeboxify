@@ -329,7 +329,7 @@ exports.logout =
 					_returnResponseWithMessage(ponse, 'logout Error');
 				});
 
-
+		quest.session.destroy();
 	}
 
 
@@ -371,6 +371,25 @@ exports.requiresAuthentication =
 		else
 		{
 			exports.redirectToAuthentication(quest, ponse);
+		}
+	}
+
+exports.requiresAdmin = 
+	function(quest, ponse, next)
+	{
+		if ( exports.me(quest, 'id') == shoeboxify.adminID() )
+		{
+			next();
+		}
+		else
+		{
+			ponse.writeHead(403, {'Content-Type': 'text/html'});
+			ponse.write('<html><body>');
+		
+			ponse.write('<h1>Requires Admin Priviledges</h1>');
+			ponse.write('</body></html>');
+			ponse.end();
+
 		}
 	}
 

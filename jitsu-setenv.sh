@@ -17,6 +17,8 @@ jitsu env set SESSION_SECRET $SESSION_SECRET
 jitsu env set SESSION_DB_URL $SESSION_DB_URL
 jitsu env set SESSION_DB_NAME $SESSION_DB_NAME
 
+jitsu env set ADMIN_ID $ADMIN_ID
+
 ##############################
 ### Amazon S3 Access Users ###
 ##############################

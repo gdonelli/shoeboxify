@@ -38,14 +38,12 @@ app.configure(
 		app.use(express.cookieParser());
 
 		app.use(express.session({
-		    secret: shoeboxify.sessionSecret()
-		    ,
-		    store: new MongoStore({
-		    	cookie: { maxAge: 60000 * 60 },
-				url: shoeboxify.sessionDatabaseURL()
-			} )
+		    	secret: shoeboxify.sessionSecret()
+		    ,	store: new MongoStore({		cookie: { maxAge: 60000 * 60 }
+										,	url: shoeboxify.sessionDatabaseURL()
+										,	auto_reconnect: true })
 
-		  }));
+		  	}));
 
 		app.use(app.router);
 		app.use(require('stylus').middleware(__dirname + '/public'));
@@ -99,14 +97,17 @@ app.get('/dev/test-email',		fb.requiresAuthentication, dev.testEmail);
 app.get('/dev/whoami',		fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
-app.get('/dev/session',	dev.session);
-app.get('/dev/drop',	fb.requiresAuthentication,	dev.drop);
-app.get('/dev/permissions',	dev.permissions);
+
+app.get('/dev/drop',		fb.requiresAuthentication, dev.drop);
+app.get('/dev/permissions',	fb.requiresAuthentication, dev.permissions);
+
 app.get('/dev/s3test',	dev.s3test);
 
+app.get('/dev/shoeboxified', fb.requiresAuthentication, fb.requiresAdmin, dev.shoeboxified);
+
+app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
 
-app.get('/dev/shoeboxified',	dev.shoeboxified);
 
 
 /* Self Test */

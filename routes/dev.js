@@ -498,8 +498,8 @@ exports.shoeboxified=
 		console.log("mongotest");
 
 		ponse.writeHead(200, {'Content-Type': 'text/html'});
-		ponse.write('<html><body>');
 
+		ponse.write('<html><body>');
 		ponse.write('<h1>' + 'Shoeboxified' + '</h1><div>');
 
 		mongo.object.allByUser( fb.me(quest, 'id')
