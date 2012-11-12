@@ -1,15 +1,16 @@
 
-var url		= require('url')
-	, assert= require('assert')
-	, email = require("emailjs/email")
-	, knox  = require('knox')
+var		url		= require('url')
+	,	assert	= require('assert')
+	,	email	= require("emailjs/email")
+	,	knox	= require('knox')
 
-	, shoeboxify = require('../lib/shoeboxify')
-	, fb	= require('./fb')
-	, debug	= require('../lib/debug-lib')
-	, utils	= require('../lib/utils')
-	, s3 = require('../lib/s3')
-	, mongo = require('../lib/mongo')
+	,	fb	= require('./fb')
+	,	s3	= require('./s3')
+
+	,	debug	= require('./debug-lib')
+	,	utils	= require('./utils')
+	,	mongo	= require('./mongo')
+	,	shoeboxify	= require('./shoeboxify')
 	;
 
 /* ================================ EXPORTS ==================================== */

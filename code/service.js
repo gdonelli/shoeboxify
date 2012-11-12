@@ -8,12 +8,12 @@ var 	https	= require('https')
 	,	path	= require('path')
 	,	assert	= require('assert')
 
-	,	s3 = require('../lib/s3')
+	,	s3 = require('./s3')
 	,	fb = require('./fb')
 
-	,	shoebox		= require('../lib/shoebox')
-	,	shoeboxify	= require('../lib/shoeboxify')
-	, 	StringExtension = require('../lib/String-extension')
+	,	shoebox		= require('./shoebox')
+	,	shoeboxify	= require('./shoeboxify')
+	, 	StringExtension = require('./String-extension')
 	;
 
 

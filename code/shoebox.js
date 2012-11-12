@@ -9,9 +9,9 @@ var		assert	= require('assert')
 
 	,	s3		= require('./s3')
 	,	mongo	= require('./mongo')
-	,	fb		= require('../routes/fb')
+	,	fb		= require('./fb')
 	,	shoeboxify	= require('./shoeboxify')
-	, 	utils = require('../lib/utils')
+	, 	utils = require('./utils')
 	;
 
 exports.add = 

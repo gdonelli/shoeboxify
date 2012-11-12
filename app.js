@@ -8,16 +8,16 @@ var		express	= require('express')
 
 	/* routes */
 
-	,	routes	= require('./routes')
-	,	fb		= require('./routes/fb')
-	,	dev		= require('./routes/dev')
-	,	service	= require('./routes/service')
-	,	view	= require('./routes/view')
+	,	code	= require('./code')
+	,	fb		= require('./code/fb')
+	,	dev		= require('./code/dev')
+	,	service	= require('./code/service')
+	,	view	= require('./code/view')
 
 	/* libs */
 
-	,	shoeboxify = require('./lib/shoeboxify')
-	,	mongo = require('./lib/mongo')
+	,	shoeboxify	= require('./code/shoeboxify')
+	,	mongo		= require('./code/mongo')
 	;
 
 
@@ -72,7 +72,7 @@ mongo.init(	shoeboxify.dbServerHost(),
 /*   Public Routes   */
 /*********************/
 
-app.get('/', routes.index);
+app.get('/', code.index);
 
 // FB Module Routes
 

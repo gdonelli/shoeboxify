@@ -11,10 +11,10 @@ var 	https		= require('https')
 
 	/* libs */
 
-	,	utils		= require('../lib/utils')
-	,	shoeboxify	= require('../lib/shoeboxify')
-	,	stacktrace	= require('../lib/stacktrace')
-	, 	StringExtension = require('../lib/String-extension')
+	,	utils		= require('./utils')
+	,	shoeboxify	= require('./shoeboxify')
+	,	stacktrace	= require('./stacktrace')
+	, 	StringExtension = require('./String-extension')
 	;
 
 

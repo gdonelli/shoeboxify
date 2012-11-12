@@ -3,15 +3,15 @@
  *		view.js
  */
 
-var 	https = require('https')
-	,	url = require('url')
-	,	path = require('path')
+var 	https	= require('https')
+	,	url		= require('url')
+	,	path	= require('path')
 
-	,	s3 = require('../lib/s3')
+	,	s3 = require('./s3')
 	,	fb = require('./fb')
-	,	shoeboxify = require('../lib/shoeboxify')
-	,	utils = require('../lib/utils')
-	,	debug = require('../lib/debug-lib')
+	,	utils = require('./utils')
+	,	debug = require('./debug-lib')
+	,	shoeboxify = require('./shoeboxify')
 	;
 
 exports.route = {}; 
