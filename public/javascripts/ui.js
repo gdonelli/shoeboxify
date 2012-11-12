@@ -63,17 +63,17 @@ var _serviceUI = (function ()
 		,	copyObject: copyObject
 	};
 
-	function objectForURL(theURL, successF /* ponse */, errorF)
+	function objectForURL(theURL, success_f /* (ponseObject) */, error_f)
 	{
-		return _sevice_processURL( '/o4u', theURL, successF, errorF);
+		return _sevice_processURL( '/o4u', theURL, success_f, error_f);
 	}
 
-	function copyObject(theURL, successF /* ponse */, errorF)
+	function copyObject(theURL, success_f /* ponse */, error_f)
 	{
-		return _sevice_processURL( '/cp', theURL, successF, errorF);
+		return _sevice_processURL( '/cp', theURL, success_f, error_f);
 	}
 
-	function _sevice_processURL(servicePath, theURL, successF /* ponse */, errorF)
+	function _sevice_processURL(servicePath, theURL, success_f /* ponse */, error_f)
 	{
 		var urlEncoded = encodeURIComponent(theURL);
 
@@ -91,8 +91,8 @@ var _serviceUI = (function ()
 				if (responseStatus == 0)
 				{
 					// Success
-					if (successF)
-						successF(ponse)
+					if (success_f)
+						success_f(ponse)
 				}
 				else
 				{
@@ -104,8 +104,8 @@ var _serviceUI = (function ()
 					var error = new Error( o4u + ' response with status: ' + responseStatus);
 					error.code = responseStatus;
 					error.response = ponse;
-					if (errorF)
-						errorF(error);
+					if (error_f)
+						error_f(error);
 				}
 			});
 		
@@ -119,8 +119,8 @@ var _serviceUI = (function ()
 				var error = new Error( 'AJAX request to ' + o4u + ' failed with status:' + textStatus);
 				error.code = 3;
 				error.response = ponse;
-				if (errorF)
-					errorF(error);
+				if (error_f)
+					error_f(error);
 
 				ui.log('AJAX request to ' + o4u + ' failed with status:' + textStatus + " jqXHR:");
 				ui.log(jqXHR);

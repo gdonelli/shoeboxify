@@ -120,40 +120,50 @@ function InstallDropListener( target )
 		else
 			ui.log( dropEvent.type + ' droppedURL: ' +  droppedURL );
 
+		ClearUI();
+		
 		PerformDragExit(dropEvent);
 
 		serviceUI.objectForURL(droppedURL
 			,	function success(ponse) {
-					var responseSource = ponse['source'];
-					var responseData = ponse['data'];
 
-					if (!responseSource)
-						responseSource = '???';
+					// Source
+					var ponseSource = ponse['source'];
+					
+					if (!ponseSource)
+						ponseSource = '???';
 
-					$('#sourceURL').text(responseSource);
+					$('#sourceURL').text(ponseSource);
 
-					if (!responseData)
-						responseData = '#?';
+					var objectToShow;
 
-					$('#facebookObjectID').text(responseData);
-
-					ui.log(ponse);
-
-					var graphObject = ponse['graphObject'];
-
-					$('#objectInfo').html( common.objectToHTML(graphObject, 'Facebook Object') );
-					$('#dropimage').attr('src', graphObject['picture']);
-
-					if (graphObject['error']) {
-						$('#droparea').css('background-color', '#AA3333');
-						$('#shoeboxify').attr('disabled', 'disabled');
+					if (ponse.fb_object)
+						objectToShow = ponse.fb_object; 
+					else if (ponse.placeholder)
+					{
+						objectToShow = ponse.placeholder;
+						$('#droparea').css('background-color', 'yellow');
 					}
-					else
-						$('#shoeboxify').removeAttr('disabled');
+
+					var objectID = objectToShow.id;
+					if (!objectID)
+						objectID = '#?' 
+					$('#facebookObjectID').text(objectID);
+
+					$('#objectInfo').html( common.objectToHTML(objectToShow, 'Facebook Object') );
+					
+					if (objectToShow.picture)
+						$('#dropimage').attr('src', objectToShow.picture );
+
+					$('#shoeboxify').removeAttr('disabled');
 
 					window.droppedURL = droppedURL;
 				}
-			,	function error(error) {
+			,	function error(error) 
+				{
+					$('#droparea').css('background-color', '#AA3333');
+					$('#shoeboxify').attr('disabled', 'disabled');
+
 					ui.error('ponse with error:');
 					ui.error(error);
 				} );

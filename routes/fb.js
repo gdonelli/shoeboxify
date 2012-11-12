@@ -20,14 +20,15 @@ var 	https		= require('https')
 
 
 exports.route = {};
+exports.path = {};
 
 /*	PAGE:	Start Facebook Login	
  * 	URL:	/facebook-login
  */ 
 
-exports.route.login = '/facebook-login';
+exports.path.login = '/facebook-login';
 
-exports.login = 
+exports.route.login = 
 	function(quest, ponse)
 	{
 		var urlElements = url.parse(quest.url, true);
@@ -57,11 +58,12 @@ exports.login =
 	};
 
 /*	PAGE:	Facebook Authentication Callback Page
- * 	URL:	/facebook-login
- */ 
-exports.route.response = '/facebook-response';
+ * 	URL:	/facebook-response
+ */
 
-exports.response = 
+exports.path.response = '/facebook-response';
+
+exports.route.response = 
 	function(quest, ponse)
 	{
 		var urlElements   = url.parse( quest['url'], true );
@@ -80,7 +82,6 @@ exports.response =
 			if (sourceInState)
 				source = utils.Base64toASCII(sourceInState);
 		}
-
 
 		if (error)
 		{
@@ -292,7 +293,9 @@ exports.me = function(quest, field)
 /*	PAGE:	Facebook App Logout
  * 	URL:	/logout
  */ 
-exports.route.logout = '/logout';
+
+exports.path.logout = '/logout';
+
 
 function _returnResponseWithMessage(ponse, message)
 {
@@ -302,7 +305,7 @@ function _returnResponseWithMessage(ponse, message)
 	ponse.end('</body></html>');
 }
 
-exports.logout = 
+exports.route.logout = 
 	function(quest, ponse)
 	{
 		if (!exports.isAuthenticated(quest)) {
@@ -353,7 +356,7 @@ exports.redirectToAuthentication =
 	function(quest, ponse)
 	{
 		var encodedURL = utils.ASCIItoBase64(quest.url);
-		var redirectURL = exports.route.login + '?source=' + encodedURL;
+		var redirectURL = exports.path.login + '?source=' + encodedURL;
 
 		ponse.redirect(redirectURL);
 

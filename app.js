@@ -75,13 +75,14 @@ mongo.init(	shoeboxify.dbServerHost(),
 app.get('/', routes.index);
 
 // FB Module Routes
-app.get(fb.route.login,		fb.login);
-app.get(fb.route.response,	fb.response);
-app.get(fb.route.logout,	fb.logout);
+
+app.get(fb.path.login,		fb.route.login);
+app.get(fb.path.response,	fb.route.response);
+app.get(fb.path.logout,		fb.route.logout);
 
 // Service Module Routes
-app.get( service.route.objectForURL, service.objectForURL );
-app.get( service.route.copyObject, service.copyObject );
+app.get( service.path.objectForURL,	service.route.objectForURL );
+app.get( service.path.copyObject, 	service.route.copyObject );
 
 app.get( view.route.viewObject, view.viewObject );
 
