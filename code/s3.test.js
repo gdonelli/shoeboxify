@@ -1,15 +1,11 @@
-//
-// s3-test.js
-//
 
-
-var		assert = require("assert")
-	,	https = require("https")
-	,	http = require("http")
-	,	url = require("url")
-
-	,	s3 = require("../lib/s3")
-	,	shoeboxify = require("../lib/shoeboxify");
+var		assert	= require("assert")
+	,	https	= require("https")
+	,	http	= require("http")
+	,	url		= require("url")
+	,	s3 			= require("../code/s3")
+	,	shoeboxify	= require("../code/shoeboxify")
+	;
 
 
 describe('Shoeboxify S3',
