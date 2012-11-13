@@ -3,7 +3,8 @@
 
 var		url		= require('url')
 	,	http	= require('http')
-	,	https	= require('https');
+	,	https	= require('https')
+	,	assert	= require("assert");
 
 
 exports.ASCIItoBase64 =
@@ -21,26 +22,45 @@ exports.Base64toASCII =
 
 
 exports.GET =
-	function(fileUrl, successF /* (string) */, errorF)
+	function(	fileUrl
+			,	_200OK_f	/*	(string)	*/
+			,	other_f		/*	(ponse)		*/
+			,	error_f		/*	(error)		*/
+			,	traverse
+			)
 	{
-		// console.log('GET ' + fileUrl);
+		console.log('GET ' + fileUrl);
 
 		var fileUrlElements = url.parse(fileUrl);
 
 		var questOptions = {
 					  method:	'GET'
 				,	hostname:	fileUrlElements['hostname']
-				,	path:	fileUrlElements['path']
+				,		path:	fileUrlElements['path']
+
+				,	 headers: {
+							'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17'
+						,	'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+						,	'Connection' : 'keep-alive'
+ 					}
+
 			};
 
-		var methodAgent = fileUrlElements['method'] == 'http' ? http : https;
+		if (fileUrlElements['port'] != undefined)
+			questOptions['port'] = fileUrlElements['port'];
 
-		console.log(fileUrlElements);
+		var methodAgent = fileUrlElements['protocol'] == 'https:' ? https : http;
+
+		// console.log('fileUrlElements:');
+		// console.log(fileUrlElements);
+
+		// console.log('questOptions:');
+		// console.log(questOptions);
 
 		var quest = methodAgent.request(questOptions,
 			function(ponse) {
-				console.log("statusCode: ", ponse.statusCode);
-				console.log("headers: ", ponse.headers);
+				// console.log("statusCode: ", ponse.statusCode);
+				// console.log("headers: ", ponse.headers);
 
 				var buffer = '';
 
@@ -51,19 +71,25 @@ exports.GET =
 
 				ponse.on('end',
 					function() {
+						// console.log("END statusCode: ", ponse.statusCode);
 
-						console.log("END statusCode: ", ponse.statusCode);
+						if (ponse.statusCode == 200)
+						{
+							if (_200OK_f)
+								_200OK_f(buffer, ponse);
+						}
+						else if (traverse == true && ponse.statusCode == 302)
+						{
+							assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
 
-						if (ponse.statusCode == 200){
-							if (successF)
-								successF(buffer);						
+							exports.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
 						}
 						else
-						{
-							if (errorF) {
-								var e = new Error('response.statusCode: ' + ponse.statusCode);
-								e.response = ponse;
-								errorF(e);
+						{	
+							ponse.readBuffer = buffer;
+
+							if (other_f) {
+								other_f(ponse);
 							}						
 						}
 					});
@@ -71,10 +97,10 @@ exports.GET =
 
 		quest.on('error',
 			function(e) {
-				console.error(e);
+				// console.error(e);
 
-				if (errorF)
-					errorF(e);
+				if (error_f)
+					error_f(e);
 			});
 
 		quest.end();

@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'Facebook Login' target in the 'Facebook Login' project
+//
+
+#ifdef __OBJC__
+    #import <Cocoa/Cocoa.h>
+#endif

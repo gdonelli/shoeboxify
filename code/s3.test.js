@@ -3,8 +3,9 @@ var		assert	= require("assert")
 	,	https	= require("https")
 	,	http	= require("http")
 	,	url		= require("url")
-	,	s3 			= require("../code/s3")
-	,	shoeboxify	= require("../code/shoeboxify")
+
+	,	s3 			= require("./s3")
+	,	shoeboxify	= require("./shoeboxify")
 	;
 
 
@@ -69,7 +70,7 @@ describe('Shoeboxify S3',
 			throw new Error("Copy should succeeed " + e);
 		}
 
-	})
+	});
 
 function SimpleCopy(destination, url, path, doneF, errorF)
 {
