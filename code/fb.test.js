@@ -3,7 +3,9 @@ var		assert	= require("assert")
 	,	https	= require("https")
 	,	http	= require("http")
 	,	url		= require("url")
-	
+	,	util  = require('util')
+	,	spawn = require('child_process').spawn
+
 	,	fb		= require("./fb")
 	,	utils	= require("./utils")
 
@@ -11,81 +13,102 @@ var		assert	= require("assert")
 	;
 
 
-describe('Facebook authentication ->',
-	function() {
+exports.getAccessToken = function( success_f, error_f )
+	{
+		var app = spawn('/tmp/sym/Release/Facebook Login.app/Contents/MacOS/Facebook Login');
 
-		it( 'should login',
-			function(done) 
+		app.stdout.on('data',
+				function (data) {
+					var jsonData = JSON.parse(data);
+					
+					if (success_f)
+						success_f(jsonData);
+			
+					exports.auth = jsonData;
+				});
+
+		app.stderr.on('data',
+			function (data) {
+				console.log('stderr: ' + data);
+
+				if (error_f)
+					error_f(data);
+			
+			});
+
+		app.on('exit', function (code) {
+			console.log('child process exited with code ' + code);
+		});
+
+	}
+
+
+exports.getPseudoSession = function(success_f, error_f)
+	{
+		assert( exports.auth != undefined,				'exports.auth undefined');
+		assert( exports.auth.accessToken != undefined,	'exports.auth.accessToken undefined');
+		assert( exports.auth.expires != undefined,		'exports.auth.expires undefined');
+
+		exports.pseudoRequest = {};
+		exports.pseudoRequest.session = {};
+		exports.pseudoRequest.session.accessToken	= exports.auth.accessToken;
+		exports.pseudoRequest.session.expiresToken	= exports.auth.expiresToken;
+
+		fb.graph('me', exports.pseudoRequest,
+			function(fbObject)
 			{
-				utils.GET('http://local.shoeboxify.com:3000/facebook-login'
-					,	function _200OK(string, ponse) {
-							console.log('200 OK:');
-							console.log(string);
+				exports.pseudoRequest.session.me = fbObject;
 
-							console.log( 'ponse.headers : ');
-							console.log( ponse.headers );
+				if (success_f)
+					success_f(exports.pseudoRequest);
+			},
+			function(e)
+			{
+				if (error_f)
+					error_f(e);
+			} );
 
-							// console.log('ponse:');
-							// console.log(ponse);
-
-							// throw new Error('/facebook-login shouldnt return 200_OK');
-						}					
-					,	function other(ponse) {
-							console.log('ponse.statusCode: ' + ponse.statusCode);
-							assert(ponse.statusCode == 302, 'facebook-login should return 302 response');
+	}
 
 
-							// console.log( 'ponse: ');
-							// console.log( ponse );
+describe('Facebook authentication ->',
+	function() 
+	{
+		var pseudoSessionQuest = {};
 
-							// console.log( 'ponse.readBuffer: ');
-							// console.log( ponse.readBuffer );
+		it( 'Get access token via Facebook Login.app',
+			function(done) {
+				exports.getAccessToken(
+						function success(auth)
+						{
+							assert( auth != undefined,				'auth undefined');
+							assert( auth.accessToken != undefined,	'auth.accessToken undefined');
+							assert( auth.expires != undefined,		'auth.expires undefined');
 
-							
-							console.log( 'ponse.headers : ');
-							console.log( ponse.headers );
+							done();
+						}
+					,	function error(e)
+						{
+							throw new Error(e);
+						} );
+			} );
 
-							assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
+		it( 'Compose pseudo-session',
+			function(done) {
+				exports.getPseudoSession(
+						function success(ponse) {
+							assert( ponse.session.me != undefined,		'ponse.session.me undefined');
+							assert( ponse.session.me.id != undefined,	'ponse.session.me.id undefined');
+							assert( ponse.session.me.name != undefined,	'ponse.session.me.name undefined');
+							assert( ponse.session.me.email != undefined,'ponse.session.me.email undefined');
 
-							utils.GET(ponse.headers.location
-								,	function _200OK(string, ponse) {
-										console.log('200 OK:');
-										console.log(string);
-
-										console.log('ponse.headers :');
-										console.log( ponse.headers );
-									}					
-								,	function other(ponse) {
-										console.log('ponse.statusCode: ' + ponse.statusCode);
-										// assert(ponse.statusCode == 302, 'facebook-login should return 302 response');
-
-
-										 // console.log( 'ponse: ');
-										 // console.log( ponse );
-
-										// console.log( 'ponse.readBuffer: ');
-										// console.log( ponse.readBuffer );
-
-										console.log( 'ponse.headers.location: ');
-										console.log( ponse.headers.location );
-
-
-								
-
-									}
-								,	function error(e) {
-										throw new Error('/facebook-login failed');
-									}
-								);
-
+							done();	
 						}
 					,	function error(e) {
-							throw new Error('/facebook-login failed');
-						}
-					// ,	true
-					
-					);
+							throw new Error(e);
+						});
 
 
 			} );
 	} );
+

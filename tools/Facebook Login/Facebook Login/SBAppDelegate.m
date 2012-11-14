@@ -16,6 +16,8 @@ extern NSString* gUrlToLoad;
 {
     // Insert code here to initialize your application
     
+    [self.webView setCustomUserAgent: @"com.shoeboxify.test"];
+    
     [self.webView setFrameLoadDelegate:self];
    
     WebFrame* mainFrame = [self.webView mainFrame];
@@ -33,6 +35,10 @@ extern NSString* gUrlToLoad;
     NSString* src = [[[[self.webView mainFrame] dataSource] representation] documentSource];
     
     printf("%s", [src UTF8String]);
+    
+    fflush(stdout);
+    
+    exit(0);
 }
 
 

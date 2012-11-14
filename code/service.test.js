@@ -4,7 +4,8 @@ var		assert	= require("assert")
 	,	http	= require("http")
 	,	url		= require("url")
 	
-	,	fb	= require("./fb")
+	,	fb		= require("./fb")
+	,	fbTest	= require("./fb.test")
 
 	,	shoeboxify	= require("./shoeboxify")
 	;
@@ -13,13 +14,9 @@ var		assert	= require("assert")
 describe('Shoeboxify Service',
 	function() {
 
-		it( 'Should login', 
-			function(done) 
+		it( 'Should have pseudoRequest', 
+			function() 
 			{
-				/* SimpleWriteToBucket( s3.test, done, true ); */
-
-				// http.get('http://local.shoeboxify.com:3000' + fb.path.login );
-
-
+				assert(fbTest.pseudoRequest != undefined, 'fbTest.pseudoRequest is undefined');
 			} );
 	} );

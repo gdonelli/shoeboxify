@@ -121,6 +121,24 @@ exports.route.response =
 
 		function RespondWithLoginSuccess()
 		{
+			if (quest.headers['user-agent'] == 'com.shoeboxify.test')
+				return RespondWithJSONSuccess();
+			else
+				return RespondWithHTMLSuccess();
+		}
+
+		function RespondWithJSONSuccess()
+		{
+			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+			
+			var object = {	'accessToken'	: _accessToken(quest),
+							'expires'		: _expiresToken(quest)	};
+
+			ponse.end( JSON.stringify(object) );	
+		}
+		
+		function RespondWithHTMLSuccess()
+		{
 			var title = quest.session.me.name +' - Login Successful';
 
 			ponse.writeHead(200, {'Content-Type': 'text/html'});
@@ -139,9 +157,8 @@ exports.route.response =
 
 			ponse.write('</body>');
 			
-			ponse.end('</html>');
+			ponse.end('</html>');			
 		}
-
 		
 		function RespondWithError(title, e)
 		{
