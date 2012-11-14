@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ../setenv.sh
+source ../secret/setenv.sh
 
 ####################
 ### Facebook App ###

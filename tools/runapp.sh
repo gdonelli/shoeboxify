@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source ./setenv.sh
+source ../secret/setenv.sh
 
 # if [ "$#" -gt 0 ]; then
 # 	echo "Setting up variable in Nodejitsu"

@@ -1,24 +1,26 @@
 #!/bin/bash
 
-cd "tools/Facebook Login"
+cd "./Facebook Login"
 xcodebuild DSTROOT=/tmp/dst SYMROOT=/tmp/sym
-cd ../..
+cd ..
+
+APPFOLDER="../app"
 
 # /tmp/sym/Release/Facebook Login.app/Contents/MacOS/Facebook Login
 
-source ../setenv.sh
+source ../secret/setenv.sh
 
 echo 'shoeboxify.test.js'
-mocha ./code/shoeboxify.test.js
+mocha $APPFOLDER/code/shoeboxify.test.js
 
 echo 'fb.test.js'
-mocha ./code/fb.test.js  -t 15000
+mocha $APPFOLDER/code/fb.test.js  -t 15000
 
 echo 'service.test.js'
-mocha ./code/service.test.js
+mocha $APPFOLDER/code/service.test.js  -t 15000
 
-echo 'utils.test.js'
-mocha ./code/utils.test.js
+echo 'handy.test.js'
+mocha $APPFOLDER/code/handy.test.js
 
 echo 's3.test.js'
-mocha ./code/s3.test.js -t 15000
+mocha $APPFOLDER/code/s3.test.js -t 15000
