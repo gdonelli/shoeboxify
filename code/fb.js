@@ -11,10 +11,9 @@ var 	https		= require('https')
 
 	/* libs */
 
-	,	utils		= require('./utils')
+	,	handy		= require('./handy')
 	,	shoeboxify	= require('./shoeboxify')
 	,	stacktrace	= require('./stacktrace')
-	, 	StringExtension = require('./String-extension')
 	;
 
 
@@ -80,7 +79,7 @@ exports.route.response =
 			var sourceInState = stateObject['source'];
 
 			if (sourceInState)
-				source = utils.Base64toASCII(sourceInState);
+				source = handy.Base64toASCII(sourceInState);
 		}
 
 		if (error)
@@ -372,7 +371,7 @@ function WriteObject(quest, ponse)
 exports.redirectToAuthentication =
 	function(quest, ponse)
 	{
-		var encodedURL = utils.ASCIItoBase64(quest.url);
+		var encodedURL = handy.ASCIItoBase64(quest.url);
 		var redirectURL = exports.path.login + '?source=' + encodedURL;
 
 		ponse.redirect(redirectURL);

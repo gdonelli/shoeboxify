@@ -9,7 +9,7 @@ var 	https	= require('https')
 
 	,	s3 = require('./s3')
 	,	fb = require('./fb')
-	,	utils = require('./utils')
+	,	handy = require('./handy')
 	,	debug = require('./debug-lib')
 	,	shoeboxify = require('./shoeboxify')
 	;
@@ -41,7 +41,7 @@ exports.viewObject =
 
 			var objectURL = s3.object.URL('/json/' + objectId + '.json');
 
-			utils.GET(objectURL 
+			handy.GET(objectURL 
 				,	function success( fileContent )
 					{
 						ponse.writeHead(200, {'Content-Type': 'text/html'});

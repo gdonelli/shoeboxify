@@ -1,6 +1,6 @@
 
 var		assert	= require("assert")
-	,	utils	= require("./utils")
+	,	handy	= require("./handy")
 
 	,	shoeboxify	= require("./shoeboxify")
 	;
@@ -35,7 +35,7 @@ describe('Utils Test',
 
 		function _test_GET_site( theURL, done )
 		{
-			utils.GET(	theURL
+			handy.GET(	theURL
 					,	function success(string) {
 
 							// console.log( 'html index: ' + string.indexOf('<html') );

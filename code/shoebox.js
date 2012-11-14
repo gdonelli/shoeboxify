@@ -11,7 +11,6 @@ var		assert	= require('assert')
 	,	mongo	= require('./mongo')
 	,	fb		= require('./fb')
 	,	shoeboxify	= require('./shoeboxify')
-	, 	utils = require('./utils')
 	;
 
 exports.add = 

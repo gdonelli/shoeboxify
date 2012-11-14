@@ -8,7 +8,7 @@ var		url		= require('url')
 	,	s3	= require('./s3')
 
 	,	debug	= require('./debug-lib')
-	,	utils	= require('./utils')
+	,	handy	= require('./handy')
 	,	mongo	= require('./mongo')
 	,	shoeboxify	= require('./shoeboxify')
 	;
@@ -20,7 +20,7 @@ var		url		= require('url')
 
 function _goToGraph(quest, ponse, path)
 {
-	ponse.redirect('/dev/exploreGraph?api=' + utils.ASCIItoBase64(path) );
+	ponse.redirect('/dev/exploreGraph?api=' + handy.ASCIItoBase64(path) );
 }
 
 
@@ -326,7 +326,7 @@ exports.exploreGraph =
 			return RespondError('apiCall is null');
 		else
 		{
-			var graphURL = utils.Base64toASCII(apiCall);
+			var graphURL = handy.Base64toASCII(apiCall);
 
 			_respondWithGraphInfoPage(quest, ponse, graphURL);
 

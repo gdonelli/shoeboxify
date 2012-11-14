@@ -3,8 +3,6 @@
  * Debug
  */
  
-var utils = require("./utils");
-
 
 exports.ObjectToHTML = 
 	function(object, title)

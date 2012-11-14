@@ -130,7 +130,6 @@ exports.dbName = function()
 		return _env('DB_NAME');
 	};
 
-
 /*****************/
 /* AUX */
 /*****************/

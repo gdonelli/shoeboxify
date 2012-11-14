@@ -10,10 +10,10 @@ var 	https	= require('https')
 
 	,	s3 = require('./s3')
 	,	fb = require('./fb')
-
+	
+	,	handy		= require('./handy')
 	,	shoebox		= require('./shoebox')
 	,	shoeboxify	= require('./shoeboxify')
-	, 	StringExtension = require('./String-extension')
 	;
 
 
