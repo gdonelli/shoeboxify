@@ -76,10 +76,12 @@ exports.route.objectForURL =
 	}
 
 exports.objectForURL = 
-	function(	quest, string
+	function(	quest
+			,	inputURL
 			,	object_f		/* (fb_object) */
 			,	placeholder_f	/* (placeholder_object) */
-			,	error_f 		/* (errString) */	)
+			,	error_f			/* (errString) */
+			)
 	{
 		assert( quest 			!= undefined,	'quest is undefined');
 		assert( quest.session 	!= undefined,	'quest.session is undefined');
@@ -87,7 +89,7 @@ exports.objectForURL =
 		assert( placeholder_f	!= undefined,	'placeholder_f is undefined');
 		assert( error_f 		!= undefined,	'error_f is undefined');
 
-		var fbID =  exports.facebookIDForURL(string);
+		var fbID =  exports.facebookIDForURL(inputURL);
 
 		if (fbID)
 			return _facebook_lookup(fbID);
@@ -115,12 +117,12 @@ exports.objectForURL =
 							var placeholder = {}; 
 							placeholder.id = fbID;
 
-							var extension = path.extname(string);
+							var extension = path.extname(inputURL);
 							if (extension == '.jpg' || 
 								extension == '.jpeg' || 
 								extension == '.png') 
 							{
-								placeholder.source = { source : string };
+								placeholder.source = inputURL;
 							}
 
 							placeholder_f(placeholder);
