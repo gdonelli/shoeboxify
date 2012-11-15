@@ -1,7 +1,16 @@
 
-var			assert		= require('assert')	
+var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
+
+		,	handy		= require('./handy')
 		,	shoeboxify	= require('./shoeboxify');
+
+
+/* ====================================================== */
+/* ====================================================== */
+/* =======================  init  ======================= */
+/* ====================================================== */
+/* ====================================================== */
 
 
 exports.init = 
@@ -16,6 +25,7 @@ exports.init =
 			,	error_f
 			);
 	};
+
 
 function _init(	host, port, name, username, password, 
 				success_f /* (db) */, error_f /* (e) */ )
@@ -64,6 +74,7 @@ function _userCollectionName(userId)
 	return 'FB' + userId;
 }
 
+
 function _getUserCollection(userId, success_f /* (collection) */,  error_f /* (e) */ )
 {
 	assert( exports.db != undefined, 'mongo.db undefined');
@@ -101,13 +112,6 @@ function _getUserCollection(userId, success_f /* (collection) */,  error_f /* (e
 }
 
 
-exports.LongFromString =
-	function(string)
-	{
-		return mongodb.Long.fromString(string);
-	}
-
-
 function _addToUser(userId, object, success_f, error_f)
 {
 	assert( userId != undefined, 'userId is undefined');
@@ -125,8 +129,29 @@ function _addToUser(userId, object, success_f, error_f)
 			} );
 };
 
+/* ====================================================== */
+/* ====================================================== */
+/* ======================= utils  ======================= */
+/* ====================================================== */
+/* ====================================================== */
 
+exports.LongFromString =
+	function(string)
+	{
+		return mongodb.Long.fromString(string);
+	}
+
+/*{
+	graph_id:_LongFromString(graphId), 
+}*/
+// { user_id: _LongFromString(userIdstr) }
+
+
+/* ======================================================================= */
+/* ======================================================================= */
 /* ======================= collection manipulation ======================= */
+/* ======================================================================= */
+/* ======================================================================= */
 
 exports.collection = {};
 
@@ -134,9 +159,9 @@ exports.collection.init =
 	function(collectionName, success_f, error_f)
 	{
 		assert( collectionName != undefined,'collectionName undefined');
-		assert( success_f  != undefined,	'success_f is undefined');
-		assert( error_f	   != undefined,	'error_f is undefined');
 		assert( exports.db != undefined,	'mongo.db undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		exports.db.collection(	
 			collectionName,
@@ -166,10 +191,11 @@ exports.collection.init =
 exports.collection.get =
 	function(collectionName, success_f, error_f)
 	{
-		assert( collectionName != undefined,'collectionName undefined');
-		assert( success_f  != undefined,	'success_f is undefined');
-		assert( error_f	   != undefined,	'error_f is undefined');
 		assert( exports.db != undefined,	'mongo.db undefined');
+		assert( collectionName != undefined,'collectionName undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
 
 		exports.db.collection(	
 			collectionName,
@@ -181,35 +207,19 @@ exports.collection.get =
 				}
 				else
 				{
-					collection.ensureIndex( { graph_id:1, user_id:1 }, { unique: true }, 
-						function(err, indexName)
-						{
-							if (err)
-							{
-								console.error('collection.ensureIndex(owner_id, graph_id) failed err:' + err);
-								if (error_f)
-									error_f(err);
-							}
-							else 
-							{
-								if (success_f)
-									success_f(collection);							
-							}
-						} );
-
+					success_f(collection);
 				}
 			} );
+	};
 
 
-	}
-
-exports.collection.addObject = 
+exports.collection.add = 
 	function(collection, object, success_f, error_f)
 	{
 		assert( collection != undefined, 'collection is undefined');
 		assert( object	   != undefined, 'object is undefined');
-		assert( success_f  != undefined, 'success_f is undefined');
-		assert( error_f	   != undefined, 'error_f is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		collection.insert( object, { safe:true },
 			function(err, result)
@@ -225,17 +235,13 @@ exports.collection.addObject =
 	};
 
 
-/*{
-	graph_id:_LongFromString(graphId), 
-}*/
-
 exports.collection.findOne =
 	function(collection, findProperties, success_f, error_f)
 	{
 		assert( collection 		!= undefined, 'collection is undefined');
 		assert( findProperties	!= undefined, 'graphId is undefined');
-		assert( success_f	!= undefined, 'success_f is undefined');
-		assert( error_f		!= undefined, 'error_f is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		collection.findOne(
 				findProperties
@@ -250,20 +256,17 @@ exports.collection.findOne =
 						success_f(item);
 					}
 				} );
-	}
+	};
 
-
-
-// { user_id: _LongFromString(userIdstr) }
 
 exports.collection.findAll =
-	function(collection, success_f, error_f)
+	function(collection, findProperties, success_f, error_f)
 	{
 		assert( collection != undefined, 'collection is undefined');
-		assert( success_f  != undefined, 'success_f is undefined');
-		assert( error_f	   != undefined, 'error_f is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
-		collection.find().toArray(
+		collection.find(findProperties).toArray(
 			function(err, item) {
 				if (err) {
 					console.error('collection.find().toArray failed ' + err );
@@ -272,8 +275,61 @@ exports.collection.findAll =
 				else
 					success_f(item);
 			} );
-	}
+	};
 
+
+exports.collection.remove =
+	function(collection, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
+	{
+		assert(collection	!= undefined,	'collection is undefined');
+		assert(findProperties != undefined,	'findProperties is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		// console.log( 'findProperties.length: ' + Object.keys(findProperties).length );
+
+		if ( Object.keys(findProperties).length == 0) 
+		{
+			var force = false;
+
+			if (options)
+				force = options.force;
+
+			if (force != true) {
+				error_f( new Error('Denied. it will remove all entries. Use force option') );
+				return;
+			}
+		}
+
+		collection.remove(findProperties
+			,	function(err, removeCount) {
+					if (err) {
+						console.error('collection.remove failed ' + err);
+						error_f(err);
+					}
+					else
+						success_f(removeCount);
+				} );
+	};
+
+
+exports.collection.drop =
+	function(collection, success_f /* () */, error_f)
+	{
+		assert(collection	!= undefined,	'collection is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+	
+		collection.drop(
+			function(err, removed) {
+				if (err) {
+					// console.error('collection.drop failed ' + err);
+					error_f(err);
+				}
+				else
+					success_f(removed);
+			} );		
+	};
 
 /* ======================= user  ======================= */
 

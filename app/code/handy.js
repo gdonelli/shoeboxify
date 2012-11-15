@@ -4,7 +4,8 @@
 var		url		= require('url')
 	,	http	= require('http')
 	,	https	= require('https')
-	,	assert	= require("assert");
+	,	assert	= require("assert")
+	;
 
 
 exports.ASCIItoBase64 =
@@ -105,6 +106,20 @@ exports.GET =
 
 		quest.end();
 	}
+
+/* ===================== Assert ===================== */
+
+exports.assert_f = 
+	function( candidate_f, canBeUndefined )
+	{
+		if (canBeUndefined != undefined) 
+		{
+			if (canBeUndefined && candidate_f == undefined)
+				return;	
+		}
+
+		assert( (typeof candidate_f == 'function'), 'expected function, given: ' + candidate_f );	
+	};
 
 
 /* ===================== String Extension ===================== */
