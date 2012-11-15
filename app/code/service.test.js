@@ -1,15 +1,18 @@
 
 var		assert	= require("assert")
-	,	service	= require("./service")
 	,	url		= require("url")
 	
-	,	authTest	= require("./authetication-test")
-	,	shoeboxify	= require("./shoeboxify")
+	,	service		= require("./service")
+	,	mongo		= require("./mongo")
+	,	authTest	= require("./authetication.test")
 	;
 
 
 describe('Shoeboxify Service',
 	function() {
+
+
+		/* Authetication setup */
 
 		it( 'getPseudoRequest should succeed', 
 			function(done) 
@@ -28,7 +31,6 @@ describe('Shoeboxify Service',
 
 		describe( 'objectForURL',
 			function() {
-
 				it( 'Placeholder Object',
 					function(done)
 					{
@@ -46,7 +48,7 @@ describe('Shoeboxify Service',
 									done();
 								}
 							,	function error(e) {
-									throw new Error('Not expected to get placeholder');
+									throw new Error('Not expected to get error');
 								} );
 					} );
 
@@ -69,13 +71,14 @@ describe('Shoeboxify Service',
 									throw new Error('Not expected to have access to this');
 								}
 							,	function error(e) {
-									throw new Error('Not expected to get placeholder');
+									throw new Error('Not expected to get error');
 								} );
 					} );
 
-				it( 'Actual Object from .jpg',
+				it( 'Actual object from .jpg',
 					function(done)
 					{
+						// my profile pict
 						var sourceURL = "https://fbcdn-photos-a.akamaihd.net/hphotos-ak-ash3/524874_10152170979900707_270531713_s.jpg";
 
 						service.objectForURL( 
@@ -91,11 +94,79 @@ describe('Shoeboxify Service',
 									throw new Error('Not expected to have access to this');
 								}
 							,	function error(e) {
-									throw new Error('Not expected to get placeholder');
+									throw new Error('Not expected to get error');
+								} );
+					} );
+
+				it( 'No object URL',
+					function(done)
+					{
+						var sourceURL = "https://fbcdn-photos-a.akamaihd.net/hphotos-ak-ash3/524874_XXXXXXXXXXX_270531713_s.jpg";
+
+						service.objectForURL( 
+								authTest.request()
+							,	sourceURL
+							,	function object(o) {
+									throw new Error('Not expected to get object');
+								}
+							,	function placeholder(p) {
+									throw new Error('Not expected to have access to this');
+								}
+							,	function error(e) {
+									done();
 								} );
 					} );
 
 
 			} );
+
+
+		describe( 'copyObject',
+			function()
+			{
+
+				it( 'Init MongoDB',
+					function(done)
+					{
+						mongo.init(
+								function success(c)
+								{
+									assert(c != undefined, 'collection is undefined');
+									done();
+								}
+							,	function error(e)
+								{
+									throw new Error(e);
+								}
+							);
+					} );
+
+				it( 'Basic copy',
+					function(done)
+					{
+						service.copyObject(
+								authTest.request()
+							,	'10152170979900707'
+							,	function success(r, opz)
+								{
+									assert(r		!= undefined, 'r is undefined');
+
+									assert(r.graph_id	!= undefined, 'r.graph_id is undefined');
+									assert(r.user_id	!= undefined, 'r.graph_id is undefined');
+
+									assert(r.source	!= undefined, 'r.source is undefined');
+									assert(r.copy	!= undefined, 'r.copy is undefined');
+
+									done();
+								}
+							,	function error(e)
+								{
+									throw new Error('copy expected to work');
+								} );
+					} );
+			
+			} );
+
+
 
 	} );

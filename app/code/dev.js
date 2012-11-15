@@ -496,7 +496,7 @@ exports.rmsession =
 exports.shoeboxified=
 	function(quest, ponse)
 	{
-		console.log("mongotest");
+		// console.log("mongotest");
 
 		ponse.writeHead(200, {'Content-Type': 'text/html'});
 

@@ -29,7 +29,7 @@ exports.GET =
 			,	traverse
 			)
 	{
-		console.log('GET ' + fileUrl);
+		// console.log('GET ' + fileUrl);
 
 		var fileUrlElements = url.parse(fileUrl);
 

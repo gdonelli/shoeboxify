@@ -187,21 +187,21 @@ exports.route.copyObject =
 
 
 exports.copyObject =
-	function(quest, fbID, successF, errorF)
+	function(quest, fbID, success_f, error_f)
 	{
 		assert(quest != undefined, 'quest is undefined');
 		assert(fbID != undefined, 'fbID is undefined');
 
 		shoebox.add(fbID, fb.me(quest, 'id'), quest 
-					,	function success(r)
+					,	function success(r, options)
 						{
-							if (successF)
-								successF(r);
+							if (success_f)
+								success_f(r, options);
 						}
 					,	function error(e)
 						{
-							if (errorF)
-								errorF(e);
+							if (error_f)
+								error_f(e);
 						} );
 
 	}

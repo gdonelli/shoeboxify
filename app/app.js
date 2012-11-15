@@ -3,6 +3,7 @@
 /**************************/
 
 var		express	= require('express')
+	,	assert	= require('assert')
 	,	http	= require('http')
 	, 	path	= require('path')
 
@@ -61,12 +62,13 @@ app.settings['x-powered-by'] = false;
 /*   Database   */
 /****************/
 
-mongo.init(	shoeboxify.dbServerHost(), 
-			shoeboxify.dbServerPort(), 
-			shoeboxify.dbName(), 
-			shoeboxify.dbServerUsername(), 
-			shoeboxify.dbServerPassword() );
-
+mongo.init(
+		function success(c) {
+			assert(c != undefined, 'mongo.init returned undefined collection');
+		}
+	,	function error(e) {
+			throw new Error(e);
+		} );
 
 /*********************/
 /*   Public Routes   */
@@ -108,7 +110,6 @@ app.get('/dev/shoeboxified', fb.requiresAuthentication, fb.requiresAdmin, dev.sh
 
 app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
-
 
 
 /* Self Test */

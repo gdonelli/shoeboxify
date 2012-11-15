@@ -14,30 +14,30 @@ var		assert	= require('assert')
 	;
 
 exports.add = 
-	function(graphIDstr, userIDstr, quest, successF, errorF)
+	function(graphIDstr, userIDstr, quest, success_f, error_f)
 	{
+		var startDate = new Date();
+
+
 		mongo.object.find(graphIDstr, userIDstr
-			,	function success(r){
+			,	function success(r) {
 					if (r == null)
 					{
+						// The object is not present in the DB. Let's add a new entry...
 						_addNew();
 					}
 					else 
 					{
-						console.log('Object already in the mongo database!');
-						
-						if (successF)
-							successF(r);
-					}
-						
+						// Object already in the mongo database!
 
+						_exitWithSuccess(r, { already: true} );
+					}
 				}
 			,	function error(e){
-					shoeboxify.error('mongo.object.find(' + graphIDstr + ', ' + userIDstr+ ') failed');
+					shoeboxify.error('mongo.object.find(' + graphIDstr + ', ' + userIDstr + ') failed');
 					shoeboxify.error(e);
 
-					if (errorF)
-						errorF(e);
+					_exitWithError(e);
 				});		
 
 		/* ================================ */
@@ -71,11 +71,10 @@ exports.add =
 			mongo.object.add( graphIDstr, userIDstr, source, copy
 				,	function success(r)
 					{
-						console.log('Object inserted in Mongo!!! here it is:');
-						console.log(r);
+						// console.log('Object inserted in Mongo!!! here it is:');
+						// console.log(r);
 
-						if (successF)
-							successF(r[0]);
+						_exitWithSuccess(r, r[0]);
 					}
 				,	function error(e)
 					{
@@ -84,25 +83,38 @@ exports.add =
 				)
 		}
 
+		function _exitWithSuccess(r, options)
+		{
+			var endDate = new Date();
+			var timeLength = endDate.getTime() - startDate.getTime();
+
+			// console.log( 'timeLength: ' + timeLength );
+
+			if (success_f)
+				success_f( r, { time: timeLength } );
+		}
+
 		function _exitWithError(errstring)
 		{
-			if (errorF)
-				errorF(new Error(errstring));
+			if (error_f)
+				error_f(new Error(errstring));
 		}
+
+
 	}
 
 
 
 /*
- *	successF( copyObject )
+ *	success_f( copyObject )
  */
 
-function _copyPhotoObject(quest, photoObject, successF, errorF)
+function _copyPhotoObject(quest, photoObject, success_f, error_f)
 {
 	// validate that this is a photo object
 	if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
-		if (errorF)
-			errorF( new Error('photoObject failed validation') );
+		if (error_f)
+			error_f( new Error('photoObject failed validation') );
 
 		return;
 	};
@@ -192,12 +204,12 @@ function _copyPhotoObject(quest, photoObject, successF, errorF)
 				
 				var copyObject = _assembleCopyObject();
 
-				if (successF)
-					successF(copyObject);
+				if (success_f)
+					success_f(copyObject);
 			}
 			else
-				if (errorF)
-					errorF('error copying object');
+				if (error_f)
+					error_f('error copying object');
 		}
 	}
 

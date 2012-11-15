@@ -458,7 +458,7 @@ function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 
 function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
 {
-	shoeboxify.debug(method + ' GRAPH: ' + path);
+	// shoeboxify.debug(method + ' GRAPH: ' + path);
 
 	var questOptions = { method: method };
 

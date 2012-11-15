@@ -10,11 +10,22 @@ APPFOLDER="../app"
 
 source ../secret/setenv.sh
 
+
+
+if [ "$#" -gt 0 ]; then
+
+	echo "$1.test.js"
+	mocha $APPFOLDER/code/$1.test.js -t 15000
+
+	exit
+fi
+
+
 echo 'shoeboxify.test.js'
 mocha $APPFOLDER/code/shoeboxify.test.js
 
 echo 'fb.test.js'
-mocha $APPFOLDER/code/fb.test.js  -t 15000
+mocha $APPFOLDER/code/fb.test.js -t 15000
 
 echo 'service.test.js'
 mocha $APPFOLDER/code/service.test.js  -t 15000
