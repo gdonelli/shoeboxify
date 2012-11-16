@@ -9,7 +9,7 @@ var			assert		= require('assert')
 
 /* ====================================================== */
 /* ====================================================== */
-/* =======================  init  ======================= */
+/* =======================[  db  ]======================= */
 /* ====================================================== */
 /* ====================================================== */
 
@@ -68,71 +68,9 @@ function _init(	host, port, name, username, password,
 }
 
 
-function _userCollectionName(userId)
-{
-	assert( userId != undefined, 'userId is undefined' );
-
-	return 'FB' + userId;
-}
-
-
-function _getUserCollection(userId, success_f /* (collection) */,  error_f /* (e) */ )
-{
-	assert( exports.db != undefined, 'mongo.db undefined');
-
-	exports.db.collection(
-		_userCollectionName(userId),
-		function(err, collection)
-		{
-			if (err) {
-				console.error('collection.ensureIndex(owner_id, graph_id) failed err:' + err);
-
-				if (error_f)
-					error_f(err);
-			}
-			else
-			{
-				collection.ensureIndex( { graph_id:1, user_id:1 }, { unique: true }, 
-					function(err, indexName)
-					{
-						if (err)
-						{
-							console.error('collection.ensureIndex(owner_id, graph_id) failed err:' + err);
-							if (error_f)
-								error_f(err);
-						}
-						else 
-						{
-							if (success_f)
-								success_f(collection);							
-						}
-					} );
-
-			}
-		} );
-}
-
-
-function _addToUser(userId, object, success_f, error_f)
-{
-	assert( userId != undefined, 'userId is undefined');
-	assert( object != undefined, 'object is undefined');
-
-	_getUserCollection(userId
-		,	function success(collection)
-			{
-				_addToCollection(collection, object, success_f, error_f);
-			}
-		,	function error(e)
-			{
-				if (error_f)
-					error_f(e);
-			} );
-};
-
 /* ====================================================== */
 /* ====================================================== */
-/* ======================= utils  ======================= */
+/* =====================[  utils  ]====================== */
 /* ====================================================== */
 /* ====================================================== */
 
@@ -140,7 +78,7 @@ exports.LongFromString =
 	function(string)
 	{
 		return mongodb.Long.fromString(string);
-	}
+	};
 
 /*{
 	graph_id:_LongFromString(graphId), 
@@ -148,11 +86,12 @@ exports.LongFromString =
 // { user_id: _LongFromString(userIdstr) }
 
 
-/* ======================================================================= */
-/* ======================================================================= */
-/* ======================= collection manipulation ======================= */
-/* ======================================================================= */
-/* ======================================================================= */
+
+/* ================================================================== */
+/* ================================================================== */
+/* ===================[   Collection Foundation   ]================== */
+/* ================================================================== */
+/* ================================================================== */
 
 
 exports.collection = {};
@@ -325,11 +264,11 @@ exports.collection.drop =
 	};
 
 
-/* ======================================================== */
-/* ======================================================== */
-/* =======================   user   ======================= */
-/* ======================================================== */
-/* ======================================================== */
+/* ================================================================== */
+/* ================================================================== */
+/* ======================[   User Foundation   ]===================== */
+/* ================================================================== */
+/* ================================================================== */
 
 
 exports.user = {};	
@@ -363,7 +302,7 @@ exports.user.init =
 		var collectionName = exports.user.collectionName(userId);
 
 		exports.collection.init(collectionName, success_f, error_f );
-	}
+	};
 
 exports.user.add =
 	function(userId, object, success_f /* (new_entry) */, error_f)
@@ -412,92 +351,53 @@ exports.user.drop =
 
 
 
-// ============================================================================
-// old
+/* ================================================================== */
+/* ================================================================== */
+/* ===================[   User Facebook Methods  ]=================== */
+/* ================================================================== */
+/* ================================================================== */
 
 
-exports.user.findByGraphID = 
+exports.user.addFacebookObject =
+	function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
+	{
+		assert(userId != undefined,		'userId is undefined');
+		assert(graphId != undefined,	'graphId is undefined');
+		assert(sourceObject != undefined, 'sourceObject is undefined');
+		assert(copyObject != undefined,	'copyObject is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		var entry = {};
+		entry.graph_id	= exports.LongFromString(graphId);
+		entry.user_id	= exports.LongFromString(userId);
+		entry.source	= sourceObject;
+		entry.copy		= copyObject;
+		entry.created	= new Date();
+
+		exports.user.add(userId, entry, success_f, error_f);
+	};
+
+
+exports.user.findOneFacebookObject =
 	function(userId, graphId, success_f, error_f)
 	{
-		assert( userId != undefined, 'userId is undefined');
-		assert( graphId != undefined, 'graphId is undefined');
+		assert(userId != undefined,	'userId is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
-		_getUserCollection(userId
-			,	function success(collection)
-				{
-					_findByGraphIdInCollection(collection, graphId, success_f, error_f);
-
-					_addToCollection(collection, object, success_f, error_f);
-				}
-			,	function error(e)
-				{
-					if (error_f)
-						error_f(e);
-				} );
-
-	}
-
-
-function _findAllByUser(userId, success_f, error_f)
-{
-	assert( userId != undefined, 'userId is undefined');
-
-	_getUserCollection(userId
-		,	function success(collection)
-			{
-				_findAllInCollection(collection, success_f, error_f);
-			}
-		,	function error(e)
-			{
-				if (error_f)
-					error_f(e);
-			} );
-}
-
-/* 
- * Collection:	object
- *
- *	   Schema:	{
- *					graph_id,
- *					user_id,
- *					source,
- *					copy,
- *					created,
- *				}
- */
-
-exports.object = {};
-
-exports.object.add =
-	function(graphId, userIdstr, sourceObject, copyObject, success_f, error_f)
-	{
-		var doc = {};
-
-		doc.graph_id = exports.LongFromString(graphId);
-		doc.user_id	 = exports.LongFromString(userIdstr);
-		doc.source	 = sourceObject;
-		doc.copy	 = copyObject;
-		doc.created	 = new Date();
-
-		shoeboxify.debug('ADDTO objects: ('  + graphId + ', ' + userIdstr + ')');
-
-		return _addToCollection(exports.collection.object, doc, success_f, error_f); 
+		exports.user.findOne(userId, { graph_id: exports.LongFromString(graphId) }, success_f, error_f);	
 	};
 
-exports.object.find =
-	function( graphid, userId, success_f, error_f) 
+
+exports.user.findAllFacebookObjects =
+	function(userId, success_f, error_f)
 	{
-		_findByGraphID
+		assert(userId != undefined,	'userId is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
-		assert( exports.collection != undefined, 'collection is undefined, mongodb not initialized?');
-		assert( exports.collection.object != undefined, 'collection.object is undefined');
-
-		return _findOne(exports.collection.object, graphId, userIdstr, success_f, error_f);
+		exports.user.findAll(userId, {}, success_f, error_f);	
 	};
 
-exports.object.allByUser =
-	function( userId, success_f, error_f) 
-	{
-		_findAllByUser(userId, success_f, error_f);
-	};
 

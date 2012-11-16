@@ -5,7 +5,7 @@ var		assert	= require("assert")
 	;
 
 
-describe('mongo->',
+describe('mongo',
 	function()
 	{
 
@@ -22,11 +22,13 @@ describe('mongo->',
 						} );		
 			} );
 
-		/* ===================================================== */
-		/* ==================== collection ===================== */
-		/* ===================================================== */
+/* ================================================================== */
+/* ================================================================== */
+/* ===================[   Collection Foundation   ]================== */
+/* ================================================================== */
+/* ================================================================== */
 
-		describe( 'collection->',
+		describe( 'mongo.collection',
 			function() {
 
 				it( 'init',
@@ -198,61 +200,64 @@ describe('mongo->',
 
 			} );
 
-		/* ===================================================== */
-		/* ======================= user ======================== */
-		/* ===================================================== */
+/* ================================================================== */
+/* ================================================================== */
+/* ======================[   User Foundation   ]===================== */
+/* ================================================================== */
+/* ================================================================== */
+		
+		function _generateId()
+		{
+			var sampleId = Math.round(Math.random() * 100000);
+			return '1' + sampleId + '1' 
+		}
 
-		describe( 'user->',
+		describe( 'mongo.user',
 			function() {
 				
 				var userid1 = 'T1'; 
 				var userid2 = 'T2';
 
-				it( 'init',
+				it( 'init ' + userid1,
 					function(done) 
 					{	
 						mongo.user.init( userid1
-							,	function success(r)
-								{
-									done();
-								}
-							,	function error(e)
-								{
-									throw e;
-								} );
+							,	function success(r) { done(); }
+							,	function error(e) { throw e; } );
 					} );
 
-				var sampleId = Math.random() * 100000;
-				var sampleIdLong = mongo.LongFromString( '1' + sampleId + '1' );
-				var sampleObject = { 
-							graph_id: sampleIdLong
-						,	 payload: 'M’illumino\nd’immenso'
-						};
-
-				it( 'add to 1',
+				it( 'init ' + userid2,
 					function(done) 
 					{	
-						// console.log('1 sampleObject:');
-						// console.log(sampleObject);
+						mongo.user.init( userid2
+							,	function success(r) { done(); }
+							,	function error(e) { throw e; } );
+					} );
 
+				var sampleIdLong = mongo.LongFromString( _generateId() );
+				var sampleObject = { 
+							graph_id:	sampleIdLong
+						,	payload:	'M’illumino\nd’immenso'
+						};
+
+				it( 'add to ' + userid1,
+					function(done) 
+					{	
 						mongo.user.add( userid1, sampleObject
 							,	function success(r){ done();	}
 							,	function error(e){	 throw e;	} );
 					} );
 
-				it( 'add to 1 - again',
+				it( 'add to ' + userid1 + ' - again',
 					function(done) 
 					{	
-						// console.log('2 sampleObject:');
-						// console.log(sampleObject);
-
 						mongo.user.add( userid1, sampleObject
 							,	function success(r){ throw new Error('not expected to work');	}
 							,	function error(e){	 done();	} );
 					} );
 
 
-				it( 'add to 2',
+				it( 'add to ' + userid2,
 					function(done) 
 					{	
 						mongo.user.add( userid2, sampleObject
@@ -260,7 +265,7 @@ describe('mongo->',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'remove from 2',
+				it( 'remove from ' + userid2,
 					function(done) 
 					{	
 						mongo.user.remove( userid2, { graph_id: sampleIdLong } 
@@ -271,7 +276,32 @@ describe('mongo->',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'findAll from 2',
+				it( 'remove from ' + userid1,
+					function(done) 
+					{	
+						mongo.user.remove( userid1, {} 
+							,	function success(r){ 
+									assert(r == 1, 'r expected to be 1, is ' + r);
+									done();	
+								}
+							,	function error(e){	 throw e;	}
+							,	{ force: true });
+					} );
+
+				it( 'findAll from ' + userid1,
+					function(done) 
+					{	
+						mongo.user.findAll( userid1, {} 
+							,	function success(r){ 
+									assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
+									done();	
+								}
+							,	function error(e){	 throw e;	});
+					} );
+
+
+
+				it( 'findAll from ' + userid2,
 					function(done) 
 					{	
 						mongo.user.findAll( userid2, {} 
@@ -282,7 +312,7 @@ describe('mongo->',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'add to 2',
+				it( 'add to ' + userid2,
 					function(done) 
 					{	
 						mongo.user.add( userid2, sampleObject
@@ -290,7 +320,7 @@ describe('mongo->',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'findAll from 2',
+				it( 'findAll from ' + userid2,
 					function(done) 
 					{	
 						mongo.user.findAll( userid2, {} 
@@ -301,23 +331,103 @@ describe('mongo->',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'drop 1',
+/* ================================================================== */
+/* ================================================================== */
+/* ===================[   User Facebook Methods  ]=================== */
+/* ================================================================== */
+/* ================================================================== */
+
+				var fakeFacebookObject = {};
+				fakeFacebookObject.id = _generateId();
+				fakeFacebookObject.picture = 'some picture';
+				fakeFacebookObject.source  = 'some source';
+
+				var copyObject = {};
+				copyObject.picture = 'copy picture';
+				copyObject.source  = 'copy source';
+
+				it( 'addFacebookObject',
+					function(done) 
+					{	
+						mongo.user.addFacebookObject( 
+								userid1
+							,	fakeFacebookObject.id
+							,	fakeFacebookObject
+							,	copyObject
+							,	function success(r) {	done();	 }
+							,	function error(e) {		throw e; } 
+							);
+					} );
+
+				it( 'addFacebookObject - again',
+					function(done) 
+					{	
+						mongo.user.addFacebookObject( 
+								userid1
+							,	fakeFacebookObject.id
+							,	fakeFacebookObject
+							,	copyObject
+							,	function success(r)	{	throw new Error('should fail');	}
+							,	function error(e)	{	done();	}
+							);
+					} );
+
+				it( 'findOneFacebookObject',
+					function(done) 
+					{	
+						mongo.user.findOneFacebookObject( 
+								userid1
+							,	fakeFacebookObject.id
+							,	function success(r)
+								{
+									assert(r.graph_id != undefined, 'graph_id is undefined');
+									assert(r.user_id  != undefined, 'user_id is undefined');
+									assert(r.graph_id == mongo.LongFromString(fakeFacebookObject.id), 'graph id dont match');
+									
+									done();
+								}
+							,	function error(e) { throw e; } );
+					} );
+
+				it( 'findAllFacebookObjects',
+					function(done) 
+					{	
+						mongo.user.findAllFacebookObjects( 
+								userid1
+							,	function success(r)
+								{
+									assert(r.length > 0, 'r.length > 0');								
+									done();
+								}
+							,	function error(e) { throw e; } );
+					} );
+
+
+/* ============================ Clean Up ============================ */
+
+
+				it( 'drop ' + userid1,
 					function(done) 
 					{	
 						mongo.user.drop( userid1
-							,	function success(r){ done();	}
-							,	function error(e){	 throw e;	});
+							,	function success(r){ 
+									assert(r == true, 'drop should return true');
+									done();
+								}
+							,	function error(e){	 throw e; } );
 					} );
 
-				it( 'drop 1 - again',
+				it( 'drop ' + userid1 +' - again',
 					function(done) 
 					{	
 						mongo.user.drop( userid1
 							,	function success(r){ throw new Error('not supposed to work') }
-							,	function error(e){	 done(); });
+							,	function error(e){	
+									assert(e != undefined, 'error is undefined');
+							 		done(); } );
 					} );
 
-				it( 'drop 2',
+				it( 'drop ' + userid2,
 					function(done) 
 					{	
 						mongo.user.drop( userid2
@@ -326,7 +436,7 @@ describe('mongo->',
 					} );
 
 
-			} );
 
+			} );
 
 	} );

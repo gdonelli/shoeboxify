@@ -18,8 +18,9 @@ exports.add =
 	{
 		var startDate = new Date();
 
-
-		mongo.object.find(graphIDstr, userIDstr
+		mongo.user.findOneFacebookObject( 
+				userIDstr 
+		 	,	graphIDstr
 			,	function success(r) {
 					if (r == null)
 					{
@@ -33,12 +34,12 @@ exports.add =
 						_exitWithSuccess(r, { already: true} );
 					}
 				}
-			,	function error(e){
+			,	function error(e) {
 					shoeboxify.error('mongo.object.find(' + graphIDstr + ', ' + userIDstr + ') failed');
 					shoeboxify.error(e);
 
 					_exitWithError(e);
-				});		
+				} );		
 
 		/* ================================ */
 
@@ -68,7 +69,11 @@ exports.add =
 		{
 			assert(source.id == graphIDstr, 'source.id(' + source.id+ ') != graphIDstr(' + graphIDstr + ')');
 			
-			mongo.object.add( graphIDstr, userIDstr, source, copy
+			mongo.user.addFacebookObject(
+					userIDstr
+				,	graphIDstr
+				,	source
+				,	copy
 				,	function success(r)
 					{
 						// console.log('Object inserted in Mongo!!! here it is:');
