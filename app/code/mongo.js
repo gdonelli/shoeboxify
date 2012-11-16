@@ -1,9 +1,10 @@
 
 var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
-
+		,	_			= require('underscore')
 		,	handy		= require('./handy')
-		,	shoeboxify	= require('./shoeboxify');
+		,	shoeboxify	= require('./shoeboxify')
+		;
 
 
 /* ====================================================== */
@@ -153,39 +154,8 @@ exports.LongFromString =
 /* ======================================================================= */
 /* ======================================================================= */
 
+
 exports.collection = {};
-
-exports.collection.init = 
-	function(collectionName, success_f, error_f)
-	{
-		assert( collectionName != undefined,'collectionName undefined');
-		assert( exports.db != undefined,	'mongo.db undefined');
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
-
-		exports.db.collection(	
-			collectionName,
-			function(err, collection)
-			{
-				if (err) {
-					console.error('db.collection failed err:' + err);
-					error_f(err);
-				}
-				else
-				{
-					collection.ensureIndex( { graph_id:1 }, { unique: true },
-						function(err, indexName) 
-						{
-							if (err) {
-								console.error('collection.ensureIndex for graph_id failed err:' + err);
-								error_f(err);
-							}
-							else 
-								success_f(collection);							
-						} );
-				}
-			} );
-	};
 
 
 exports.collection.get =
@@ -195,7 +165,6 @@ exports.collection.get =
 		assert( collectionName != undefined,'collectionName undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
-
 
 		exports.db.collection(	
 			collectionName,
@@ -213,15 +182,39 @@ exports.collection.get =
 	};
 
 
+exports.collection.init = 
+	function(collectionName, success_f, error_f)
+	{
+		exports.collection.get(
+				collectionName
+			,	function success(c) {
+					c.ensureIndex( { graph_id:1 }, { unique: true },
+						function(err, indexName) 
+						{
+							if (err) {
+								console.error('collection.ensureIndex for graph_id failed err:' + err);
+								error_f(err);
+							}
+							else 
+								success_f(c);							
+						} );				
+				}
+			,	error_f
+			);
+	};
+
+
 exports.collection.add = 
-	function(collection, object, success_f, error_f)
+	function(collection, object, success_f /* (result) */, error_f)
 	{
 		assert( collection != undefined, 'collection is undefined');
 		assert( object	   != undefined, 'object is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
+		
+		var objectToAdd = _.clone(object); // make a copy because it will change the source object...
 
-		collection.insert( object, { safe:true },
+		collection.insert( objectToAdd, { safe:true },
 			function(err, result)
 		 	{
 		 		if (err)
@@ -331,9 +324,97 @@ exports.collection.drop =
 			} );		
 	};
 
-/* ======================= user  ======================= */
+
+/* ======================================================== */
+/* ======================================================== */
+/* =======================   user   ======================= */
+/* ======================================================== */
+/* ======================================================== */
+
 
 exports.user = {};	
+
+exports.user.collectionName =
+	function(userId)
+	{
+		assert( userId != undefined, 'userId is undefined' );
+		return 'FB' + userId;
+	};
+
+exports.user.getCollection = 
+	function(userId, success_f, error_f)
+	{
+		assert( userId!=undefined, 'userId is undefined');
+		assert( userId.length > 0, 'userId.length <= 0');
+		
+		var collectionName = exports.user.collectionName(userId);
+	
+		exports.collection.get(collectionName
+				,	function success(c) { success_f(c); }
+				,	error_f );
+	};
+
+exports.user.init =
+	function(userId, success_f, error_f)
+	{
+		assert( userId!=undefined, 'userId is undefined');
+		assert( userId.length > 0, 'userId.length <= 0');
+		
+		var collectionName = exports.user.collectionName(userId);
+
+		exports.collection.init(collectionName, success_f, error_f );
+	}
+
+exports.user.add =
+	function(userId, object, success_f /* (new_entry) */, error_f)
+	{
+		exports.user.getCollection(
+				userId
+			,	function success(c) { exports.collection.add(c, object, success_f, error_f); }
+			, 	error_f);
+	};
+
+exports.user.findOne =
+	function(userId, findProperties, success_f, error_f)
+	{
+		exports.user.getCollection(
+				userId
+			,	function success(c) { exports.collection.findOne(c, findProperties, success_f, error_f); }
+			, 	error_f);
+	};
+
+exports.user.findAll =
+	function(userId, findProperties, success_f, error_f)
+	{
+		exports.user.getCollection(
+				userId
+			,	function success(c) { exports.collection.findAll(c, findProperties, success_f, error_f); }
+			, 	error_f);
+	};
+
+exports.user.remove =
+	function(userId, findProperties, success_f, error_f, options)
+	{
+		exports.user.getCollection(
+				userId
+			,	function success(c) { exports.collection.remove(c, findProperties, success_f, error_f, options); }
+			, 	error_f);
+	};
+
+exports.user.drop =
+	function(userId, success_f, error_f)
+	{
+		exports.user.getCollection(
+				userId
+			,	function success(c) { exports.collection.drop(c, success_f, error_f); }
+			, 	error_f);
+	};
+
+
+
+// ============================================================================
+// old
+
 
 exports.user.findByGraphID = 
 	function(userId, graphId, success_f, error_f)

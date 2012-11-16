@@ -22,6 +22,10 @@ describe('mongo->',
 						} );		
 			} );
 
+		/* ===================================================== */
+		/* ==================== collection ===================== */
+		/* ===================================================== */
+
 		describe( 'collection->',
 			function() {
 
@@ -195,6 +199,134 @@ describe('mongo->',
 			} );
 
 		/* ===================================================== */
+		/* ======================= user ======================== */
+		/* ===================================================== */
+
+		describe( 'user->',
+			function() {
+				
+				var userid1 = 'T1'; 
+				var userid2 = 'T2';
+
+				it( 'init',
+					function(done) 
+					{	
+						mongo.user.init( userid1
+							,	function success(r)
+								{
+									done();
+								}
+							,	function error(e)
+								{
+									throw e;
+								} );
+					} );
+
+				var sampleId = Math.random() * 100000;
+				var sampleIdLong = mongo.LongFromString( '1' + sampleId + '1' );
+				var sampleObject = { 
+							graph_id: sampleIdLong
+						,	 payload: 'M’illumino\nd’immenso'
+						};
+
+				it( 'add to 1',
+					function(done) 
+					{	
+						// console.log('1 sampleObject:');
+						// console.log(sampleObject);
+
+						mongo.user.add( userid1, sampleObject
+							,	function success(r){ done();	}
+							,	function error(e){	 throw e;	} );
+					} );
+
+				it( 'add to 1 - again',
+					function(done) 
+					{	
+						// console.log('2 sampleObject:');
+						// console.log(sampleObject);
+
+						mongo.user.add( userid1, sampleObject
+							,	function success(r){ throw new Error('not expected to work');	}
+							,	function error(e){	 done();	} );
+					} );
+
+
+				it( 'add to 2',
+					function(done) 
+					{	
+						mongo.user.add( userid2, sampleObject
+							,	function success(r){ done();	}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'remove from 2',
+					function(done) 
+					{	
+						mongo.user.remove( userid2, { graph_id: sampleIdLong } 
+							,	function success(r){ 
+									assert(r == 1, 'r expected to be 1');
+									done();	
+								}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'findAll from 2',
+					function(done) 
+					{	
+						mongo.user.findAll( userid2, {} 
+							,	function success(r){ 
+									assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
+									done();	
+								}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'add to 2',
+					function(done) 
+					{	
+						mongo.user.add( userid2, sampleObject
+							,	function success(r){ done();	}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'findAll from 2',
+					function(done) 
+					{	
+						mongo.user.findAll( userid2, {} 
+							,	function success(r){ 
+									assert(r.length == 1, 'r.length expected to be 1, is: ' + r.length);
+									done();	
+								}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'drop 1',
+					function(done) 
+					{	
+						mongo.user.drop( userid1
+							,	function success(r){ done();	}
+							,	function error(e){	 throw e;	});
+					} );
+
+				it( 'drop 1 - again',
+					function(done) 
+					{	
+						mongo.user.drop( userid1
+							,	function success(r){ throw new Error('not supposed to work') }
+							,	function error(e){	 done(); });
+					} );
+
+				it( 'drop 2',
+					function(done) 
+					{	
+						mongo.user.drop( userid2
+							,	function success(r){ done();	}
+							,	function error(e){	 throw e;	} );
+					} );
+
+
+			} );
 
 
 	} );
