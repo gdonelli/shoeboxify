@@ -5,51 +5,60 @@ var		assert	= require("assert")
 	,	url		= require("url")
 
 	,	s3 			= require("./s3")
+	,	handy		= require("./handy")
 	,	shoeboxify	= require("./shoeboxify")
 	;
 
 
-describe('Shoeboxify S3',
+describe('S3',
 	function() {
 
-		it( 'Should write to [test] bucket', 
+		it( 'Write to [test] bucket', 
 			function(done) {
 				SimpleWriteToBucket( s3.test, done, true );
 			} );
 
-		it( 'Should write to [object] bucket', 
+		it( 'Write to [object] bucket', 
 			function(done) {
 				SimpleWriteToBucket( s3.object, done, true );
 			} );
 	
-		it( 'Should write to [cache] bucket', 
-			function(done) {
-				SimpleWriteToBucket( s3.cache, done, true );
-			} );
 
-		it( 'Should not write to [test] bucket', 
+		it( 'Fail to write to [test] bucket', 
 			function(done) {
 				SimpleWriteToBucket( s3.test, done, false );
 			} );
 
-		it( 'Should copy shoebox.png',
+		it( 'Copy shoebox.png',
 			function(done) {
 				SimpleCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', '/test/shoebox.png', done, _copyFailed );
 			} );
 
-		it( 'Should copy favicon.ico',
+		it( 'Copy favicon.ico',
 			function(done) {
 				SimpleCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', '/test/favicon.ico', done, _copyFailed );
 			} );
 
-		it( 'Should copy fbpict.jpg',
+		it( 'Delete favicon.ico',
+			function(done) {
+				var clientTestS3 = s3.test.clientRW();
+
+				s3.delete(clientTestS3, '/test/favicon.ico', 
+					done, 
+					function error(e){
+						throw e;
+					} );
+			} );
+
+
+		it( 'Copy fbpict.jpg',
 			function(done) {
 				SimpleCopy(s3.test, 
 					'https://sphotos-a.xx.fbcdn.net/hphotos-ash3/s320x320/524874_10152170979900707_270531713_n.jpg', 
 					'/test/fbpict.jpg', done, _copyFailed );
 			} );
 
-		it( 'Should copy doDotExist',
+		it( 'Copy doDotExist',
 			function(done) {
 				SimpleCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
 					,	function sucess(bytes){
@@ -74,7 +83,7 @@ describe('Shoeboxify S3',
 
 function SimpleCopy(destination, url, path, doneF, errorF)
 {
-	var clientS3 = destination.readwrite();
+	var clientS3 = destination.clientRW();
 
 	s3.copyURL(clientS3, url, path, 
 			function sucess(nbytes){
@@ -100,28 +109,33 @@ function SimpleCopy(destination, url, path, doneF, errorF)
 function SimpleWriteToBucket(destination, done, shouldSucceed)
 {
 	var now = new Date();
-
 	var object = { today: now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() };
-	var path = '/test/test.json';
 
+	var theDestinationPath = '/test/test.json';
 
 	var clientS3;
 
 	if (shouldSucceed)
-		clientS3 = destination.readwrite();
+		clientS3 = destination.clientRW();
 	else
-		clientS3 = destination.read();
+		clientS3 = destination.clientR();
 
-	var stringWritten = s3.writeJSON( clientS3, object, path,
-		function sucess(ponse) {
+	// console.log('theDestinationPath: ' + theDestinationPath);
+
+	var stringWritten = s3.writeJSON( clientS3, object, theDestinationPath,
+		function success(ponse) {
 			assert.equal(ponse.statusCode, 200);
 
-			GetFile(https, destination.URL(path),
-				function(data){
-					assert( stringWritten == data , 'data pushed to s3 is different: original(' + stringWritten +') vs expected(' + data + ')' );
-					if (shouldSucceed)
-						done();
-				});
+			handy.GET(	clientS3.URLForPath(theDestinationPath)
+					,	function _200OK(readBuffer) {
+							assert( stringWritten == readBuffer , 'data pushed to s3 is different: written(' + stringWritten +') vs read(' + readBuffer + ')' );
+							if (shouldSucceed)
+								done();
+						}
+					,	function other(ponse) { throw new Error('other response') } 
+					,	function error(e) { throw e } 
+					);
+
 		},
 		function error(e) {
 			assert(e != undefined, 'error passed is undefined');
@@ -130,33 +144,5 @@ function SimpleWriteToBucket(destination, done, shouldSucceed)
 			if (!shouldSucceed)
 				done();
 		} );
-}
-
-
-function GetFile(method, fileUrl, done /* (string) */)
-{
-	// console.log('GET ' + fileUrl);
-
-	var quest = method.get(fileUrl,
-		function(ponse) {
-			// console.log("statusCode: ", ponse.statusCode);
-			// console.log("headers: ", ponse.headers);
-
-			var buffer = '';
-
-			ponse.on('data', function(chuck) {
-				buffer += chuck;
-			});
-
-			ponse.on('end', function() {
-				if (done)
-					done(buffer);
-			});
-
-		})
-
-	quest.on('error', function(e) {
-			console.error(e);
-		});
 }
 

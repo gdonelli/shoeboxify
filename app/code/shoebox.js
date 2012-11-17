@@ -7,9 +7,10 @@ var		assert	= require('assert')
 	,	url 	= require('url')
 	,	path 	= require('path')
 
+	,	fb		= require('./fb')
 	,	s3		= require('./s3')
 	,	mongo	= require('./mongo')
-	,	fb		= require('./fb')
+
 	,	shoeboxify	= require('./shoeboxify')
 	;
 
@@ -128,7 +129,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 
 	var imageDictionary = _collectAllImages(photoObject);
 
-	var s3client = s3.object.readwrite();
+	var s3client = s3.object.clientRW();
 
 	var imageIndex = 0;
 
@@ -160,7 +161,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 	{
 		s3.copyURL( client, srcURL, path
 			,	function success(total) {
-					var s3copyURL = s3.object.URL(path);
+					var s3copyURL = client.URLForPath(path);
 					imageDictionary[srcURL].s3copyURL = s3copyURL
 
 					// console.log('S3 -> ' +  s3copyURL + ' ('  + total/1024 + ' KB)' );			

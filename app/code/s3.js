@@ -1,119 +1,135 @@
 
-var		knox = require('knox')
+var		assert= require('assert')
+	,	knox = require('knox')
 	,	path = require('path')
-	,	url = require('url')
+	,	url  = require('url')
 	,	http = require("http")
 	,	https = require("https")
-	,	assert= require('assert')
+	,	_ = require("underscore")
 
+	,	handy = require('./handy')
 	,	shoeboxify	= require('./shoeboxify')
 	;
 
 
-var _S3Client = (function() 
-{
-	// constructor
-	var result = function(key, secret, bucket, region) {
-		assert( (key != undefined),		's3 key is undefined');
-		assert( (secret != undefined),	's3 secret is undefined');
-		assert( (bucket != undefined),	's3 bucket is undefined');
+/* ====================================================== */
+/* ====================================================== */
+/* ===============[   Built in Clients   ]=============== */
+/* ====================================================== */
+/* ====================================================== */
 
-		var options =	{	key: key
-						,	secret: secret
-						,	bucket: bucket	};
+/* 
+ *
+ *	 client.URLForPath(aPath) 
+ *
+ *   returns the URL of a file for a given path
+ *
+ */
 
-		if (region)
-			options.region = region;
+var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
 
-		this._client = knox.createClient(options);
-	};
+exports.object = {};
+exports.object.bucketName	= "shoeboxify.object";
+exports.object.clientR	= function(){ return _getCachedClient(exports.object.bucketName, 'R' ); };
+exports.object.clientRW	= function(){ return _getCachedClient(exports.object.bucketName, 'RW'); };
 
-	// prototype
-	result.prototype = {
-			constructor: result
+exports.test = {};
+exports.test.bucketName	= "shoeboxify.test";
+exports.test.clientR	= function(){ return _getCachedClient(exports.test.bucketName, 'R' ); };
+exports.test.clientRW	= function(){ return _getCachedClient(exports.test.bucketName, 'RW'); };
 
-		,	client: client
-	};
 
-	function client()
-	{
-		return this._client;
+var _clientCache = {
+			test: {
+					R:  null
+				,	RW: null
+			}
+		,	object: {
+					R:  null
+				,	RW: null
+			}
 	}
+
+
+function _getCachedClient(bucketName, permission)
+{
+	var bucketEndName = bucketName.split('.')[1];
+
+	assert(bucketEndName == 'test' || bucketEndName == 'object', 'bucketEndName is not valid: ' + bucketEndName);
+
+	if (_clientCache[bucketEndName][permission] == null) {
+
+		// console.log('_getCachedClient ' + bucketEndName + ' ' + permission );
+
+		_clientCache[bucketEndName][permission] = _s3client(bucketName, permission);
+		_clearCache(bucketEndName, permission);
+	}
+
+	return _clientCache[bucketEndName][permission];
+
+	/* ========================================================== */
 	
-	function writeJSON( object, filepath, successF,  errorF )
+	function _clearCache(n, p)
 	{
-		exports.writeJSON( this._client, object, filepath, successF,  errorF );
+		setTimeout( function() {
+			console.log('Clearning S3 Client ' + n + ' ' + p );
+			_clientCache[n][p] = null;
+		}, CLIENT_CACHE_DURATION);
+
 	}
-
-	return result;
-})();
+}
 
 
-// exports.client = function(a, b, c) { return new _S3Client(a, b, c) };
-// var sClient = new _S3Client( shoeboxify.s3.RW.key(), shoeboxify.s3.RW.secret(), shoeboxify.s3.bucket.test() );
-// console.log('sClient ' + sClient );
-
-
-function _s3client( access, bucket )
+function _s3client( bucket, access )
 {
-	var key		= shoeboxify.s3[access].key();
-	var secret	= shoeboxify.s3[access].secret();
-	var bucket	= bucket();
+	var key		= shoeboxify.s3.key[access]();
+	var secret	= shoeboxify.s3.secret[access]();
 
 	assert( (key != undefined),		's3 key is undefined');
 	assert( (secret != undefined),	's3 secret is undefined');
 	assert( (bucket != undefined),	's3 bucket is undefined');
 
-	return knox.createClient({
+	var result = knox.createClient({
 				   key: key
 			,	secret: secret
 			,	bucket: bucket
 			,	region: 'us-west-2'
 			});
-}
 
-
-exports.object = {
-			read:		function(){ return _s3client( 'R',  shoeboxify.s3.bucket.object ); }
-		,	readwrite:	function(){ return _s3client( 'RW', shoeboxify.s3.bucket.object ); }
-		,	URL:		function(filepath){ return _URL(	shoeboxify.s3.bucket.object, filepath); }
+	result.URLForPath = 
+		function(filePath) {
+			return 'https://s3-us-west-2.amazonaws.com/' + path.normalize(bucket + '/' + filePath);			
 		};
-
-exports.cache = {
-			read:		function(){ return _s3client( 'R',  shoeboxify.s3.bucket.cache ); }
-		,	readwrite:	function(){ return _s3client( 'RW', shoeboxify.s3.bucket.cache ); }
-		,	URL:		function(filepath){ return _URL(	shoeboxify.s3.bucket.cache, filepath); }
-		};
-
-exports.test = {
-			read: 		function(){ return _s3client( 'R',  shoeboxify.s3.bucket.test ); }
-		,	readwrite:	function(){ return _s3client( 'RW', shoeboxify.s3.bucket.test ); }
-		,	URL:		function(filepath){ return _URL(	shoeboxify.s3.bucket.test, filepath); }
-		};
-
-
-function _URL(bucket, filepath)
-{
-	var result = 'https://s3-us-west-2.amazonaws.com/' + path.normalize(bucket() + '/' + filepath);
 
 	return result;
 }
 
 
+/* =================================================== */
+/* =================================================== */
+/* =================[  Module API  ]================== */
+/* =================================================== */
+/* =================================================== */
+
+
+
 // http://docs.amazonwebservices.com/AmazonS3/latest/API/RESTObjectPUT.html
 /*
- * successF(ponse)
- * errorF(ErrorObj), ErrorObj.response
+ * success_f(ponse)
+ * error_f(ErrorObj), ErrorObj.response
  */
+
 exports.writeJSON =
-	function( clientS3, object, filepath, successF,  errorF ) 
+	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
-		assert( clientS3,	arguments.callee.name + " clientS3 is undefined");
-		assert( object,		arguments.callee.name + " object is undefined");
-		assert( filepath,	arguments.callee.name + " clientS3 is undefined");
+		exports.assert_client(client);
+		assert(object != undefined, " object is undefined");
+		exports.assert_path(filePath);
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		var string = JSON.stringify(object);
-		var questToS3 = clientS3.put(filepath,	{
+		var questToS3 = client.put(filePath,	{
 					'Content-Length': string.length
 			  	,	'Content-Type': 'application/json'
 				,	'x-amz-acl': 'public-read'
@@ -123,14 +139,14 @@ exports.writeJSON =
 		questToS3.on('response', 
 			function(ponse) {
 				if (ponse.statusCode == 200) {
-					if (successF)
-						successF(ponse);
+					if (success_f)
+						success_f(ponse);
 				}
 				else {
-					if (errorF) {
+					if (error_f) {
 						var e = new Error('Failed with statusCode: ' + ponse.statusCode);
 						e.response = ponse;
-						errorF(e);
+						error_f(e);
 					}
 				}
 			});
@@ -141,19 +157,49 @@ exports.writeJSON =
 	};
 
 
-/*
- *	successF(total_byte_written)
- *	errorF( Error_obj )
- *	progressF( p ), p: {written, total, percent}
+exports.delete =
+	function( client, filePath, success_f, error_f )
+	{
+		exports.assert_client(client);
+		exports.assert_path(filePath);
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		var questToS3 = client.del(filePath);
+
+		questToS3.on('response',
+			function(ponse){
+				if (ponse.statusCode >= 200 && ponse.statusCode < 300)
+				{
+					success_f();				
+				}
+				else
+				{
+					error_f();				
+				}
+				console.log(ponse.statusCode);
+				console.log(ponse.headers);
+			});
+
+		questToS3.end();
+	};
+
+/**
+ *
+ *	success_f(total_byte_written)
+ *	error_f( Error_obj )
+ *	progress_f( p ), p: {written, total, percent}
  *	
  */
 
 exports.copyURL =
-	function( clientS3, fileURL, filePath, successF, errorF, progressF )
+	function( client, fileURL, filePath, success_f, error_f, progress_f )
 	{
-		assert( clientS3,	arguments.callee.name + " clientS3 is undefined");
-		assert( fileURL,	arguments.callee.name + " fileURL is undefined");
-		assert( filePath,	arguments.callee.name + " clientS3 is undefined");
+		exports.assert_client(client);
+		exports.assert_path(filePath);
+		handy.assert_http_url(fileURL);
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		var urlElements = url.parse(fileURL);
 
@@ -187,7 +233,7 @@ exports.copyURL =
 				var written = 0;
 				var total = 0;
 
-				var putStream = clientS3.putStream(getPonse, filePath, headers, 
+				var putStream = client.putStream(getPonse, filePath, headers, 
 					function(err, streamPonse){
 				
 						streamPonse.on('end',
@@ -214,8 +260,8 @@ exports.copyURL =
 						total	= progressObj.total;
 						// console.log('stream->progressObj.percent: ' + progressObj.percent );
 
-						if (progressF)
-							progressF(progressObj);
+						if (progress_f)
+							progress_f(progressObj);
 					});
 
 				putStream.on('error', 
@@ -228,19 +274,45 @@ exports.copyURL =
 					var err = new Error(message);
 					err.code = code;
 
-					if (errorF)
-						errorF( err );
+					if (error_f)
+						error_f( err );
 
 				}
 
 				function ExitWithSuccess()
 				{
-					if (successF)
-						successF( Math.round(total) );					
+					if (success_f)
+						success_f( Math.round(total) );					
 				}
 
 			});
 
 		quest.end();
-	}
+	};
+
+
+/* ============================================== */
+/* ============================================== */
+/* =================[  Utils  ]================== */
+/* ============================================== */
+/* ============================================== */
+
+
+exports.assert_client =
+	function(client)
+	{
+		assert( client != undefined,		'client is undefined');
+		assert( client.key != undefined,	'client.key is undefined');
+		assert( client.secret != undefined,	'client.secret is undefined');
+		assert( client.bucket != undefined,	'client.bucket is undefined');
+	};
+
+
+exports.assert_path =
+	function(filePath)
+	{
+		assert( filePath != undefined,	'filePath is undefined');
+		assert( _.isString(filePath),	'filePath is not string');
+		assert( filePath.length > 1,	'filePath.length not valid');
+	};
 

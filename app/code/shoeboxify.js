@@ -65,20 +65,14 @@ exports.adminID = function() {
 /***********************/
 
 exports.s3 = {
-		R: {
-		     key: function(){ return _env('S3_R_KEY');		}
-		, secret: function(){ return _env('S3_R_SECRET');	}
+		key: {
+				R:	function(){ return _env('S3_R_KEY');	}
+			,	RW:	function(){ return _env('S3_RW_KEY');	}
 		}
 
-	,	RW: {
-		     key: function(){ return _env('S3_RW_KEY');		}
-		, secret: function(){ return _env('S3_RW_SECRET');	}
-		}
-
-	,	bucket: {
-			object: function(){ return _env('S3_OBJECT_BUCKET');	}
-		,	 cache: function(){ return _env('S3_CACHE_BUCKET');		}
-		,	  test: function(){ return _env('S3_TEST_BUCKET');		}
+	,	secret: {
+				R:	function(){ return _env('S3_R_SECRET');	}
+			,	RW:	function(){ return _env('S3_RW_SECRET');}
 		}
 	};
 
@@ -154,16 +148,11 @@ exports.validateEnviroment = function()
 		exports.appID();
 
 		// AWS
-		exports.s3.R.key();
-		exports.s3.R.secret();
+		exports.s3.key.R();
+		exports.s3.key.RW();
+		exports.s3.secret.R();
+		exports.s3.secret.RW();
 
-		exports.s3.RW.key();
-		exports.s3.RW.secret();
-
-		exports.s3.bucket.object();
-		exports.s3.bucket.cache();
-		exports.s3.bucket.test();
-	
 		// Session
 		exports.sessionSecret();
 		exports.sessionDatabaseName();
@@ -175,5 +164,4 @@ exports.validateEnviroment = function()
 		exports.dbServerUsername();
 		exports.dbServerPassword();
 		exports.dbName();
-
 	};

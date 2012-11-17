@@ -12,6 +12,7 @@ var 	https		= require('https')
 	/* libs */
 
 	,	handy		= require('./handy')
+	,	mongo		= require('./mongo')
 	,	shoeboxify	= require('./shoeboxify')
 	,	stacktrace	= require('./stacktrace')
 	;
@@ -89,96 +90,38 @@ exports.route.response =
 		else if ( code && code.length > 1 ) //Exchange code for Access Token
 		{
 			AccessTokenFromCode(
-				function ConsumeToken(token, expiration)
-				{
-					StartSession( token, expiration,
-						function success() {
-							if (source)
-								ponse.redirect(source);
-							else
-							{
-								RespondWithLoginSuccess();
-							}
-						},
-						function failure(e) {
-								var errorToReport = 'error:' + e;
-								errorToReport += ', Token:' + token;
-								errorToReport += ', Expiration:' + expiration;
+					function ConsumeToken(token, expiration)
+					{
+						StartSession( token, expiration
+								,	function success()
+									{
+										try
+										{
+											UserSessionStartedSuccesfully();
+										}
+										catch(e)
+										{
+											RespondWithError('UserSessionStartedSuccesfully failed ', e);
+										}
+									}
+								,	function failure(e)
+									{
+										var errorToReport = 'error:' + e;
+										errorToReport += ', Token:' + token;
+										errorToReport += ', Expiration:' + expiration;
 
-								RespondWithError( 'StartSession() failed', errorToReport );
-						} );
-
-				}
-				, function AccessTokenError(errString)
-				{
-					RespondWithError( 'AccessTokenFromCode() failed', errString );
-				} );
+										RespondWithError( 'StartSession() failed', errorToReport );
+									} );
+					}
+				,	function AccessTokenError(errString)
+					{
+						RespondWithError( 'AccessTokenFromCode() failed', errString );
+					} );
 		}
 
 
-		/* ============================= */
-
-		function RespondWithLoginSuccess()
-		{
-			if (quest.headers['user-agent'] == 'com.shoeboxify.test')
-				return RespondWithJSONSuccess();
-			else
-				return RespondWithHTMLSuccess();
-		}
-
-		function RespondWithJSONSuccess()
-		{
-			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
-			
-			var object = {	'accessToken'	: _accessToken(quest),
-							'expires'		: _expiresToken(quest)	};
-
-			ponse.end( JSON.stringify(object) );	
-		}
+		/* =============================================================================== */
 		
-		function RespondWithHTMLSuccess()
-		{
-			var title = quest.session.me.name +' - Login Successful';
-
-			ponse.writeHead(200, {'Content-Type': 'text/html'});
-
-			ponse.write('<html>');
-
-			ponse.write('<head>');
-			ponse.write('<title>' + title + '</title>');
-			ponse.write('</head>');
-
-			ponse.write('<body>');
-			ponse.write('<h1>' + title + '</h1>');
-
-			ponse.write('<p><strong>accessToken: </strong>' + _accessToken(quest) + '</p>');
-			ponse.write('<p><strong>expires: </strong>' + _expiresToken(quest) + ' seconds (' + _expiresToken(quest)/(60*60*24) + ' days)</p>');
-
-			ponse.write('</body>');
-			
-			ponse.end('</html>');			
-		}
-		
-		function RespondWithError(title, e)
-		{
-			shoeboxify.error('Login: ' + e);
-
-			ponse.writeHead(200, {'Content-Type': 'text/html'});
-
-			ponse.write('<html>');
-
-			ponse.write('<head>');
-			ponse.write('<title>' + title + '</title>');
-			ponse.write('</head>');
-
-			ponse.write('<body>');
-			ponse.write('<h1>' + title + '</h1>');
-			ponse.write('<p> Error: ' + e +'</p><br>');
-			ponse.write('<p style="color:red">Please report this error at error[at]shoeboxify.com</p>');
-			ponse.write('</body>');
-			
-			ponse.end('</html>');
-		}
 
 		function AccessTokenFromCode( consumeTokenFunction /* (token, expiration) */ 
 									, errorFunction /* errString */) 
@@ -251,7 +194,6 @@ exports.route.response =
 			tokenQuest.end();
 		}
 
-		/* ============================= */
 		function StartSession(accessToken, expiresInSeconds, nextFunction, errorFunction)
 		{
 			 _setAccessToken(quest, accessToken, expiresInSeconds ); 
@@ -282,7 +224,105 @@ exports.route.response =
 					if (errorFunction)
 						errorFunction(error);
 				} );
+		}
 
+		function UserSessionStartedSuccesfully()
+		{
+			assert(quest != undefined,			'quest is undefined');
+			assert(quest.session != undefined,	'quest.session is undefined');
+			assert(quest.session.me != undefined,	'quest.session.me is undefined');
+			assert(quest.session.me.id != undefined,'quest.session.me.id is undefined');
+
+			// init user mongo db
+			mongo.user.init( quest.session.me.id
+				,	function success(collection) {
+						assert(collection != undefined, 'user collection is undefined');
+						LastStep();
+					}
+				,	function error(e) {
+						RespondWithError('mongo.user.init failed', e);
+					} );
+
+		}
+
+		function LastStep()
+		{
+			if (source)
+				ponse.redirect(source);
+			else
+				RespondWithLoginSuccess();			
+		}
+
+		function RespondWithLoginSuccess()
+		{
+			if (quest.headers['user-agent'] == 'com.shoeboxify.test')
+				return RespondWithJSONSuccess();
+			else
+				return RespondWithHTMLSuccess();
+		}
+
+		function RespondWithJSONSuccess()
+		{
+			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+			
+			var object = {	'accessToken'	: _accessToken(quest),
+							'expires'		: _expiresToken(quest)	};
+
+			ponse.end( JSON.stringify(object) );	
+		}
+		
+		function RespondWithHTMLSuccess()
+		{
+			var title = quest.session.me.name +' - Login Successful';
+
+			ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+			ponse.write('<html>');
+
+			ponse.write('<head>');
+			ponse.write('<title>' + title + '</title>');
+			ponse.write('</head>');
+
+			ponse.write('<body>');
+			ponse.write('<h1>' + title + '</h1>');
+
+			ponse.write('<p><strong>accessToken: </strong>' + _accessToken(quest) + '</p>');
+			ponse.write('<p><strong>expires: </strong>' + _expiresToken(quest) + ' seconds (' + _expiresToken(quest)/(60*60*24) + ' days)</p>');
+
+			ponse.write('</body>');
+			
+			ponse.end('</html>');			
+		}
+		
+		function RespondWithError(title, e)
+		{
+			shoeboxify.error('Login: ' + e);
+
+			ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+			ponse.write('<html>');
+
+			ponse.write('<head>');
+			ponse.write('<title>' + title + '</title>');
+			ponse.write('</head>');
+
+			ponse.write('<body>');
+			ponse.write('<h1>' + title + '</h1>');
+			ponse.write('<p>Error: ' + e +'</p><br>');
+
+
+			// Trace
+
+			ponse.write('<p>Trace:</p>');
+			ponse.write('<code>');
+			handy.writeHTMLstacktrace(ponse, e);
+			ponse.write('</code>');
+			
+
+			ponse.write('<p style="color:red">Please report this error at error[at]shoeboxify.com</p>');
+			ponse.write('</body>');
+			
+			ponse.end('</html>');
 		}
 
 	};
@@ -526,13 +566,13 @@ function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, erro
 					console.error('**** Caught exception while processing Graph response');
 					console.error('**** Exception:' + e);
 
-					var trace = stacktrace.process({ e : e });
-					
 					console.error('**** Stacktrace:');
-					console.error(trace);
+					handy.errorLogStacktrace(e);
 
-					console.error('**** Buffer String:\n' + bufferString);
+					console.error('**** Buffer String:');
+					var bufferToShow = (bufferString.length > 256 ? bufferString.substring(0, 256) : bufferString );
 
+					console.error('**** ' + bufferToShow + '...');
 
 					if (errorFunction)
 						errorFunction(e);

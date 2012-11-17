@@ -31,20 +31,6 @@ describe('mongo',
 		describe( 'mongo.collection',
 			function() {
 
-				it( 'init',
-					function(done) 
-					{	
-						mongo.collection.init('test' 
-							,	function success()
-								{
-									done();
-								}
-							,	function error()
-								{
-									throw new Error('mongo.collection.init failed');
-								} );
-						
-					} );
 
 				var testCollection;
 
@@ -70,11 +56,9 @@ describe('mongo',
 							graph_id: sampleIdLong
 						,	 payload: 'Nel cammino di nostra vita mi ritrovai in una selva oscura'
 						};
-
-				it( 'addObject',
-					function(done) 
-					{	
-						mongo.collection.add(testCollection, sampleObject
+				function _addSampleObject(done)
+				{
+					mongo.collection.add(testCollection, sampleObject
 							,	function success(r)
 								{
 									assert(r != undefined, 'addObject expected to return result');
@@ -84,24 +68,19 @@ describe('mongo',
 								{
 									throw e;
 								} );
+				}
+
+				it( 'addObject',
+					function(done) 
+					{
+						_addSampleObject(done);
 					} );
 
 
 				it( 'addObject - same object',
 					function(done) 
 					{	
-						mongo.collection.add(testCollection, sampleObject
-							,	function success(r)
-								{
-									throw new Error('collection.addObject is supposed to fail with the same object');
-								}
-							,	function error(e)
-								{
-									// console.log(e);
-									assert(e != undefined, 'error is undefined');
-									assert(e.code != 1100, 'Expected duplicated key error');
-									done();
-								} );
+						_addSampleObject(done);
 					} );
 
 
@@ -127,7 +106,7 @@ describe('mongo',
 						mongo.collection.findAll(testCollection, { graph_id : sampleIdLong }
 							,	function success(r)
 								{	
-									assert( r.length == 1, 'findAll expected to find only #1 result, found #'+ r.length);					
+									assert( r.length == 2, 'findAll expected to find only #2 result, found #'+ r.length);					
 									assert(r[0] != undefined, 'r is undefined');
 									assert(r[0].payload != undefined, 'r.payload is undefined');
 
@@ -346,30 +325,45 @@ describe('mongo',
 				copyObject.picture = 'copy picture';
 				copyObject.source  = 'copy source';
 
+				function _addFBObject(done, expectedSuccess)
+				{
+					mongo.user.addFacebookObject( 
+							userid1
+						,	fakeFacebookObject.id
+						,	fakeFacebookObject
+						,	copyObject
+						,	function success(r)	{	if (expectedSuccess) done();	else	throw new Error('Success expected');	}
+						,	function error(e)	{	if (expectedSuccess) throw e;	else	done();		} 
+						);					
+				}
+
 				it( 'addFacebookObject',
 					function(done) 
-					{	
-						mongo.user.addFacebookObject( 
-								userid1
-							,	fakeFacebookObject.id
-							,	fakeFacebookObject
-							,	copyObject
-							,	function success(r) {	done();	 }
-							,	function error(e) {		throw e; } 
-							);
+					{
+						_addFBObject(done, true);
 					} );
 
 				it( 'addFacebookObject - again',
 					function(done) 
 					{	
-						mongo.user.addFacebookObject( 
+						_addFBObject(done, false);
+					} );
+
+				it( 'removeFacebookObject',
+					function(done) 
+					{	
+						mongo.user.removeFacebookObject( 
 								userid1
 							,	fakeFacebookObject.id
-							,	fakeFacebookObject
-							,	copyObject
-							,	function success(r)	{	throw new Error('should fail');	}
-							,	function error(e)	{	done();	}
+							,	function success(r)	{	done();	}
+							,	function error(e)	{	throw e; }
 							);
+					} );
+
+				it( 'addFacebookObject - after remove',
+					function(done) 
+					{	
+						_addFBObject(done, true);
 					} );
 
 				it( 'findOneFacebookObject',

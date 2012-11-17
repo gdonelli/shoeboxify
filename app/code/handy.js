@@ -5,6 +5,7 @@ var		url		= require('url')
 	,	http	= require('http')
 	,	https	= require('https')
 	,	assert	= require("assert")
+	,	stacktrace	= require('./stacktrace')
 	;
 
 
@@ -121,6 +122,45 @@ exports.assert_f =
 		assert( (typeof candidate_f == 'function'), 'expected function, given: ' + candidate_f );	
 	};
 
+
+exports.assert_http_url = 
+	function(url)
+	{
+		assert( url != undefined, 'url is undefined');
+		assert( url.startsWith('http') != undefined, 'url doesnt start with http');
+	};
+
+
+exports.writeHTMLstacktrace =
+	function( ponse, forError )
+	{
+		var options;
+
+		if (forError)
+			options = { e : forError };
+
+		var trace = stacktrace.process( options );
+
+		for (var i in trace)
+		{
+			var line_i = trace[i];
+			ponse.write( line_i.replace( " ", '&nbsp;' ) );
+			ponse.write('<br>');
+		}
+	};
+
+exports.errorLogStacktrace =
+	function(forError)
+	{
+		var options;
+
+		if (forError)
+			options = { e : forError };
+
+		var trace = stacktrace.process( options );
+		
+		console.error(trace);
+	};
 
 /* ===================== String Extension ===================== */
 

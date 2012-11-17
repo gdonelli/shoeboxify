@@ -9,5 +9,5 @@ source ../secret/setenv.sh
 # 	cd ..
 # else
 
-supervisor -p 1000 ../app/app.js	
+supervisor -p 1000 --watch ../app/ ../app/app.js 
 

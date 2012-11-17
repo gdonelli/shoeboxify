@@ -121,28 +121,6 @@ exports.collection.get =
 	};
 
 
-exports.collection.init = 
-	function(collectionName, success_f, error_f)
-	{
-		exports.collection.get(
-				collectionName
-			,	function success(c) {
-					c.ensureIndex( { graph_id:1 }, { unique: true },
-						function(err, indexName) 
-						{
-							if (err) {
-								console.error('collection.ensureIndex for graph_id failed err:' + err);
-								error_f(err);
-							}
-							else 
-								success_f(c);							
-						} );				
-				}
-			,	error_f
-			);
-	};
-
-
 exports.collection.add = 
 	function(collection, object, success_f /* (result) */, error_f)
 	{
@@ -294,14 +272,26 @@ exports.user.getCollection =
 	};
 
 exports.user.init =
-	function(userId, success_f, error_f)
+	function(userId, success_f /* (collection) */, error_f)
 	{
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		var collectionName = exports.user.collectionName(userId);
-
-		exports.collection.init(collectionName, success_f, error_f );
+		exports.user.getCollection(
+				userId
+			,	function success(c) {
+					c.ensureIndex( { graph_id:1 }, { unique: true },
+						function(err, indexName) 
+						{
+							if (err) {
+								console.error('collection.ensureIndex for graph_id failed err:' + err);
+								error_f(err);
+							}
+							else 
+								success_f(c);							
+						} );				
+				}
+			,	error_f );
 	};
 
 exports.user.add =
@@ -332,7 +322,7 @@ exports.user.findAll =
 	};
 
 exports.user.remove =
-	function(userId, findProperties, success_f, error_f, options)
+	function(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
 	{
 		exports.user.getCollection(
 				userId
@@ -357,6 +347,10 @@ exports.user.drop =
 /* ================================================================== */
 /* ================================================================== */
 
+function _objectWithGraphId(graphId)
+{
+	return  { graph_id: exports.LongFromString(graphId) };
+}
 
 exports.user.addFacebookObject =
 	function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
@@ -386,7 +380,7 @@ exports.user.findOneFacebookObject =
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		exports.user.findOne(userId, { graph_id: exports.LongFromString(graphId) }, success_f, error_f);	
+		exports.user.findOne(userId, _objectWithGraphId(graphId), success_f, error_f);	
 	};
 
 
@@ -398,6 +392,22 @@ exports.user.findAllFacebookObjects =
 		handy.assert_f(error_f);
 
 		exports.user.findAll(userId, {}, success_f, error_f);	
+	};
+
+exports.user.removeFacebookObject =
+	function(userId, graphId, success_f, error_f)
+	{
+		assert(userId != undefined,	'userId is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		exports.user.remove(userId, _objectWithGraphId(graphId), 
+			function success(numOfEntries)
+			{
+				assert(numOfEntries == 1, 'numOfEntries expected to be #1 is #' + numOfEntries);
+				success_f();
+			}, 
+			error_f);	
 	};
 
 
