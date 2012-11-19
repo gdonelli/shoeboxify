@@ -4,7 +4,7 @@ var		assert		= require("assert")
 	;
 
 
-describe('Shoeboxify.js Test',
+describe('shoeboxify.js',
 	function() 
 	{
 		it( 'Enviroment variables test',

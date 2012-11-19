@@ -6,7 +6,7 @@ var		assert	= require("assert")
 	;
 
 
-describe('Utils Test',
+describe('handy.js',
 	function() {
 
 		// ------
@@ -30,6 +30,41 @@ describe('Utils Test',
 			{				
 				_test_GET_site( httpsWells, done );
 			} );
+
+		it( 'HEAD ' + httpsWells,
+			function(done) 
+			{
+				handy.HEAD(httpsWells
+					,	function success(ponse) {
+							// console.log('ponse.headers:');
+							// console.log(ponse.headers);
+							done();
+						}
+					,	function error(e) {
+							throw e;
+						});
+
+			} );
+
+		var dontexist = 'https://sphotos-b.xx.fbcdn.net/hphotos-snc7/575052_10151241240779286_6119758003_n.jpg';
+
+		it( 'HEAD ' + dontexist,
+			function(done) 
+			{
+				handy.HEAD( 
+						dontexist
+					,	function success(ponse) {
+							// console.log('ponse.statusCode: ' + ponse.statusCode);
+							// console.log('ponse.headers:');
+							// console.log(ponse.headers);
+							done();
+						}
+					,	function error(e) {
+							throw e;
+						});
+
+			} );
+
 
 		/* ===================================================== */
 

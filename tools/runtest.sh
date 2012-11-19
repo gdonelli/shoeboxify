@@ -28,6 +28,10 @@ fi
 ##    all tests    ##
 #####################
 
+mocha $APPFOLDER/code/*.test.js -t $TIMEOUT -R $REPORTER
+
+exit 
+
 echo 'shoeboxify.test.js'
 mocha $APPFOLDER/code/shoeboxify.test.js -t $TIMEOUT -R $REPORTER
 

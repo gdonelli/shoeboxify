@@ -10,57 +10,87 @@ var		assert	= require("assert")
 	;
 
 
-describe('S3',
-	function() {
+function CheckFileExist(aPath, shouldExist, done)
+{
+	handy.is200OK(aPath,
+		function(value)
+		{ 
+			assert(value == shouldExist, 'file (' + aPath + ') expected to exist:' + shouldExist );
 
-		it( 'Write to [test] bucket', 
+			if (done)
+				done();
+		} );
+}
+
+
+describe('s3.js',
+	function() 
+	{
+		var jsonTestPath = '/test/test.json';
+
+		it( 'write ' + jsonTestPath + ' to s3.test',
 			function(done) {
-				SimpleWriteToBucket( s3.test, done, true );
+				_simpleJSONWrite( s3.test, jsonTestPath, done, true );
 			} );
 
-		it( 'Write to [object] bucket', 
+		it ( 'delete ' + jsonTestPath + ' from s3.test',	
 			function(done) {
-				SimpleWriteToBucket( s3.object, done, true );
-			} );
-	
-
-		it( 'Fail to write to [test] bucket', 
-			function(done) {
-				SimpleWriteToBucket( s3.test, done, false );
+				_deleteFile( s3.test, jsonTestPath, done);
 			} );
 
+		it( 'write ' + jsonTestPath + ' to s3.object',
+			function(done) {
+				_simpleJSONWrite( s3.object, jsonTestPath, done, true );
+			} );
+
+		it( 'write ' + jsonTestPath + ' to s3.test',
+			function(done) {
+				_simpleJSONWrite( s3.test, jsonTestPath, done, false );
+			} );
+
+		// ---> /test/shoebox.png
+
+		var shoeboxPath = '/test/shoebox.png';
 		it( 'Copy shoebox.png',
 			function(done) {
-				SimpleCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', '/test/shoebox.png', done, _copyFailed );
+				_simpleCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath, done, _copyFailed );
 			} );
 
+		it ( 'delete ' + shoeboxPath + ' from s3.test',
+			function(done) {
+				_deleteFile(s3.test, shoeboxPath, done);
+			} );
+
+		// ---> /test/favicon.ico
+
+		var faviconPath = '/test/favicon.ico';
 		it( 'Copy favicon.ico',
 			function(done) {
-				SimpleCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', '/test/favicon.ico', done, _copyFailed );
+				_simpleCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath, done, _copyFailed );
 			} );
 
-		it( 'Delete favicon.ico',
-			function(done) {
-				var clientTestS3 = s3.test.clientRW();
+		it( 'Delete ' + faviconPath,	function(done) {
+											_deleteFile(s3.test, faviconPath, done);
+										} );
 
-				s3.delete(clientTestS3, '/test/favicon.ico', 
-					done, 
-					function error(e){
-						throw e;
-					} );
-			} );
-
+		// ---> /test/fbpict.jpg
+		var fbpict = '/test/fbpict.jpg';
 
 		it( 'Copy fbpict.jpg',
 			function(done) {
-				SimpleCopy(s3.test, 
+				_simpleCopy(s3.test, 
 					'https://sphotos-a.xx.fbcdn.net/hphotos-ash3/s320x320/524874_10152170979900707_270531713_n.jpg', 
-					'/test/fbpict.jpg', done, _copyFailed );
+					fbpict, done, _copyFailed );
 			} );
 
-		it( 'Copy doDotExist',
+		it( 'Delete ' + fbpict,		function(done) {
+										_deleteFile(s3.test, fbpict, done);
+									} );
+
+
+		it( 'Copy doNotExist',
 			function(done) {
-				SimpleCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
+				_simpleCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
 					,	function sucess(bytes){
 							throw new Error("Copy should not succeeed bytes written:" + bytes);
 						}
@@ -74,6 +104,13 @@ describe('S3',
 					);
 			} );
 
+		it ( 'delete ' + jsonTestPath + ' from s3.test',
+			function(done) {
+				_deleteFile(s3.object, jsonTestPath, done);
+			} );
+
+		/* ========================================================== */
+
 		function _copyFailed(e)
 		{
 			throw new Error("Copy should succeeed " + e);
@@ -81,7 +118,8 @@ describe('S3',
 
 	});
 
-function SimpleCopy(destination, url, path, doneF, errorF)
+
+function _simpleCopy(destination, url, path, doneF, errorF)
 {
 	var clientS3 = destination.clientRW();
 
@@ -106,12 +144,11 @@ function SimpleCopy(destination, url, path, doneF, errorF)
 
 }
 
-function SimpleWriteToBucket(destination, done, shouldSucceed)
+
+function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
 {
 	var now = new Date();
 	var object = { today: now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds() };
-
-	var theDestinationPath = '/test/test.json';
 
 	var clientS3;
 
@@ -120,13 +157,13 @@ function SimpleWriteToBucket(destination, done, shouldSucceed)
 	else
 		clientS3 = destination.clientR();
 
-	// console.log('theDestinationPath: ' + theDestinationPath);
+	// console.log('thePath: ' + thePath);
 
-	var stringWritten = s3.writeJSON( clientS3, object, theDestinationPath,
+	var stringWritten = s3.writeJSON( clientS3, object, thePath,
 		function success(ponse) {
 			assert.equal(ponse.statusCode, 200);
 
-			handy.GET(	clientS3.URLForPath(theDestinationPath)
+			handy.GET(	clientS3.URLForPath(thePath)
 					,	function _200OK(readBuffer) {
 							assert( stringWritten == readBuffer , 'data pushed to s3 is different: written(' + stringWritten +') vs read(' + readBuffer + ')' );
 							if (shouldSucceed)
@@ -135,7 +172,6 @@ function SimpleWriteToBucket(destination, done, shouldSucceed)
 					,	function other(ponse) { throw new Error('other response') } 
 					,	function error(e) { throw e } 
 					);
-
 		},
 		function error(e) {
 			assert(e != undefined, 'error passed is undefined');
@@ -145,4 +181,23 @@ function SimpleWriteToBucket(destination, done, shouldSucceed)
 				done();
 		} );
 }
+
+
+function _deleteFile(destination, thePath, done)
+{
+	var c = destination.clientRW();
+
+	CheckFileExist(c.URLForPath(thePath), true, 
+		function()
+		{
+			s3.delete( c, thePath
+				, 	function success(ponse)
+					{
+						assert(ponse != undefined, 'ponse is undefined');
+
+						CheckFileExist(c.URLForPath(thePath), false, done);
+					}
+				,	function error(e) { assert(e != undefined, 'e is undefined' ); throw e;});						
+		} );
+} 
 

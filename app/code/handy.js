@@ -8,6 +8,7 @@ var		url		= require('url')
 	,	stacktrace	= require('./stacktrace')
 	;
 
+var handy = exports;
 
 exports.ASCIItoBase64 =
 	function(asciiString)
@@ -23,10 +24,98 @@ exports.Base64toASCII =
 	}
 
 
+exports.is200OK =
+	function( fileUrl, result_f  /* ( true_or_false ) */ )
+	{
+		assert(fileUrl != undefined, 'fileUrl is undefined');
+		handy.assert_f(result_f);
+
+		handy.HEAD(fileUrl
+			,	function success(ponse) {
+					// console.log('success:');
+					// console.log('ponse.statusCode: ' + ponse.statusCode);
+
+					result_f( ponse.statusCode == 200 );
+				}
+			,	function error(error) {
+					// console.log('error:');
+					// console.log(error);
+					
+					result_f(false);
+				} );
+	}
+
+
+exports.HEAD =
+	function(	fileUrl
+			,	success_f	/*	(ponse)	*/
+			,	error_f		/*	(error)	*/
+			)
+	{
+		return handy.makeHTTPRequest(
+					fileUrl
+				,	'HEAD'
+				,	function(read_s, ponse)
+					{
+						/*						
+						console.log('read_s:');
+						console.log(read_s);
+
+						console.log('ponse:');
+						console.log(ponse);
+						*/
+
+						if (success_f)
+							success_f(ponse);
+					}
+				,	error_f
+				,	false);			
+
+	};
+
+
 exports.GET =
 	function(	fileUrl
-			,	_200OK_f	/*	(string)	*/
+			,	_200OK_f	/*	(read_s, ponse)	*/
 			,	other_f		/*	(ponse)		*/
+			,	error_f		/*	(error)		*/
+			,	traverse
+			)
+	{
+		return exports.makeHTTPRequest(
+					fileUrl
+				,	'GET'
+				,	function(read_s, ponse)
+					{
+
+						if (ponse.statusCode == 200)
+						{
+							if (_200OK_f)
+								_200OK_f(read_s, ponse);
+						}
+						else if (traverse == true && ponse.statusCode == 302)
+						{
+							assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
+
+							exports.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
+						}
+						else
+						{	
+							ponse.readBuffer = read_s;
+
+							if (other_f)
+								other_f(ponse);			
+						}
+					}
+				,	error_f
+				,	traverse);			
+	};
+
+
+exports.makeHTTPRequest =
+	function(	fileUrl
+			,	httpMethod
+			,	success_f	/*	(read_s, ponse)	*/
 			,	error_f		/*	(error)		*/
 			,	traverse
 			)
@@ -36,17 +125,16 @@ exports.GET =
 		var fileUrlElements = url.parse(fileUrl);
 
 		var questOptions = {
-					  method:	'GET'
+					  method:	httpMethod
 				,	hostname:	fileUrlElements['hostname']
 				,		path:	fileUrlElements['path']
 
-				,	 headers: {
-							'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17'
-						,	'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-						,	'Connection' : 'keep-alive'
- 					}
+//				,	 headers: {
+//							'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17'
+//						,	'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+//						,	'Connection' : 'keep-alive'
 
-			};
+ 					}
 
 		if (fileUrlElements['port'] != undefined)
 			questOptions['port'] = fileUrlElements['port'];
@@ -64,38 +152,19 @@ exports.GET =
 				// console.log("statusCode: ", ponse.statusCode);
 				// console.log("headers: ", ponse.headers);
 
-				var buffer = '';
+				var read_s = '';
 
 				ponse.on('data',
 					function(chuck) {
-						buffer += chuck;
+						read_s += chuck;
 					});
 
 				ponse.on('end',
-					function() {
-						// console.log("END statusCode: ", ponse.statusCode);
-
-						if (ponse.statusCode == 200)
-						{
-							if (_200OK_f)
-								_200OK_f(buffer, ponse);
-						}
-						else if (traverse == true && ponse.statusCode == 302)
-						{
-							assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
-
-							exports.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
-						}
-						else
-						{	
-							ponse.readBuffer = buffer;
-
-							if (other_f) {
-								other_f(ponse);
-							}						
-						}
+					function(p) {
+						if (success_f)
+							success_f(read_s, ponse);
 					});
-			})
+			});
 
 		quest.on('error',
 			function(e) {
@@ -106,7 +175,7 @@ exports.GET =
 			});
 
 		quest.end();
-	}
+	};
 
 /* ===================== Assert ===================== */
 

@@ -5,7 +5,7 @@ var		assert	= require("assert")
 	;
 
 
-describe('mongo',
+describe('mongo.js',
 	function()
 	{
 

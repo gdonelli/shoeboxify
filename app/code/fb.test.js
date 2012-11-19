@@ -7,7 +7,7 @@ var		assert	= require("assert")
 
 
 
-describe('Facebook authentication ->',
+describe('fb.js',
 	function() 
 	{
 		var pseudoSessionQuest = {};

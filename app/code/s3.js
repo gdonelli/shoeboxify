@@ -138,19 +138,21 @@ exports.writeJSON =
 		
 		questToS3.on('response', 
 			function(ponse) {
-				if (ponse.statusCode == 200) {
-					if (success_f)
-						success_f(ponse);
+				if (ponse.statusCode == 200)
+				{
+					success_f(ponse);
 				}
-				else {
-					if (error_f) {
-						var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-						e.response = ponse;
-						error_f(e);
-					}
+				else
+				{
+					var e = new Error('Failed with statusCode: ' + ponse.statusCode);
+					e.response = ponse;
+					error_f(e);
 				}
 			});
 		
+		questToS3.on('error', 
+			function(e) { error_f(e); } );
+
 		questToS3.end(string);
 
 		return string;
@@ -158,7 +160,7 @@ exports.writeJSON =
 
 
 exports.delete =
-	function( client, filePath, success_f, error_f )
+	function( client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
 		exports.assert_client(client);
 		exports.assert_path(filePath);
@@ -169,17 +171,20 @@ exports.delete =
 
 		questToS3.on('response',
 			function(ponse){
-				if (ponse.statusCode >= 200 && ponse.statusCode < 300)
+				if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
 				{
-					success_f();				
+					success_f(ponse);	
 				}
 				else
 				{
-					error_f();				
+					var e = new Error('Failed with statusCode: ' + ponse.statusCode);
+					e.response = ponse;
+					error_f(e);
 				}
-				console.log(ponse.statusCode);
-				console.log(ponse.headers);
 			});
+
+		questToS3.on('error', 
+			function(e) { error_f(e); } );
 
 		questToS3.end();
 	};
@@ -274,15 +279,12 @@ exports.copyURL =
 					var err = new Error(message);
 					err.code = code;
 
-					if (error_f)
-						error_f( err );
-
+					error_f( err );
 				}
 
 				function ExitWithSuccess()
 				{
-					if (success_f)
-						success_f( Math.round(total) );					
+					success_f( Math.round(total) );					
 				}
 
 			});

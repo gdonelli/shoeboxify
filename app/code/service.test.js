@@ -8,7 +8,7 @@ var		assert	= require("assert")
 	;
 
 
-describe('Shoeboxify Service',
+describe('service.js',
 	function() {
 
 
