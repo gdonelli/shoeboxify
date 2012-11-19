@@ -152,12 +152,13 @@ describe('service.js',
 							,	fbid
 							,	function success(r, opz)
 								{
-									assert( r != undefined, 'r is undefined');
+									assert(r != undefined, 'r is undefined');
+									var entityFbId = mongo.memento.entity.getFacebookId(r);
 
-									assert(mongo.entry.getFacebookId(r)	== fbid, 'fbid doesnt match -  mongo.entry.getFacebookId(r):' + mongo.entry.getFacebookId(r) + ' expected: ' +  fbid);
-									assert(mongo.entry.getFacebookUserId(r)	!= undefined, 'mongo.entry.getFacebookUserId(r) is undefined');
-									assert( mongo.entry.getSourceObject(r)	!= undefined, 'mongo.entry.getSourceObject(r) is undefined');
-									assert( mongo.entry.getCopyObject(r)	!= undefined, 'mongo.entry.getCopyObject(r) is undefined');
+									assert(entityFbId == fbid, 'fbid doesnt match -  entityFbId:' + entityFbId + ' expected: ' +  fbid);
+									assert(mongo.memento.entity.getFacebookUserId(r)!= undefined, 'mongo.memento.entity.getFacebookUserId(r) is undefined');
+									assert(mongo.memento.entity.getSourceObject(r)	!= undefined, 'mongo.memento.entity.getSourceObject(r) is undefined');
+									assert(mongo.memento.entity.getCopyObject(r)	!= undefined, 'mongo.memento.entity.getCopyObject(r) is undefined');
 
 									done();
 								}

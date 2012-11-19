@@ -229,6 +229,8 @@ exports.errorLogStacktrace =
 		var trace = stacktrace.process( options );
 		
 		console.error(trace);
+
+		return trace;
 	};
 
 /* ===================== String Extension ===================== */

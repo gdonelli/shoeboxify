@@ -18,7 +18,7 @@ var		express	= require('express')
 	/* libs */
 
 	,	shoeboxify	= require('./code/shoeboxify')
-	,	shoebox		= require('./code/shoebox')
+	,	memento		= require('./code/memento')
 	;
 
 
@@ -62,7 +62,7 @@ app.settings['x-powered-by'] = false;
 /*   Database   */
 /****************/
 
-shoebox.init(	function success() {}
+memento.init(	function success() {}
 			,	function error(e) {
 					throw new Error(e);
 				} );

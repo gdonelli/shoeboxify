@@ -12,14 +12,14 @@ var 	https	= require('https')
 	,	fb = require('./fb')
 	
 	,	handy		= require('./handy')
-	,	shoebox		= require('./shoebox')
+	,	memento		= require('./memento')
 	,	shoeboxify	= require('./shoeboxify')
 	;
 
+var service = exports;
 
-
-exports.path  = {}; 
-exports.route = {}; 
+service.path  = {}; 
+service.route = {}; 
 
 /*	API:	objectForURL
  *	URL:	/o4u
@@ -44,15 +44,15 @@ exports.route = {};
  *		}
  */
 
-exports.path.objectForURL = '/o4u';
+service.path.objectForURL = '/o4u';
 
-exports.route.objectForURL = 
+service.route.objectForURL = 
 	function(quest, ponse)
 	{
 		_sevice_processInputURL(quest, ponse, 
 			function(input, exit)
 			{
-				exports.objectForURL(quest, input
+				service.objectForURL(quest, input
 					,	function success(o){
 							exit({		status: 0
 									,	fb_object: o
@@ -75,7 +75,7 @@ exports.route.objectForURL =
 			});
 	}
 
-exports.objectForURL = 
+service.objectForURL = 
 	function(	quest
 			,	inputURL
 			,	object_f		/* (fb_object) */
@@ -89,7 +89,7 @@ exports.objectForURL =
 		assert( placeholder_f	!= undefined,	'placeholder_f is undefined');
 		assert( error_f 		!= undefined,	'error_f is undefined');
 
-		var fbID =  exports.facebookIDForURL(inputURL);
+		var fbID =  service.facebookIDForURL(inputURL);
 
 		if (fbID)
 			return _facebook_lookup(fbID);
@@ -154,19 +154,19 @@ exports.objectForURL =
  *		}
  */
 
-exports.path.copyObject = '/cp';
+service.path.copyObject = '/cp';
 
-exports.route.copyObject =
+service.route.copyObject =
 	function(quest, ponse)
 	{
 		_sevice_processInputURL(quest, ponse, 
 			function(input, exit_f)
 			{
-				var fbID =  exports.facebookIDForURL(input);
+				var fbID =  service.facebookIDForURL(input);
 
 				if (fbID)
 				{
-					exports.copyObject(quest, fbID
+					service.copyObject(quest, fbID
 						,	function success(r)
 							{
 								exit_f({	status: 0
@@ -186,13 +186,13 @@ exports.route.copyObject =
 	};
 
 
-exports.copyObject =
+service.copyObject =
 	function(quest, fbID, success_f, error_f)
 	{
 		assert(quest != undefined, 'quest is undefined');
 		assert(fbID != undefined, 'fbID is undefined');
 
-		shoebox.user.add(fb.me(quest, 'id'), fbID, quest 
+		memento.add(fb.me(quest, 'id'), fbID, quest 
 					,	function success(r, options)
 						{
 							if (success_f)
@@ -275,7 +275,7 @@ function _sevice_processInputURL(quest, ponse, process_f)
  * Will extract the facebook ID from a URL if present
  * returns undefined if none is found.
  */
-exports.facebookIDForURL =
+service.facebookIDForURL =
 	function( srcString )
 	{
 		if (srcString.startsWith('http'))

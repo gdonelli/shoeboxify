@@ -1,5 +1,10 @@
-
-var mongo = exports;
+/*
+ * Shoeboxify layer to interface with the mongo database.
+ *
+ * Built on top of the mongodb native driver:
+ * http://mongodb.github.com/node-mongodb-native
+ *
+ */
 
 var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
@@ -8,6 +13,10 @@ var			assert		= require('assert')
 		,	shoeboxify	= require('./shoeboxify')
 		;
 
+
+var mongo = exports;
+
+mongo.const = {};
 
 /* ====================================================== */
 /* ====================================================== */
@@ -143,7 +152,12 @@ mongo.collection.add =
 		 			error_f(err);
 		 		}
 		 		else
-	 				success_f(result);
+		 		{
+		 			assert(result.length == 1, 'insert expected to return array of length #1, is instead: #' + result.length);
+
+		 			success_f(result[0]);
+		 		}
+	 				
 		 	});
 	};
 
@@ -252,35 +266,35 @@ mongo.collection.drop =
 /* ================================================================== */
 
 
-mongo.user = {};	
+mongo.memento = {};	
 
-mongo.user.collectionName =
+mongo.memento.collectionName =
 	function(userId)
 	{
 		assert( userId != undefined, 'userId is undefined' );
-		return 'FB' + userId;
+		return 'fb_' + userId + '_memento';
 	};
 
-mongo.user.getCollection = 
+mongo.memento.getCollection = 
 	function(userId, success_f, error_f)
 	{
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		var collectionName = mongo.user.collectionName(userId);
+		var collectionName = mongo.memento.collectionName(userId);
 	
 		mongo.collection.get(collectionName
 				,	function success(c) { success_f(c); }
 				,	error_f );
 	};
 
-mongo.user.init =
+mongo.memento.init =
 	function(userId, success_f /* (collection) */, error_f)
 	{
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		mongo.user.getCollection(
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) {
 					var propertyIndex= {};
@@ -300,51 +314,83 @@ mongo.user.init =
 			,	error_f );
 	};
 
-mongo.user.add =
-	function(userId, object, success_f /* (new_entry) */, error_f)
+mongo.memento.add =
+	function(userId, object, success_f /* (new_entity) */, error_f)
 	{
-		mongo.user.getCollection(
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) { mongo.collection.add(c, object, success_f, error_f); }
 			, 	error_f);
 	};
 
-mongo.user.findOne =
+mongo.memento.findOne =
 	function(userId, findProperties, success_f, error_f)
 	{
-		mongo.user.getCollection(
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) { mongo.collection.findOne(c, findProperties, success_f, error_f); }
 			, 	error_f);
 	};
 
-mongo.user.findAll =
+mongo.memento.findAll =
 	function(userId, findProperties, success_f, error_f)
 	{
-		mongo.user.getCollection(
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) { mongo.collection.findAll(c, findProperties, success_f, error_f); }
 			, 	error_f);
 	};
 
-mongo.user.remove =
+mongo.memento.remove =
 	function(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
 	{
-		mongo.user.getCollection(
+		assert(typeof findProperties == 'object', 'findProperties should be an object. it is ' + typeof findProperties);
+
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) { mongo.collection.remove(c, findProperties, success_f, error_f, options); }
 			, 	error_f);
 	};
 
-mongo.user.drop =
+mongo.memento.drop =
 	function(userId, success_f, error_f)
 	{
-		mongo.user.getCollection(
+		mongo.memento.getCollection(
 				userId
 			,	function success(c) { mongo.collection.drop(c, success_f, error_f); }
 			, 	error_f);
 	};
 
+
+/* ================================================================== */
+
+
+mongo.memento.findId =
+	function(userId, mongoId, success_f, error_f)
+	{
+		assert(userId  != undefined, 'userId is undefined');
+		assert(mongoId != undefined, 'mongoId is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		mongo.memento.findOne(userId, mongo.memento.entity.newWithId(mongoId), success_f, error_f);
+	}
+
+mongo.memento.removeId =
+	function(userId, mongoId, success_f /* () */, error_f /* (err) */)
+	{
+		assert(mongoId != undefined, 'mongoId is undefined');
+		handy.assert_f(success_f);
+
+		mongo.memento.remove(userId
+				,	mongo.memento.entity.newWithId(mongoId)
+				,	function(num)
+					{
+						assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
+						success_f();
+					} 
+				,	error_f );	
+	};
 
 
 /* ================================================================== */
@@ -354,15 +400,14 @@ mongo.user.drop =
 /* ================================================================== */
 
 // Keys
-mongo.const = {};
-mongo.const.facebookId	= 'fb_id';
-mongo.const.facebookUserId		= 'fb_userid';
-mongo.const.sourceObject		= 'source';
-mongo.const.copyObject			= 'copy';
-mongo.const.createDate			= 'created';
+mongo.const.facebookId		= 'fb_id';
+mongo.const.facebookUserId	= 'fb_userid';
+mongo.const.sourceObject	= 'source';
+mongo.const.copyObject		= 'copy';
+mongo.const.createDate		= 'created';
 
 
-mongo.user.addFacebookObject =
+mongo.memento.addFacebookObject =
 	function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
 	{
 		assert(userId != undefined,		'userId is undefined');
@@ -372,44 +417,45 @@ mongo.user.addFacebookObject =
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		var entry = {};
-		entry[mongo.const.facebookId]		= mongo.LongFromString(graphId);
-		entry[mongo.const.facebookUserId]	= mongo.LongFromString(userId);
-		entry[mongo.const.sourceObject]		= sourceObject;
-		entry[mongo.const.copyObject]		= copyObject;
-		entry[mongo.const.createDate]		= new Date();
+		var entity = {};
+		entity[mongo.const.facebookId]		= mongo.LongFromString(graphId);
+		entity[mongo.const.facebookUserId]	= mongo.LongFromString(userId);
+		entity[mongo.const.sourceObject]	= sourceObject;
+		entity[mongo.const.copyObject]		= copyObject;
+		entity[mongo.const.createDate]		= new Date();
 
-		mongo.user.add(userId, entry, success_f, error_f);
+		mongo.memento.add(userId, entity, success_f, error_f);
 	};
 
-mongo.user.findOneFacebookObject =
-	function(userId, graphId, success_f, error_f)
+mongo.memento.findOneFacebookObject =
+	function(userId, fbId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
+		assert(  fbId != undefined,	'fbId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		mongo.user.findOne(userId, mongo.entry.newWithFacebookId(graphId), success_f, error_f);	
+		mongo.memento.findOne(userId, mongo.memento.entity.newWithFacebookId(fbId), success_f, error_f);	
 	};
 
-mongo.user.findAllFacebookObjects =
+mongo.memento.findAllFacebookObjects =
 	function(userId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		mongo.user.findAll(userId, {}, success_f, error_f);	
+		mongo.memento.findAll(userId, {}, success_f, error_f);	
 	};
 
-mongo.user.removeFacebookObject =
+mongo.memento.removeFacebookObject =
 	function(userId, graphId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		mongo.user.remove(userId, mongo.entry.newWithFacebookId(graphId), 
+		mongo.memento.remove(userId, mongo.memento.entity.newWithFacebookId(graphId), 
 			function success(numOfEntries)
 			{
 				assert(numOfEntries == 1, 'numOfEntries expected to be #1 is #' + numOfEntries);
@@ -425,10 +471,22 @@ mongo.user.removeFacebookObject =
 /* ========================================================== */
 /* ========================================================== */
 
+mongo.const.entityId = '_id'; // default mongo id
 
-mongo.entry = {};
+mongo.entity = {};
 
-mongo.entry.newWithFacebookId = 
+mongo.entity.getId =
+	function(entity)
+	{
+		assert(entity != undefined,	'entity is undefined');
+
+		return entity[mongo.const.entityId];
+	}
+
+
+mongo.memento.entity = {};
+
+mongo.memento.entity.newWithFacebookId = 
 	function (graphId)
 	{
 		var result = {};
@@ -436,41 +494,48 @@ mongo.entry.newWithFacebookId =
 		return result;		
 	}
 
+mongo.memento.entity.newWithId = 
+	function(theId)
+	{
+		var result = {};
+		result[mongo.const.entityId] = theId;
+		return result;		
+	}
 
-function _getLongProperty(entry, property)
+mongo.memento.entity.getFacebookId =
+	function(entity)
+	{
+		return _getLongProperty(entity, mongo.const.facebookId);
+	}
+
+mongo.memento.entity.getFacebookUserId =
+	function(entity)
+	{
+		return _getLongProperty(entity, mongo.const.facebookUserId);
+	}
+
+mongo.memento.entity.getSourceObject =
+	function(entity)
+	{
+		assert(entity != undefined,	'entity is undefined');
+
+		return entity[mongo.const.sourceObject];
+	}
+
+mongo.memento.entity.getCopyObject =
+	function(entity)
+	{
+		assert(entity != undefined,	'entity is undefined');
+
+		return entity[mongo.const.copyObject];
+	}
+
+function _getLongProperty(entity, property)
 {
-	assert(entry != undefined,	'entry is undefined');
-	var value = entry[property];
-	assert(value != undefined, property + ' for the entry is undefined');
+	assert(entity != undefined,	'entity is undefined');
+	var value = entity[property];
+	assert(value != undefined, property + ' for the entity is undefined');
 
 	return value.toString();
 }
 
-mongo.entry.getFacebookId =
-	function(entry)
-	{
-		return _getLongProperty(entry, mongo.const.facebookId);
-	}
-
-
-mongo.entry.getFacebookUserId =
-	function(entry)
-	{
-		return _getLongProperty(entry, mongo.const.facebookUserId);
-	}
-
-mongo.entry.getSourceObject =
-	function(entry)
-	{
-		assert(entry != undefined,	'entry is undefined');
-
-		return entry[mongo.const.sourceObject] ;
-	}
-
-mongo.entry.getCopyObject =
-	function(entry)
-	{
-		assert(entry != undefined,	'entry is undefined');
-
-		return entry[mongo.const.copyObject] ;
-	}

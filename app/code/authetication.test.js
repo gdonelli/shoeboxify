@@ -1,9 +1,14 @@
 
 var		assert	= require("assert")
+	,	fs		= require("fs")
 	,	spawn	= require('child_process').spawn
 	,	fb		= require("./fb")
 	,	shoeboxify	= require("./shoeboxify")
 	;
+
+
+
+var ACCESS_TOKEN_CACHE_MAX_AGE = 1000 * 60 * 60; // 1 hour
 
 
 /* ============================================================= */
@@ -61,12 +66,24 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
 	app.stdout.on('data',
 			function (data) {
-				var jsonData = JSON.parse(data);
 
-				authTest.auth = jsonData;
+				try {
+					var jsonData = JSON.parse(data);
 				
-				if (success_f)
-					success_f(jsonData);			
+					if (success_f)
+						success_f(jsonData);			
+				}
+				catch(e)
+				{
+					console.error('***** Failed to process auth data. error:');
+					console.error(e);
+
+					console.error('**** Data:');
+					console.error(data.toString());			
+
+					if (error_f)
+						error_f(e);
+				}
 			});
 
 	app.stderr.on('data',
@@ -87,11 +104,58 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
 authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 	{
-		_getAccessTokenWithExternalApp( 
-				function success(jsonData) {
-					success_f(jsonData);
-				}
-			,		error_f );
+		var cacheFilePath = '/tmp/authTest.cache';
+
+		fs.readFile(cacheFilePath,
+			function (err, data) {
+  				if (err) 
+  				{
+  					console.log('no cache');
+
+  					_miss();
+  				}
+  				else
+  					var fileContent = data.toString();
+  					var cache =  JSON.parse(fileContent);
+
+  					var now = new Date();
+  					var then = new Date(cache.date);
+
+  					var cacheAge = now.getTime() - then.getTime();
+  					console.log( 'Using cached AccessToken');
+  					console.log( 'CacheFile: ' + cacheFilePath);
+  					console.log( 'CacheAge:  ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes');	
+
+  					if ( cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE )
+  					{
+  						_useAuth(cache.payload)
+  					}
+  					else
+  						_miss();
+			} );
+
+		function _useAuth(jsonData)
+		{
+			authTest.auth = jsonData;
+			
+			success_f(jsonData);
+		}
+
+		function _miss() {
+			_getAccessTokenWithExternalApp( 
+					function success(jsonData) 
+					{
+						_useAuth(jsonData)
+
+						var cache = {};
+						cache.date = new Date();
+						cache.payload = jsonData;
+
+						fs.writeFile(cacheFilePath, JSON.stringify(cache) );
+
+					}
+				,		error_f );
+		}
 	}
 
 

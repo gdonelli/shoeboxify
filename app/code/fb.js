@@ -124,7 +124,7 @@ exports.route.response =
 		
 
 		function AccessTokenFromCode( consumeTokenFunction /* (token, expiration) */ 
-									, errorFunction /* errString */) 
+									, error_f /* errString */) 
 		{
 			console.log('AccessTokenFromCode: '+ code);
 
@@ -168,8 +168,8 @@ exports.route.response =
 
 								if ( !accessToken || !expiresInSeconds )
 								{
-									if (errorFunction)
-										errorFunction( 'accessToken:' + accessToken +' expiresInSeconds:' + expiresInSeconds);
+									if (error_f)
+										error_f( 'accessToken:' + accessToken +' expiresInSeconds:' + expiresInSeconds);
 								}
 									
 								consumeTokenFunction(accessToken, expiresInSeconds);
@@ -178,8 +178,8 @@ exports.route.response =
 							{
 								console.error('tokenPonse.statusCode: ' + tokenPonse.statusCode);
 
-								if (errorFunction)
-									errorFunction('tokenPonse.statusCode: ' + tokenPonse.statusCode + ' resBuffer:' + resBuffer);
+								if (error_f)
+									error_f('tokenPonse.statusCode: ' + tokenPonse.statusCode + ' resBuffer:' + resBuffer);
 							}
   						} );
 				} );
@@ -187,14 +187,14 @@ exports.route.response =
 			tokenQuest.on('error',
 				function(e) {
   					console.error(e);
-  					if (errorFunction)
-	  					errorFunction('AccessTokenFromCode -> tokenQuest.on(error):' + e + ' for URL: ' + accessTokenURL);
+  					if (error_f)
+	  					error_f('AccessTokenFromCode -> tokenQuest.on(error):' + e + ' for URL: ' + accessTokenURL);
 				} );
 
 			tokenQuest.end();
 		}
 
-		function StartSession(accessToken, expiresInSeconds, nextFunction, errorFunction)
+		function StartSession(accessToken, expiresInSeconds, nextFunction, error_f)
 		{
 			 _setAccessToken(quest, accessToken, expiresInSeconds ); 
 			quest.session.cookie.maxAge = Math.floor(expiresInSeconds) * 1000; 
@@ -221,8 +221,8 @@ exports.route.response =
 				},
 				function(error)
 				{
-					if (errorFunction)
-						errorFunction(error);
+					if (error_f)
+						error_f(error);
 				} );
 		}
 
@@ -234,7 +234,8 @@ exports.route.response =
 			assert(quest.session.me.id != undefined,'quest.session.me.id is undefined');
 
 			// init user mongo db
-			mongo.user.init( quest.session.me.id
+			mongo.memento.init(
+					quest.session.me.id
 				,	function success(collection) {
 						assert(collection != undefined, 'user collection is undefined');
 						LastStep();
@@ -253,9 +254,14 @@ exports.route.response =
 				RespondWithLoginSuccess();			
 		}
 
+		function IsShoeboxifyTool()
+		{
+			return (quest.headers['user-agent'] == 'com.shoeboxify.tool');
+		}
+
 		function RespondWithLoginSuccess()
 		{
-			if (quest.headers['user-agent'] == 'com.shoeboxify.test')
+			if ( IsShoeboxifyTool() )
 				return RespondWithJSONSuccess();
 			else
 				return RespondWithHTMLSuccess();
@@ -293,8 +299,31 @@ exports.route.response =
 			
 			ponse.end('</html>');			
 		}
-		
+
 		function RespondWithError(title, e)
+		{
+			if ( IsShoeboxifyTool() )
+				return RespondWithJSONError(title, e);
+			else
+				return RespondWithHTMLError(title, e);
+		}
+		
+		function RespondWithJSONError(title, e)
+		{
+			shoeboxify.error('Login: ' + e);
+
+			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+
+			var responseObject = {};
+
+			responseObject.message = title;
+			responseObject.error = e.message;
+			responseObject.trace = handy.errorLogStacktrace(e);
+			
+			ponse.end( JSON.stringify(responseObject) );
+		}
+
+		function RespondWithHTMLError(title, e)
 		{
 			shoeboxify.error('Login: ' + e);
 
@@ -496,7 +525,7 @@ function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
 	return result;
 }
 
-function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
+function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /* (error) */)
 {
 	// shoeboxify.debug(method + ' GRAPH: ' + path);
 
@@ -539,8 +568,8 @@ function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, erro
 			{
 				shoeboxify.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
 
-				if (errorFunction)
-					errorFunction(e);
+				if (error_f)
+					error_f(e);
 			});			
 	}
 
@@ -558,8 +587,8 @@ function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, erro
 				try
 				{
 					var jsonObject = JSON.parse(bufferString);
-					if (consumeFunction)
-						consumeFunction(jsonObject);						
+					if (success_f)
+						success_f(jsonObject);						
 				}
 				catch(e)
 				{
@@ -574,22 +603,22 @@ function _graphCall(method, path, srcQuest, consumeFunction /*(fbObject)*/, erro
 
 					console.error('**** ' + bufferToShow + '...');
 
-					if (errorFunction)
-						errorFunction(e);
+					if (error_f)
+						error_f(e);
 				}
 			} );
 	}
 }
 
 exports.graph = 
-	function( path, srcQuest, consumeFunction /*(fbObject)*/, errorFunction /* (error) */)
+	function( path, srcQuest, success_f /*(fbObject)*/, error_f /* (error) */)
 	{
-		return _graphCall( 'GET', path, srcQuest, consumeFunction, errorFunction );
+		return _graphCall( 'GET', path, srcQuest, success_f, error_f );
 	}
 
 
 exports.batch =
-	function( paths, quest, consumeFunction/* (fbObject) */, errorFunction/* (error) */)
+	function( paths, quest, success_f/* (fbObject) */, error_f/* (error) */)
 	{
 		var options = {
 				host:		'graph.facebook.com'
@@ -612,8 +641,8 @@ exports.batch =
 
 				outPonse.on('end',
 					function () {
-						if (consumeFunction)
-							consumeFunction( JSON.parse(str) );
+						if (success_f)
+							success_f( JSON.parse(str) );
 					} );
 			});
 

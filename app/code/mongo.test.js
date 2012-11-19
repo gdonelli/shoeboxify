@@ -29,12 +29,11 @@ describe('mongo.js',
 /* ================================================================== */
 
 		describe( 'mongo.collection',
-			function() {
-
-
+			function()
+			{
 				var testCollection;
 
-				it( 'get',
+				it( 'mongo.collection.get',
 					function(done) 
 					{	
 						mongo.collection.get('test' 
@@ -49,19 +48,24 @@ describe('mongo.js',
 								} );
 					} );
 
-
 				var sampleId = Math.random() * 100000;
 				var sampleIdLong = mongo.LongFromString( '1' + sampleId + '1' );
 				var sampleObject = { 
 							id: sampleIdLong
 						,	 payload: 'Nel cammino di nostra vita mi ritrovai in una selva oscura'
 						};
+
+				var sampleObjectMongoId;
+
 				function _addSampleObject(done)
 				{
 					mongo.collection.add(testCollection, sampleObject
-							,	function success(r)
+							,	function success(entry)
 								{
-									assert(r != undefined, 'addObject expected to return result');
+									assert(entry != undefined, 'addObject expected to return result');
+									assert(mongo.entity.getId(entry) != undefined, 'entry.getId(entry) is undefined');
+									sampleObjectMongoId = mongo.entity.getId(entry);
+
 									done();
 								}
 							,	function error(e)
@@ -70,21 +74,21 @@ describe('mongo.js',
 								} );
 				}
 
-				it( 'addObject',
+				it( 'mongo.collection.add',
 					function(done) 
 					{
 						_addSampleObject(done);
 					} );
 
 
-				it( 'addObject - same object',
+				it( 'mongo.collection.add - same object',
 					function(done) 
 					{	
 						_addSampleObject(done);
 					} );
 
 
-				it( 'findOne',
+				it( 'mongo.collection.findOne',
 					function(done) 
 					{
 						mongo.collection.findOne(testCollection, { id : sampleIdLong }
@@ -100,7 +104,7 @@ describe('mongo.js',
 								} );
 					} );
 
-				it( 'findAll',
+				it( 'mongo.collection.findAll',
 					function(done) 
 					{
 						mongo.collection.findAll(testCollection, { id : sampleIdLong }
@@ -118,7 +122,7 @@ describe('mongo.js',
 								} );
 					} );
 
-				it( 'remove all expected to fail. no force option',
+				it( 'mongo.collection.remove {} - expected to fail with no force option',
 					function(done) 
 					{
 						mongo.collection.remove(testCollection, {}
@@ -132,7 +136,7 @@ describe('mongo.js',
 							} );
 					} );
 
-				it( 'remove all by forcing',
+				it( 'mongo.collection.remove {} force=true',
 					function(done) 
 					{
 						mongo.collection.remove(testCollection, {}
@@ -147,7 +151,8 @@ describe('mongo.js',
 							, 	{	force: true	} );
 					} );
 
-				it( 'drop',
+
+				it( 'mongo.collection.drop - success',
 					function(done) 
 					{
 						mongo.collection.drop(testCollection
@@ -162,7 +167,7 @@ describe('mongo.js',
 								} );
 					} );
 
-				it( 'drop fail',
+				it( 'mongo.collection.drop - fail',
 					function(done) 
 					{
 						mongo.collection.drop(testCollection
@@ -191,24 +196,24 @@ describe('mongo.js',
 			return '1' + sampleId + '1' 
 		}
 
-		describe( 'mongo.user',
+		describe( 'mongo.memento',
 			function() {
 				
 				var userid1 = 'T1'; 
 				var userid2 = 'T2';
 
-				it( 'init ' + userid1,
+				it( 'mongo.memento.init ' + userid1,
 					function(done) 
 					{	
-						mongo.user.init( userid1
+						mongo.memento.init( userid1
 							,	function success(r) { done(); }
 							,	function error(e) { throw e; } );
 					} );
 
-				it( 'init ' + userid2,
+				it( 'mongo.memento.init ' + userid2,
 					function(done) 
 					{	
-						mongo.user.init( userid2
+						mongo.memento.init( userid2
 							,	function success(r) { done(); }
 							,	function error(e) { throw e; } );
 					} );
@@ -219,35 +224,35 @@ describe('mongo.js',
 						,	payload:	'M’illumino\nd’immenso'
 						};
 
-				it( 'add to ' + userid1,
+				it( 'mongo.memento.add sampleObject to ' + userid1,
 					function(done) 
 					{	
-						mongo.user.add( userid1, sampleObject
+						mongo.memento.add( userid1, sampleObject
 							,	function success(r){ done();	}
 							,	function error(e){	 throw e;	} );
 					} );
 
-				it( 'add to ' + userid1 + ' - again',
+				it( 'mongo.memento.add sampleObject to ' + userid1 + ' - again',
 					function(done) 
 					{	
-						mongo.user.add( userid1, sampleObject
+						mongo.memento.add( userid1, sampleObject
 							,	function success(r){ throw new Error('not expected to work');	}
 							,	function error(e){	 done();	} );
 					} );
 
 
-				it( 'add to ' + userid2,
+				it( 'mongo.memento.add sampleObject to ' + userid2,
 					function(done) 
 					{	
-						mongo.user.add( userid2, sampleObject
+						mongo.memento.add( userid2, sampleObject
 							,	function success(r){ done();	}
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'remove from ' + userid2,
+				it( 'mongo.memento.remove from ' + userid2,
 					function(done) 
 					{	
-						mongo.user.remove( userid2, { id: sampleIdLong } 
+						mongo.memento.remove( userid2, { id: sampleIdLong } 
 							,	function success(r){ 
 									assert(r == 1, 'r expected to be 1');
 									done();	
@@ -255,10 +260,10 @@ describe('mongo.js',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'remove from ' + userid1,
+				it( 'mongo.memento.remove from ' + userid1,
 					function(done) 
 					{	
-						mongo.user.remove( userid1, {} 
+						mongo.memento.remove( userid1, {} 
 							,	function success(r){ 
 									assert(r == 1, 'r expected to be 1, is ' + r);
 									done();	
@@ -267,10 +272,10 @@ describe('mongo.js',
 							,	{ force: true });
 					} );
 
-				it( 'findAll from ' + userid1,
+				it( 'mongo.memento.findAll {} from ' + userid1,
 					function(done) 
 					{	
-						mongo.user.findAll( userid1, {} 
+						mongo.memento.findAll( userid1, {} 
 							,	function success(r){ 
 									assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
 									done();	
@@ -278,12 +283,10 @@ describe('mongo.js',
 							,	function error(e){	 throw e;	});
 					} );
 
-
-
-				it( 'findAll from ' + userid2,
+				it( 'mongo.memento.findAll {} from ' + userid2,
 					function(done) 
 					{	
-						mongo.user.findAll( userid2, {} 
+						mongo.memento.findAll( userid2, {} 
 							,	function success(r){ 
 									assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
 									done();	
@@ -291,24 +294,57 @@ describe('mongo.js',
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'add to ' + userid2,
+				it( 'mongo.memento.add sampleObject to ' + userid2,
 					function(done) 
 					{	
-						mongo.user.add( userid2, sampleObject
+						mongo.memento.add( userid2, sampleObject
 							,	function success(r){ done();	}
 							,	function error(e){	 throw e;	});
 					} );
 
-				it( 'findAll from ' + userid2,
+				it( 'mongo.memento.findAll from ' + userid2,
 					function(done) 
 					{	
-						mongo.user.findAll( userid2, {} 
+						mongo.memento.findAll( userid2, {} 
 							,	function success(r){ 
 									assert(r.length == 1, 'r.length expected to be 1, is: ' + r.length);
 									done();	
 								}
 							,	function error(e){	 throw e;	});
 					} );
+
+/* ================================================================== */
+
+				it( 'mongo.memento.removeId from ' + userid1,
+					function(done) 
+					{	
+						mongo.memento.add( userid1, sampleObject
+							,	function success(entry) 
+								{
+									var newObjectId = mongo.entity.getId(entry);
+
+									assert( newObjectId != undefined, 'newObjectId is undefined');
+
+									mongo.memento.removeId(userid1, newObjectId 
+										,	function success() {
+
+												mongo.memento.findId(userid1, newObjectId
+													,	function success(entry) {
+															assert(entry == null, 'entry expected to be null');
+															done();
+														}
+													,	function error(e) {
+															throw e;
+														});
+
+											}
+										,	function error(error) {
+												throw e;				
+											} );
+								}
+							,	function error(e){	 throw e;	} );
+					} );
+
 
 /* ================================================================== */
 /* ================================================================== */
@@ -327,7 +363,7 @@ describe('mongo.js',
 
 				function _addFBObject(done, expectedSuccess)
 				{
-					mongo.user.addFacebookObject( 
+					mongo.memento.addFacebookObject( 
 							userid1
 						,	fakeFacebookObject.id
 						,	fakeFacebookObject
@@ -337,22 +373,22 @@ describe('mongo.js',
 						);					
 				}
 
-				it( 'addFacebookObject',
+				it( 'mongo.memento.addFacebookObject',
 					function(done) 
 					{
 						_addFBObject(done, true);
 					} );
 
-				it( 'addFacebookObject - again',
+				it( 'mongo.memento.addFacebookObject - again - should fail',
 					function(done) 
 					{	
 						_addFBObject(done, false);
 					} );
 
-				it( 'removeFacebookObject',
+				it( 'mongo.memento.removeFacebookObject',
 					function(done) 
 					{	
-						mongo.user.removeFacebookObject( 
+						mongo.memento.removeFacebookObject( 
 								userid1
 							,	fakeFacebookObject.id
 							,	function success(r)	{	done();	}
@@ -360,33 +396,33 @@ describe('mongo.js',
 							);
 					} );
 
-				it( 'addFacebookObject - after remove',
+				it( 'mongo.memento.addFacebookObject - after remove',
 					function(done) 
 					{	
 						_addFBObject(done, true);
 					} );
 
-				it( 'findOneFacebookObject',
+				it( 'mongo.memento.findOneFacebookObject',
 					function(done) 
 					{	
-						mongo.user.findOneFacebookObject( 
+						mongo.memento.findOneFacebookObject( 
 								userid1
 							,	fakeFacebookObject.id
 							,	function success(r)
 								{
-									assert( mongo.entry.getFacebookId(r)	!= undefined, 'id is undefined');
-									assert( mongo.entry.getFacebookUserId(r)!= undefined, 'user_id is undefined');
-									assert( mongo.entry.getFacebookId(r)	== mongo.LongFromString(fakeFacebookObject.id), 'graph id dont match');
+									assert( mongo.memento.entity.getFacebookId(r)	!= undefined, 'id is undefined');
+									assert( mongo.memento.entity.getFacebookUserId(r)!= undefined, 'user_id is undefined');
+									assert( mongo.memento.entity.getFacebookId(r)	== mongo.LongFromString(fakeFacebookObject.id), 'graph id dont match');
 									
 									done();
 								}
 							,	function error(e) { throw e; } );
 					} );
 
-				it( 'findAllFacebookObjects',
+				it( 'mongo.memento.findAllFacebookObjects',
 					function(done) 
 					{	
-						mongo.user.findAllFacebookObjects( 
+						mongo.memento.findAllFacebookObjects( 
 								userid1
 							,	function success(r)
 								{
@@ -400,10 +436,10 @@ describe('mongo.js',
 /* ============================ Clean Up ============================ */
 
 
-				it( 'drop ' + userid1,
+				it( 'mongo.memento.drop ' + userid1,
 					function(done) 
 					{	
-						mongo.user.drop( userid1
+						mongo.memento.drop( userid1
 							,	function success(r){ 
 									assert(r == true, 'drop should return true');
 									done();
@@ -411,25 +447,23 @@ describe('mongo.js',
 							,	function error(e){	 throw e; } );
 					} );
 
-				it( 'drop ' + userid1 +' - again',
+				it( 'mongo.memento.drop ' + userid1 +' - again',
 					function(done) 
 					{	
-						mongo.user.drop( userid1
+						mongo.memento.drop( userid1
 							,	function success(r){ throw new Error('not supposed to work') }
 							,	function error(e){	
 									assert(e != undefined, 'error is undefined');
 							 		done(); } );
 					} );
 
-				it( 'drop ' + userid2,
+				it( 'mongo.memento.drop ' + userid2,
 					function(done) 
 					{	
-						mongo.user.drop( userid2
+						mongo.memento.drop( userid2
 							,	function success(r){ done();	}
 							,	function error(e){	 throw e;	} );
 					} );
-
-
 
 			} );
 

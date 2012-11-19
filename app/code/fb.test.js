@@ -10,24 +10,23 @@ var		assert	= require("assert")
 describe('fb.js',
 	function() 
 	{
-		var pseudoSessionQuest = {};
+		 it( 'Graph: /me',
+			function(done) {
 
-		// it( 'Get access token via Facebook Login.app',
-		// 	function(done) {
-		// 		authTest.getAccessToken(
-		// 				function success(auth)
-		// 				{
-		// 					assert( auth != undefined,				'auth undefined');
-		// 					assert( auth.accessToken != undefined,	'auth.accessToken undefined');
-		// 					assert( auth.expires != undefined,		'auth.expires undefined');
+				fb.graph( '/me', authTest.pseudoRequest
+					,	function success(meObject) {
+							assert(meObject != undefined , 'fbObject is undefined');
+							assert(meObject.id != undefined , 'meObject.id is undefined');
+							assert(meObject.email != undefined , 'meObject.email is undefined');
+							done();
+						}
+					,	function error(e) {
+							throw e;
+						}
 
-		// 					done();
-		// 				}
-		// 			,	function error(e)
-		// 				{
-		// 					throw new Error(e);
-		// 				} );
-		// 	} );
+					);
+
+			} );
 
 	} );
 

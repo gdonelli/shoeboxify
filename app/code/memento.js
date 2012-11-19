@@ -1,5 +1,5 @@
 /*
- *		shoebox.js
+ *		memento.js
  */
 
 var		assert	= require('assert')	
@@ -16,9 +16,9 @@ var		assert	= require('assert')
 	;
 
 
-var shoebox = exports;
+var memento = exports;
 
-exports.init =
+memento.init =
 	function(success_f, error_f)
 	{
 		mongo.init(
@@ -35,17 +35,16 @@ exports.init =
 	};
 
 
-exports.user = {};
+memento.user = {};
 
-
-exports.user.init =
+memento.initUser =
 	function(userId, success_f, error_f)
 	{
 		assert( userId != undefined, 'userId is undefined');
 		handy.assert_f(success_f, false);
 		handy.assert_f(error_f, false);
 
-		mongo.user.init(userId
+		mongo.memento.init(userId
 			,	function success(collection) {
 					assert(collection != undefined, 'user collection is undefined');
 					if (success_f)
@@ -57,13 +56,24 @@ exports.user.init =
 				} );
 	};
 
+memento.removeId =
+	function(userId, mongoId, success_f /* () */, error_f /* (error) */)
+	{
+		mongo.memento.removeId(userId, mongoId, success_f, error_f);
+	};
 
-exports.user.add =
+memento.findId =
+	function(userId, mongoId, success_f /* (entry) */, error_f /* (error) */)
+	{
+		mongo.memento.findId(userId, mongoId, success_f, error_f);
+	};
+
+memento.add =
 	function(userId, graphId, quest, success_f /* (newEntry, options) */, error_f)
 	{
 		var startDate = new Date();
 
-		mongo.user.findOneFacebookObject( 
+		mongo.memento.findOneFacebookObject( 
 				userId 
 		 	,	graphId
 			,	function success(r) {
@@ -114,18 +124,15 @@ exports.user.add =
 		{
 			assert(source.id == graphId, 'source.id(' + source.id+ ') != graphId(' + graphId + ')');
 			
-			mongo.user.addFacebookObject(
+			mongo.memento.addFacebookObject(
 					userId
 				,	graphId
 				,	source
 				,	copy
 				,	function success(r)
 					{
-						assert( r.length == 1, 'entry count is expected to #1, insead is: #' + r.length);
-						// console.log('Object inserted in Mongo!!! here it is:');
-						// console.log(r);
-
-						_exitWithSuccess(r[0], {} );
+						assert( r != undefined, 'added a new entry but that is undefined');
+						_exitWithSuccess(r, {} );
 					}
 				,	function error(e)
 					{
@@ -143,8 +150,6 @@ exports.user.add =
 
 			if (options)
 				allOptions = _.extend(options, allOptions);
-
-			// console.log( 'timeLength: ' + timeLength );
 
 			if (success_f)
 				success_f( r, allOptions );
@@ -195,7 +200,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 		// console.log('original: ' + imageURL);
 		// console.log('copy:     ' + s3.object.URL(newFilePath) );
 		
-		_copy2s3( s3client, imageURL, newFilePath);
+		_performOneCopyOperationToS3( s3client, imageURL, newFilePath);
 		
 		totCount++;
 	}
@@ -205,7 +210,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 	/* ============================================ */
 	var totalBytesWrittenToS3 = 0;
 
-	function _copy2s3( client, srcURL, path)
+	function _performOneCopyOperationToS3( client, srcURL, path)
 	{
 		s3.copyURL( client, srcURL, path
 			,	function success(total) {

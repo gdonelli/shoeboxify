@@ -16,7 +16,7 @@ extern NSString* gUrlToLoad;
 {
     // Insert code here to initialize your application
     
-    [self.webView setCustomUserAgent: @"com.shoeboxify.test"];
+    [self.webView setCustomUserAgent: @"com.shoeboxify.tool"];
     
     [self.webView setFrameLoadDelegate:self];
    
