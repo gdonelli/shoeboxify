@@ -1,67 +1,118 @@
 
 var		assert	= require("assert")
-	// ,	https	= require("https")
-	// ,	http	= require("http")
-	// ,	url		= require("url")
-	// ,	util  = require('util')
-	,	spawn = require('child_process').spawn
-
+	,	spawn	= require('child_process').spawn
 	,	fb		= require("./fb")
-
 	,	shoeboxify	= require("./shoeboxify")
 	;
 
 
-exports.getAccessToken = function( success_f /* jsonData */, error_f )
-	{
-		var app = spawn('/tmp/sym/Release/Facebook Login.app/Contents/MacOS/Facebook Login');
+/* ============================================================= */
+/* ======================= TEST AUTH =========================== */
+/* ============================================================= */
 
-		app.stdout.on('data',
-				function (data) {
-					var jsonData = JSON.parse(data);
+var authTest = exports;
 
-					exports.auth = jsonData;
-					
-					if (success_f)
-						success_f(jsonData);			
-				});
+describe('authetication.test.js',
+	function() {
 
-		app.stderr.on('data',
+		/* Authetication setup */
+
+		it( 'getPseudoRequest', 
+			function(done) 
+			{
+				authTest.getPseudoRequest(
+						function success(quest){
+							assert(authTest.pseudoRequest != undefined, 'authTest.pseudoRequest is undefined');
+							done();
+						}
+					,	function error(e){
+							throw new Error(e);
+						});
+
+			} );
+
+		it( 'getPseudoSession',
+			function(done) {
+				authTest.getPseudoSession(
+						function success(ponse) {
+							assert( ponse.session.me != undefined,		'ponse.session.me undefined');
+							assert( ponse.session.me.id != undefined,	'ponse.session.me.id undefined');
+							assert( ponse.session.me.name != undefined,	'ponse.session.me.name undefined');
+							assert( ponse.session.me.email != undefined,'ponse.session.me.email undefined');
+
+							done();	
+						}
+					,	function error(e) {
+							throw new Error(e);
+						});
+
+
+			} );
+
+	});
+
+/* =================================================================== */
+/* ========================== MODULE API ============================= */
+/* =================================================================== */
+
+function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
+{
+	var app = spawn('/tmp/sym/Release/Facebook Login.app/Contents/MacOS/Facebook Login');
+
+	app.stdout.on('data',
 			function (data) {
-				console.log('stderr: ' + data);
+				var jsonData = JSON.parse(data);
 
-				if (error_f)
-					error_f(data);
-			
+				authTest.auth = jsonData;
+				
+				if (success_f)
+					success_f(jsonData);			
 			});
 
-		app.on('exit', function (code) {
-			assert(code == 0, 'Facebook Login exited with ' + code);
+	app.stderr.on('data',
+		function (data) {
+			console.log('stderr: ' + data);
 
-			// console.log('child process exited with code ' + code);
+			if (error_f)
+				error_f(data);
+		
 		});
 
+	app.on('exit', function (code) {
+		assert(code == 0, 'Facebook Login exited with ' + code);
+
+		// console.log('child process exited with code ' + code);
+	});	
+}
+
+authTest.getAccessToken = function( success_f /* jsonData */, error_f )
+	{
+		_getAccessTokenWithExternalApp( 
+				function success(jsonData) {
+					success_f(jsonData);
+				}
+			,		error_f );
 	}
 
 
-exports.getPseudoSession = function(success_f /* request */, error_f)
+authTest.getPseudoSession = function(success_f /* request */, error_f)
 	{
-		assert( exports.auth != undefined,				'exports.auth undefined');
-		assert( exports.auth.accessToken != undefined,	'exports.auth.accessToken undefined');
-		assert( exports.auth.expires != undefined,		'exports.auth.expires undefined');
+		assert( authTest.auth != undefined,				'authTest.auth undefined');
+		assert( authTest.auth.accessToken != undefined,	'authTest.auth.accessToken undefined');
+		assert( authTest.auth.expires != undefined,		'authTest.auth.expires undefined');
 
-		exports.pseudoRequest = {};
-		exports.pseudoRequest.session = {};
-		exports.pseudoRequest.session.accessToken	= exports.auth.accessToken;
-		exports.pseudoRequest.session.expiresToken	= exports.auth.expiresToken;
+		authTest.pseudoRequest = {};
+		authTest.pseudoRequest.session = {};
+		authTest.pseudoRequest.session.accessToken	= authTest.auth.accessToken;
+		authTest.pseudoRequest.session.expiresToken	= authTest.auth.expiresToken;
 
-		fb.graph('me', exports.pseudoRequest,
+		fb.graph('me', authTest.pseudoRequest,
 			function(fbObject)
 			{
-				exports.pseudoRequest.session.me = fbObject;
+				authTest.pseudoRequest.session.me = fbObject;
 
 				if (success_f)
-					success_f(exports.pseudoRequest);
+					success_f(authTest.pseudoRequest);
 			},
 			function(e)
 			{
@@ -72,11 +123,11 @@ exports.getPseudoSession = function(success_f /* request */, error_f)
 	}
 
 
-exports.getPseudoRequest = function(success_f, error_f)
+authTest.getPseudoRequest = function(success_f, error_f)
 	{
-		exports.getAccessToken(
+		authTest.getAccessToken(
 				function success(jsonData){
-					exports.getPseudoSession(success_f, error_f);
+					authTest.getPseudoSession(success_f, error_f);
 				}
 			,	function error(e){
 					throw new Error(e);
@@ -84,11 +135,11 @@ exports.getPseudoRequest = function(success_f, error_f)
 	}
 
 
-exports.request = function()
+authTest.request = function()
 	{
-		if (exports.pseudoRequest)
+		if (authTest.pseudoRequest)
 		{
-			return exports.pseudoRequest;	
+			return authTest.pseudoRequest;	
 		}
 		else
 			throw new Error('pseudoRequest is undefined');

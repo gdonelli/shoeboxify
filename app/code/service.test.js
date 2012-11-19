@@ -13,7 +13,7 @@ describe('service.js',
 
 
 		/* Authetication setup */
-
+/*
 		it( 'getPseudoRequest should succeed', 
 			function(done) 
 			{
@@ -27,6 +27,8 @@ describe('service.js',
 						});
 
 			} );
+
+*/
 
 
 		describe( 'objectForURL',
