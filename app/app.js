@@ -18,7 +18,7 @@ var		express	= require('express')
 	/* libs */
 
 	,	shoeboxify	= require('./code/shoeboxify')
-	,	mongo		= require('./code/mongo')
+	,	shoebox		= require('./code/shoebox')
 	;
 
 
@@ -62,13 +62,10 @@ app.settings['x-powered-by'] = false;
 /*   Database   */
 /****************/
 
-mongo.init(
-		function success(c) {
-			assert(c != undefined, 'mongo.init returned undefined collection');
-		}
-	,	function error(e) {
-			throw new Error(e);
-		} );
+shoebox.init(	function success() {}
+			,	function error(e) {
+					throw new Error(e);
+				} );
 
 /*********************/
 /*   Public Routes   */

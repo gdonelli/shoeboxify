@@ -144,18 +144,18 @@ describe('service.js',
 				it( 'Basic copy',
 					function(done)
 					{
+						var fbid = '10152170979900707';
 						service.copyObject(
 								authTest.request()
-							,	'10152170979900707'
+							,	fbid
 							,	function success(r, opz)
 								{
-									assert(r		!= undefined, 'r is undefined');
+									assert( r != undefined, 'r is undefined');
 
-									assert(r.graph_id	!= undefined, 'r.graph_id is undefined');
-									assert(r.user_id	!= undefined, 'r.graph_id is undefined');
-
-									assert(r.source	!= undefined, 'r.source is undefined');
-									assert(r.copy	!= undefined, 'r.copy is undefined');
+									assert(mongo.entry.getFacebookId(r)	== fbid, 'fbid doesnt match -  mongo.entry.getFacebookId(r):' + mongo.entry.getFacebookId(r) + ' expected: ' +  fbid);
+									assert(mongo.entry.getFacebookUserId(r)	!= undefined, 'mongo.entry.getFacebookUserId(r) is undefined');
+									assert( mongo.entry.getSourceObject(r)	!= undefined, 'mongo.entry.getSourceObject(r) is undefined');
+									assert( mongo.entry.getCopyObject(r)	!= undefined, 'mongo.entry.getCopyObject(r) is undefined');
 
 									done();
 								}

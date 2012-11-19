@@ -53,7 +53,7 @@ describe('mongo.js',
 				var sampleId = Math.random() * 100000;
 				var sampleIdLong = mongo.LongFromString( '1' + sampleId + '1' );
 				var sampleObject = { 
-							graph_id: sampleIdLong
+							id: sampleIdLong
 						,	 payload: 'Nel cammino di nostra vita mi ritrovai in una selva oscura'
 						};
 				function _addSampleObject(done)
@@ -87,7 +87,7 @@ describe('mongo.js',
 				it( 'findOne',
 					function(done) 
 					{
-						mongo.collection.findOne(testCollection, { graph_id : sampleIdLong }
+						mongo.collection.findOne(testCollection, { id : sampleIdLong }
 							,	function success(r)
 								{
 									assert(r != undefined, 'r is undefined');
@@ -103,7 +103,7 @@ describe('mongo.js',
 				it( 'findAll',
 					function(done) 
 					{
-						mongo.collection.findAll(testCollection, { graph_id : sampleIdLong }
+						mongo.collection.findAll(testCollection, { id : sampleIdLong }
 							,	function success(r)
 								{	
 									assert( r.length == 2, 'findAll expected to find only #2 result, found #'+ r.length);					
@@ -215,7 +215,7 @@ describe('mongo.js',
 
 				var sampleIdLong = mongo.LongFromString( _generateId() );
 				var sampleObject = { 
-							graph_id:	sampleIdLong
+							id:	sampleIdLong
 						,	payload:	'M’illumino\nd’immenso'
 						};
 
@@ -247,7 +247,7 @@ describe('mongo.js',
 				it( 'remove from ' + userid2,
 					function(done) 
 					{	
-						mongo.user.remove( userid2, { graph_id: sampleIdLong } 
+						mongo.user.remove( userid2, { id: sampleIdLong } 
 							,	function success(r){ 
 									assert(r == 1, 'r expected to be 1');
 									done();	
@@ -374,9 +374,9 @@ describe('mongo.js',
 							,	fakeFacebookObject.id
 							,	function success(r)
 								{
-									assert(r.graph_id != undefined, 'graph_id is undefined');
-									assert(r.user_id  != undefined, 'user_id is undefined');
-									assert(r.graph_id == mongo.LongFromString(fakeFacebookObject.id), 'graph id dont match');
+									assert( mongo.entry.getFacebookId(r)	!= undefined, 'id is undefined');
+									assert( mongo.entry.getFacebookUserId(r)!= undefined, 'user_id is undefined');
+									assert( mongo.entry.getFacebookId(r)	== mongo.LongFromString(fakeFacebookObject.id), 'graph id dont match');
 									
 									done();
 								}

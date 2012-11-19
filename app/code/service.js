@@ -192,7 +192,7 @@ exports.copyObject =
 		assert(quest != undefined, 'quest is undefined');
 		assert(fbID != undefined, 'fbID is undefined');
 
-		shoebox.add(fbID, fb.me(quest, 'id'), quest 
+		shoebox.user.add(fb.me(quest, 'id'), fbID, quest 
 					,	function success(r, options)
 						{
 							if (success_f)

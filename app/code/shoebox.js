@@ -1,4 +1,3 @@
-
 /*
  *		shoebox.js
  */
@@ -6,22 +5,67 @@
 var		assert	= require('assert')	
 	,	url 	= require('url')
 	,	path 	= require('path')
+	,	_		= require('underscore')
 
 	,	fb		= require('./fb')
 	,	s3		= require('./s3')
 	,	mongo	= require('./mongo')
+	,	handy	= require('./handy')
 
 	,	shoeboxify	= require('./shoeboxify')
 	;
 
-exports.add = 
-	function(graphIDstr, userIDstr, quest, success_f, error_f)
+
+var shoebox = exports;
+
+exports.init =
+	function(success_f, error_f)
+	{
+		mongo.init(
+			function success(c) {
+				assert(c != undefined, 'mongo.init returned undefined collection');
+
+				if (success_f)
+					success_f();
+			}
+		,	function error(e) {
+				if (error_f)
+					error_f(e);
+			} );
+	};
+
+
+exports.user = {};
+
+
+exports.user.init =
+	function(userId, success_f, error_f)
+	{
+		assert( userId != undefined, 'userId is undefined');
+		handy.assert_f(success_f, false);
+		handy.assert_f(error_f, false);
+
+		mongo.user.init(userId
+			,	function success(collection) {
+					assert(collection != undefined, 'user collection is undefined');
+					if (success_f)
+						success_f();
+				}
+			,	function error(e) {
+					if (error_f)
+						error_f(e);
+				} );
+	};
+
+
+exports.user.add =
+	function(userId, graphId, quest, success_f /* (newEntry, options) */, error_f)
 	{
 		var startDate = new Date();
 
 		mongo.user.findOneFacebookObject( 
-				userIDstr 
-		 	,	graphIDstr
+				userId 
+		 	,	graphId
 			,	function success(r) {
 					if (r == null)
 					{
@@ -32,21 +76,21 @@ exports.add =
 					{
 						// Object already in the mongo database!
 
-						_exitWithSuccess(r, { already: true} );
+						_exitWithSuccess( r, { already: true } );
 					}
 				}
 			,	function error(e) {
-					shoeboxify.error('mongo.object.find(' + graphIDstr + ', ' + userIDstr + ') failed');
+					shoeboxify.error('mongo.object.find(' + graphId + ', ' + userId + ') failed');
 					shoeboxify.error(e);
 
 					_exitWithError(e);
 				} );		
 
-		/* ================================ */
+		/* ========================================================================== */
 
 		function _addNew()
 		{
-			fb.graph(graphIDstr, quest
+			fb.graph(graphId, quest
 				,	function success(fbObject) {
 						_makeCopy(fbObject);
 					}
@@ -68,19 +112,20 @@ exports.add =
 
 		function _insertInMongo(source, copy)
 		{
-			assert(source.id == graphIDstr, 'source.id(' + source.id+ ') != graphIDstr(' + graphIDstr + ')');
+			assert(source.id == graphId, 'source.id(' + source.id+ ') != graphId(' + graphId + ')');
 			
 			mongo.user.addFacebookObject(
-					userIDstr
-				,	graphIDstr
+					userId
+				,	graphId
 				,	source
 				,	copy
 				,	function success(r)
 					{
+						assert( r.length == 1, 'entry count is expected to #1, insead is: #' + r.length);
 						// console.log('Object inserted in Mongo!!! here it is:');
 						// console.log(r);
 
-						_exitWithSuccess(r, r[0]);
+						_exitWithSuccess(r[0], {} );
 					}
 				,	function error(e)
 					{
@@ -94,10 +139,15 @@ exports.add =
 			var endDate = new Date();
 			var timeLength = endDate.getTime() - startDate.getTime();
 
+			var allOptions = { time: timeLength };
+
+			if (options)
+				allOptions = _.extend(options, allOptions);
+
 			// console.log( 'timeLength: ' + timeLength );
 
 			if (success_f)
-				success_f( r, { time: timeLength } );
+				success_f( r, allOptions );
 		}
 
 		function _exitWithError(errstring)
@@ -105,9 +155,7 @@ exports.add =
 			if (error_f)
 				error_f(new Error(errstring));
 		}
-
-
-	}
+	};
 
 
 

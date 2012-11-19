@@ -1,4 +1,6 @@
 
+var mongo = exports;
+
 var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
 		,	_			= require('underscore')
@@ -14,7 +16,7 @@ var			assert		= require('assert')
 /* ====================================================== */
 
 
-exports.init = 
+mongo.init = 
 	function(success_f, error_f)
 	{
 		_init(	shoeboxify.dbServerHost()
@@ -58,7 +60,7 @@ function _init(	host, port, name, username, password,
 
 					// You are now connected and authenticated.
 
-					exports.db =  db;
+					mongo.db =  db;
 
 					if (success_f)
 						success_f(db);
@@ -74,11 +76,12 @@ function _init(	host, port, name, username, password,
 /* ====================================================== */
 /* ====================================================== */
 
-exports.LongFromString =
+mongo.LongFromString =
 	function(string)
 	{
 		return mongodb.Long.fromString(string);
 	};
+
 
 /*{
 	graph_id:_LongFromString(graphId), 
@@ -94,18 +97,18 @@ exports.LongFromString =
 /* ================================================================== */
 
 
-exports.collection = {};
+mongo.collection = {};
 
 
-exports.collection.get =
+mongo.collection.get =
 	function(collectionName, success_f, error_f)
 	{
-		assert( exports.db != undefined,	'mongo.db undefined');
+		assert( mongo.db != undefined,	'mongo.db undefined');
 		assert( collectionName != undefined,'collectionName undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		exports.db.collection(	
+		mongo.db.collection(	
 			collectionName,
 			function(err, collection)
 			{
@@ -121,7 +124,7 @@ exports.collection.get =
 	};
 
 
-exports.collection.add = 
+mongo.collection.add = 
 	function(collection, object, success_f /* (result) */, error_f)
 	{
 		assert( collection != undefined, 'collection is undefined');
@@ -145,7 +148,7 @@ exports.collection.add =
 	};
 
 
-exports.collection.findOne =
+mongo.collection.findOne =
 	function(collection, findProperties, success_f, error_f)
 	{
 		assert( collection 		!= undefined, 'collection is undefined');
@@ -169,7 +172,7 @@ exports.collection.findOne =
 	};
 
 
-exports.collection.findAll =
+mongo.collection.findAll =
 	function(collection, findProperties, success_f, error_f)
 	{
 		assert( collection != undefined, 'collection is undefined');
@@ -188,7 +191,7 @@ exports.collection.findAll =
 	};
 
 
-exports.collection.remove =
+mongo.collection.remove =
 	function(collection, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
 	{
 		assert(collection	!= undefined,	'collection is undefined');
@@ -223,7 +226,7 @@ exports.collection.remove =
 	};
 
 
-exports.collection.drop =
+mongo.collection.drop =
 	function(collection, success_f /* () */, error_f)
 	{
 		assert(collection	!= undefined,	'collection is undefined');
@@ -249,42 +252,45 @@ exports.collection.drop =
 /* ================================================================== */
 
 
-exports.user = {};	
+mongo.user = {};	
 
-exports.user.collectionName =
+mongo.user.collectionName =
 	function(userId)
 	{
 		assert( userId != undefined, 'userId is undefined' );
 		return 'FB' + userId;
 	};
 
-exports.user.getCollection = 
+mongo.user.getCollection = 
 	function(userId, success_f, error_f)
 	{
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		var collectionName = exports.user.collectionName(userId);
+		var collectionName = mongo.user.collectionName(userId);
 	
-		exports.collection.get(collectionName
+		mongo.collection.get(collectionName
 				,	function success(c) { success_f(c); }
 				,	error_f );
 	};
 
-exports.user.init =
+mongo.user.init =
 	function(userId, success_f /* (collection) */, error_f)
 	{
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
 			,	function success(c) {
-					c.ensureIndex( { graph_id:1 }, { unique: true },
+					var propertyIndex= {};
+					propertyIndex[mongo.const.facebookId] = 1;
+
+					c.ensureIndex( propertyIndex, { unique: true },
 						function(err, indexName) 
 						{
 							if (err) {
-								console.error('collection.ensureIndex for graph_id failed err:' + err);
+								console.error('collection.ensureIndex for mongo.const.facebookId failed err:' + err);
 								error_f(err);
 							}
 							else 
@@ -294,48 +300,48 @@ exports.user.init =
 			,	error_f );
 	};
 
-exports.user.add =
+mongo.user.add =
 	function(userId, object, success_f /* (new_entry) */, error_f)
 	{
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
-			,	function success(c) { exports.collection.add(c, object, success_f, error_f); }
+			,	function success(c) { mongo.collection.add(c, object, success_f, error_f); }
 			, 	error_f);
 	};
 
-exports.user.findOne =
+mongo.user.findOne =
 	function(userId, findProperties, success_f, error_f)
 	{
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
-			,	function success(c) { exports.collection.findOne(c, findProperties, success_f, error_f); }
+			,	function success(c) { mongo.collection.findOne(c, findProperties, success_f, error_f); }
 			, 	error_f);
 	};
 
-exports.user.findAll =
+mongo.user.findAll =
 	function(userId, findProperties, success_f, error_f)
 	{
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
-			,	function success(c) { exports.collection.findAll(c, findProperties, success_f, error_f); }
+			,	function success(c) { mongo.collection.findAll(c, findProperties, success_f, error_f); }
 			, 	error_f);
 	};
 
-exports.user.remove =
+mongo.user.remove =
 	function(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
 	{
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
-			,	function success(c) { exports.collection.remove(c, findProperties, success_f, error_f, options); }
+			,	function success(c) { mongo.collection.remove(c, findProperties, success_f, error_f, options); }
 			, 	error_f);
 	};
 
-exports.user.drop =
+mongo.user.drop =
 	function(userId, success_f, error_f)
 	{
-		exports.user.getCollection(
+		mongo.user.getCollection(
 				userId
-			,	function success(c) { exports.collection.drop(c, success_f, error_f); }
+			,	function success(c) { mongo.collection.drop(c, success_f, error_f); }
 			, 	error_f);
 	};
 
@@ -347,12 +353,16 @@ exports.user.drop =
 /* ================================================================== */
 /* ================================================================== */
 
-function _objectWithGraphId(graphId)
-{
-	return  { graph_id: exports.LongFromString(graphId) };
-}
+// Keys
+mongo.const = {};
+mongo.const.facebookId	= 'fb_id';
+mongo.const.facebookUserId		= 'fb_userid';
+mongo.const.sourceObject		= 'source';
+mongo.const.copyObject			= 'copy';
+mongo.const.createDate			= 'created';
 
-exports.user.addFacebookObject =
+
+mongo.user.addFacebookObject =
 	function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
 	{
 		assert(userId != undefined,		'userId is undefined');
@@ -363,45 +373,43 @@ exports.user.addFacebookObject =
 		handy.assert_f(error_f);
 
 		var entry = {};
-		entry.graph_id	= exports.LongFromString(graphId);
-		entry.user_id	= exports.LongFromString(userId);
-		entry.source	= sourceObject;
-		entry.copy		= copyObject;
-		entry.created	= new Date();
+		entry[mongo.const.facebookId]		= mongo.LongFromString(graphId);
+		entry[mongo.const.facebookUserId]	= mongo.LongFromString(userId);
+		entry[mongo.const.sourceObject]		= sourceObject;
+		entry[mongo.const.copyObject]		= copyObject;
+		entry[mongo.const.createDate]		= new Date();
 
-		exports.user.add(userId, entry, success_f, error_f);
+		mongo.user.add(userId, entry, success_f, error_f);
 	};
 
-
-exports.user.findOneFacebookObject =
+mongo.user.findOneFacebookObject =
 	function(userId, graphId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		exports.user.findOne(userId, _objectWithGraphId(graphId), success_f, error_f);	
+		mongo.user.findOne(userId, mongo.entry.newWithFacebookId(graphId), success_f, error_f);	
 	};
 
-
-exports.user.findAllFacebookObjects =
+mongo.user.findAllFacebookObjects =
 	function(userId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		exports.user.findAll(userId, {}, success_f, error_f);	
+		mongo.user.findAll(userId, {}, success_f, error_f);	
 	};
 
-exports.user.removeFacebookObject =
+mongo.user.removeFacebookObject =
 	function(userId, graphId, success_f, error_f)
 	{
 		assert(userId != undefined,	'userId is undefined');
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		exports.user.remove(userId, _objectWithGraphId(graphId), 
+		mongo.user.remove(userId, mongo.entry.newWithFacebookId(graphId), 
 			function success(numOfEntries)
 			{
 				assert(numOfEntries == 1, 'numOfEntries expected to be #1 is #' + numOfEntries);
@@ -411,3 +419,58 @@ exports.user.removeFacebookObject =
 	};
 
 
+/* ========================================================== */
+/* ========================================================== */
+/* ===================[  Entry Methods  ]=================== */
+/* ========================================================== */
+/* ========================================================== */
+
+
+mongo.entry = {};
+
+mongo.entry.newWithFacebookId = 
+	function (graphId)
+	{
+		var result = {};
+		result[mongo.const.facebookId] = mongo.LongFromString(graphId);
+		return result;		
+	}
+
+
+function _getLongProperty(entry, property)
+{
+	assert(entry != undefined,	'entry is undefined');
+	var value = entry[property];
+	assert(value != undefined, property + ' for the entry is undefined');
+
+	return value.toString();
+}
+
+mongo.entry.getFacebookId =
+	function(entry)
+	{
+		return _getLongProperty(entry, mongo.const.facebookId);
+	}
+
+
+mongo.entry.getFacebookUserId =
+	function(entry)
+	{
+		return _getLongProperty(entry, mongo.const.facebookUserId);
+	}
+
+mongo.entry.getSourceObject =
+	function(entry)
+	{
+		assert(entry != undefined,	'entry is undefined');
+
+		return entry[mongo.const.sourceObject] ;
+	}
+
+mongo.entry.getCopyObject =
+	function(entry)
+	{
+		assert(entry != undefined,	'entry is undefined');
+
+		return entry[mongo.const.copyObject] ;
+	}
