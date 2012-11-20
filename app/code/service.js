@@ -192,17 +192,17 @@ service.copyObject =
 		assert(quest != undefined, 'quest is undefined');
 		assert(fbID != undefined, 'fbID is undefined');
 
-		memento.add(fb.me(quest, 'id'), fbID, quest 
-					,	function success(r, options)
-						{
-							if (success_f)
-								success_f(r, options);
-						}
-					,	function error(e)
-						{
-							if (error_f)
-								error_f(e);
-						} );
+		memento.addFacebookObject(	fb.me(quest, 'id'), fbID, quest
+								,	function success(r, options)
+									{
+										if (success_f)
+											success_f(r, options);
+									}
+								,	function error(e)
+									{
+										if (error_f)
+											error_f(e);
+									} );
 
 	}
 

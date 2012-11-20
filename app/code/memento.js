@@ -57,9 +57,60 @@ memento.initUser =
 	};
 
 memento.removeId =
-	function(userId, mongoId, success_f /* () */, error_f /* (error) */)
+	function(userId, mongoId, success_f /* ( elapsedTime ) */, error_f /* (error) */)
 	{
-		mongo.memento.removeId(userId, mongoId, success_f, error_f);
+		assert( userId != undefined, 'userId is undefined');
+		assert( mongoId != undefined, 'userId is undefined');
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+		var startTimestamp = new Date();
+
+
+		mongo.memento.findId(userId, mongoId
+			,	function success(entry) 
+				{
+					assert( entry != undefined, 'found entry is undefined');
+
+					// we only know how to deal with photo objects
+					var entryType = mongo.memento.entity.getType(entry);
+					assert(entryType == mongo.const.mementoPhotoType, 'found entry is not mementoPhotoType is ' + entryType);
+
+					var photoURLs = _getCopyURLsForPhotoEntry(entry);
+
+					assert(photoURLs.length > 0 , 'photoURLs.length expected to be > 0');
+
+					var c = s3.clientForURL(photoURLs[0], 'RW');
+
+
+					console.log('photoURLs:');
+					console.log(photoURLs);
+
+					var elapsedTime = handy.elapsedTime(startTimestamp);
+
+					success_f(elapsedTime);
+				}
+			,	function error(error) {
+					error_f(error);	
+				} 
+			);
+
+
+		/* =================================================== */
+
+		function _getCopyURLsForPhotoEntry(entry)
+		{
+			var result = [];
+			var copyObject = mongo.memento.entity.getCopyObject(entry);
+
+			result.push(copyObject.picture);
+			result.push(copyObject.source);
+
+			for (var i in copyObject.images)
+				result.push(copyObject.images[i].source);
+
+			return result;
+		}
+
 	};
 
 memento.findId =
@@ -68,7 +119,7 @@ memento.findId =
 		mongo.memento.findId(userId, mongoId, success_f, error_f);
 	};
 
-memento.add =
+memento.addFacebookObject =
 	function(userId, graphId, quest, success_f /* (newEntry, options) */, error_f)
 	{
 		var startDate = new Date();

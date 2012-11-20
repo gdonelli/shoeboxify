@@ -298,13 +298,13 @@ mongo.memento.init =
 				userId
 			,	function success(c) {
 					var propertyIndex= {};
-					propertyIndex[mongo.const.facebookId] = 1;
+					propertyIndex[mongo.const.facebookIdKey] = 1;
 
 					c.ensureIndex( propertyIndex, { unique: true },
 						function(err, indexName) 
 						{
 							if (err) {
-								console.error('collection.ensureIndex for mongo.const.facebookId failed err:' + err);
+								console.error('collection.ensureIndex for mongo.const.facebookIdKey failed err:' + err);
 								error_f(err);
 							}
 							else 
@@ -400,11 +400,15 @@ mongo.memento.removeId =
 /* ================================================================== */
 
 // Keys
-mongo.const.facebookId		= 'fb_id';
-mongo.const.facebookUserId	= 'fb_userid';
-mongo.const.sourceObject	= 'source';
-mongo.const.copyObject		= 'copy';
-mongo.const.createDate		= 'created';
+mongo.const.facebookIdKey		= 'fb_id';
+mongo.const.facebookUserIdKey	= 'fb_userid';
+mongo.const.sourceObjectKey		= 'source';
+mongo.const.copyObjectKey		= 'copy';
+mongo.const.createDateKey		= 'created';
+
+mongo.const.mementoTypeKey		= 'type';
+
+mongo.const.mementoPhotoType	= 1;
 
 
 mongo.memento.addFacebookObject =
@@ -417,12 +421,23 @@ mongo.memento.addFacebookObject =
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
+		var type = 0; // only photo type supported at this point
+
+		if (sourceObject.picture != undefined &&
+			sourceObject.source != undefined &&
+			sourceObject.images != undefined)
+			type = mongo.const.mementoPhotoType;
+
+		assert(type == mongo.const.mementoPhotoType, 'Unsupported facebook object type');
+
 		var entity = {};
-		entity[mongo.const.facebookId]		= mongo.LongFromString(graphId);
-		entity[mongo.const.facebookUserId]	= mongo.LongFromString(userId);
-		entity[mongo.const.sourceObject]	= sourceObject;
-		entity[mongo.const.copyObject]		= copyObject;
-		entity[mongo.const.createDate]		= new Date();
+		
+		entity[mongo.const.mementoTypeKey]		= type;
+		entity[mongo.const.facebookIdKey]		= mongo.LongFromString(graphId);
+		entity[mongo.const.facebookUserIdKey]	= mongo.LongFromString(userId);
+		entity[mongo.const.sourceObjectKey]		= sourceObject;
+		entity[mongo.const.copyObjectKey]		= copyObject;
+		entity[mongo.const.createDateKey]		= new Date();
 
 		mongo.memento.add(userId, entity, success_f, error_f);
 	};
@@ -483,14 +498,13 @@ mongo.entity.getId =
 		return entity[mongo.const.entityId];
 	}
 
-
 mongo.memento.entity = {};
 
 mongo.memento.entity.newWithFacebookId = 
 	function (graphId)
 	{
 		var result = {};
-		result[mongo.const.facebookId] = mongo.LongFromString(graphId);
+		result[mongo.const.facebookIdKey] = mongo.LongFromString(graphId);
 		return result;		
 	}
 
@@ -502,39 +516,50 @@ mongo.memento.entity.newWithId =
 		return result;		
 	}
 
-mongo.memento.entity.getFacebookId =
-	function(entity)
+mongo.memento.entity.getType =
+	function(entry)
 	{
-		return _getLongProperty(entity, mongo.const.facebookId);
+		return _getEntryProperty(entry, mongo.const.mementoTypeKey);
+	}
+
+mongo.memento.entity.getFacebookId =
+	function(entry)
+	{
+		return _getLongProperty(entry, mongo.const.facebookIdKey);
 	}
 
 mongo.memento.entity.getFacebookUserId =
-	function(entity)
+	function(entry)
 	{
-		return _getLongProperty(entity, mongo.const.facebookUserId);
+		return _getLongProperty(entry, mongo.const.facebookUserIdKey);
 	}
 
 mongo.memento.entity.getSourceObject =
-	function(entity)
+	function(entry)
 	{
-		assert(entity != undefined,	'entity is undefined');
-
-		return entity[mongo.const.sourceObject];
+		return _getEntryProperty(entry, mongo.const.sourceObjectKey);
 	}
 
 mongo.memento.entity.getCopyObject =
-	function(entity)
+	function(entry)
 	{
-		assert(entity != undefined,	'entity is undefined');
-
-		return entity[mongo.const.copyObject];
+		return _getEntryProperty(entry, mongo.const.copyObjectKey);
 	}
 
-function _getLongProperty(entity, property)
+function _getEntryProperty(entry, property)
 {
-	assert(entity != undefined,	'entity is undefined');
-	var value = entity[property];
-	assert(value != undefined, property + ' for the entity is undefined');
+	assert(entry != undefined,	'entry is undefined');
+	var value = entry[property];
+	assert(value != undefined, property + ' for the entry is undefined');
+
+	return value;
+}
+
+function _getLongProperty(entry, property)
+{
+	assert(entry != undefined,	'entry is undefined');
+	var value = entry[property];
+	assert(value != undefined, property + ' for the entry is undefined');
 
 	return value.toString();
 }

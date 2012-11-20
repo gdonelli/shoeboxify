@@ -10,21 +10,21 @@ var		url		= require('url')
 
 var handy = exports;
 
-exports.ASCIItoBase64 =
+handy.ASCIItoBase64 =
 	function(asciiString)
 	{
 		return new Buffer(asciiString).toString('base64');
 	}
 
 
-exports.Base64toASCII =
+handy.Base64toASCII =
 	function(string64)
 	{
 		return new Buffer(string64, 'base64').toString('ascii');
 	}
 
 
-exports.is200OK =
+handy.is200OK =
 	function( fileUrl, result_f  /* ( true_or_false ) */ )
 	{
 		assert(fileUrl != undefined, 'fileUrl is undefined');
@@ -46,7 +46,7 @@ exports.is200OK =
 	}
 
 
-exports.HEAD =
+handy.HEAD =
 	function(	fileUrl
 			,	success_f	/*	(ponse)	*/
 			,	error_f		/*	(error)	*/
@@ -74,7 +74,7 @@ exports.HEAD =
 	};
 
 
-exports.GET =
+handy.GET =
 	function(	fileUrl
 			,	_200OK_f	/*	(read_s, ponse)	*/
 			,	other_f		/*	(ponse)		*/
@@ -82,7 +82,7 @@ exports.GET =
 			,	traverse
 			)
 	{
-		return exports.makeHTTPRequest(
+		return handy.makeHTTPRequest(
 					fileUrl
 				,	'GET'
 				,	function(read_s, ponse)
@@ -97,7 +97,7 @@ exports.GET =
 						{
 							assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
 
-							exports.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
+							handy.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
 						}
 						else
 						{	
@@ -112,7 +112,7 @@ exports.GET =
 	};
 
 
-exports.makeHTTPRequest =
+handy.makeHTTPRequest =
 	function(	fileUrl
 			,	httpMethod
 			,	success_f	/*	(read_s, ponse)	*/
@@ -179,7 +179,7 @@ exports.makeHTTPRequest =
 
 /* ===================== Assert ===================== */
 
-exports.assert_f = 
+handy.assert_f = 
 	function( candidate_f, canBeUndefined )
 	{
 		if (canBeUndefined != undefined) 
@@ -192,7 +192,7 @@ exports.assert_f =
 	};
 
 
-exports.assert_http_url = 
+handy.assert_http_url = 
 	function(url)
 	{
 		assert( url != undefined, 'url is undefined');
@@ -200,7 +200,7 @@ exports.assert_http_url =
 	};
 
 
-exports.writeHTMLstacktrace =
+handy.writeHTMLstacktrace =
 	function( ponse, forError )
 	{
 		var options;
@@ -218,7 +218,8 @@ exports.writeHTMLstacktrace =
 		}
 	};
 
-exports.errorLogStacktrace =
+
+handy.errorLogStacktrace =
 	function(forError)
 	{
 		var options;
@@ -232,6 +233,15 @@ exports.errorLogStacktrace =
 
 		return trace;
 	};
+
+
+handy.elapsedTime =
+	function(startTime)
+	{
+		var now = new Date();
+
+		return now.getTime() - startTime.getTime();
+	}
 
 /* ===================== String Extension ===================== */
 

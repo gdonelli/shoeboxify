@@ -352,14 +352,16 @@ describe('mongo.js',
 /* ================================================================== */
 /* ================================================================== */
 
-				var fakeFacebookObject = {};
-				fakeFacebookObject.id = _generateId();
-				fakeFacebookObject.picture = 'some picture';
-				fakeFacebookObject.source  = 'some source';
+				var fakeFacebookObject	= {};
+				fakeFacebookObject.id	= _generateId();
+				fakeFacebookObject.picture	= 'some picture';
+				fakeFacebookObject.source	= 'some source';
+				fakeFacebookObject.images	= [];
 
-				var copyObject = {};
-				copyObject.picture = 'copy picture';
-				copyObject.source  = 'copy source';
+				var copyObject	= {};
+				copyObject.picture	= 'copy picture';
+				copyObject.source	= 'copy source';
+				copyObject.images	= [];
 
 				function _addFBObject(done, expectedSuccess)
 				{

@@ -1,3 +1,6 @@
+/*
+ * 		s3
+ */
 
 var		assert= require('assert')
 	,	knox = require('knox')
@@ -11,6 +14,8 @@ var		assert= require('assert')
 	,	shoeboxify	= require('./shoeboxify')
 	;
 
+
+var s3 = exports;
 
 /* ====================================================== */
 /* ====================================================== */
@@ -28,15 +33,15 @@ var		assert= require('assert')
 
 var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
 
-exports.object = {};
-exports.object.bucketName	= "shoeboxify.object";
-exports.object.clientR	= function(){ return _getCachedClient(exports.object.bucketName, 'R' ); };
-exports.object.clientRW	= function(){ return _getCachedClient(exports.object.bucketName, 'RW'); };
+s3.object = {};
+s3.object.bucketName= "shoeboxify.object";
+s3.object.clientR	= function(){ return _getCachedClient(s3.object.bucketName, 'R' ); };
+s3.object.clientRW	= function(){ return _getCachedClient(s3.object.bucketName, 'RW'); };
 
-exports.test = {};
-exports.test.bucketName	= "shoeboxify.test";
-exports.test.clientR	= function(){ return _getCachedClient(exports.test.bucketName, 'R' ); };
-exports.test.clientRW	= function(){ return _getCachedClient(exports.test.bucketName, 'RW'); };
+s3.test = {};
+s3.test.bucketName	= "shoeboxify.test";
+s3.test.clientR		= function(){ return _getCachedClient(s3.test.bucketName, 'R' ); };
+s3.test.clientRW	= function(){ return _getCachedClient(s3.test.bucketName, 'RW'); };
 
 
 var _clientCache = {
@@ -79,11 +84,14 @@ function _getCachedClient(bucketName, permission)
 	}
 }
 
+var S3_HOST_NAME = 's3-us-west-2.amazonaws.com';
 
-function _s3client( bucket, access )
+ // do not use directly. Use _getCachedClient instead
+
+function _s3client( bucket, permission )
 {
-	var key		= shoeboxify.s3.key[access]();
-	var secret	= shoeboxify.s3.secret[access]();
+	var key		= shoeboxify.s3.key[permission]();
+	var secret	= shoeboxify.s3.secret[permission]();
 
 	assert( (key != undefined),		's3 key is undefined');
 	assert( (secret != undefined),	's3 secret is undefined');
@@ -98,11 +106,43 @@ function _s3client( bucket, access )
 
 	result.URLForPath = 
 		function(filePath) {
-			return 'https://s3-us-west-2.amazonaws.com/' + path.normalize(bucket + '/' + filePath);			
+			return 'https://' + S3_HOST_NAME + '/' + path.normalize(bucket + '/' + filePath);			
 		};
 
 	return result;
 }
+
+s3.infoForURL =
+	function(theURL)
+{
+	var result = {};
+
+	var urlElements = url.parse(theURL);
+	assert( urlElements.host == S3_HOST_NAME, 'url host (' + urlElements.host + ') doesnt match expected s3 host:' + S3_HOST_NAME);
+
+	var urlPath = urlElements.path;
+	var urlPathElements = urlPath.split('/');
+
+	var s3Bucket = urlPathElements[1];
+	var s3Path = '';
+	
+	for (var i=2; i<urlPathElements.length; i++) {
+		s3Path += '/' + urlPathElements[i];
+	}
+
+	result.path	 = s3Path;
+	result.bucket= s3Bucket;
+
+	return result;	
+}
+
+s3.clientForURL =
+	function(theURL, permission)
+	{
+		var meta = s3.infoForURL(theURL);
+
+		return _getCachedClient(meta.bucket, permission);
+	}
 
 
 /* =================================================== */
@@ -119,12 +159,12 @@ function _s3client( bucket, access )
  * error_f(ErrorObj), ErrorObj.response
  */
 
-exports.writeJSON =
+s3.writeJSON =
 	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
-		exports.assert_client(client);
+		s3.assert_client(client);
 		assert(object != undefined, " object is undefined");
-		exports.assert_path(filePath);
+		s3.assert_path(filePath);
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
@@ -159,35 +199,138 @@ exports.writeJSON =
 	};
 
 
-exports.delete =
-	function( client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
+function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
+{
+	s3.assert_client(client);
+	assert(filePath != undefined, 'filePath is undefined' );
+	assert(_.isString(filePath), 'filePath is not a string');	
+	handy.assert_f(success_f);
+	handy.assert_f(error_f);
+
+	client.deleteFile(filePath,
+		function(err, ponse){
+			if (err)
+				error_f(err);
+			else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
+			{
+				success_f(ponse);	
+			}
+			else
+			{
+				var e = new Error('Failed with statusCode: ' + ponse.statusCode);
+				e.response = ponse;
+				error_f(e);
+			}
+		} );
+}
+
+
+s3.delete =
+	function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
 	{
-		exports.assert_client(client);
-		exports.assert_path(filePath);
+		s3.assert_client(client);
+		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
+		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+	
+		var filesToRemove;
+
+		if ( _.isString(filePath_or_arrayOfPaths) )
+			filesToRemove = [ filePath_or_arrayOfPaths ];
+		else
+			filesToRemove = filePath_or_arrayOfPaths;
+
+
+		var removeIndex = 0;
+		var successCount = 0;
+		var errorCount = 0;
+
+		_removeStep();
+
+		/* ============== */
+
+		function _removeStep()
+		{
+			if (successCount + errorCount == filesToRemove.length)
+				return _end();
+
+			var file_i = filesToRemove[removeIndex++];
+
+			_s3_delete_file(client, file_i
+				,	function success(reponse)
+					{
+						successCount++;
+						_removeStep();
+					}
+				,	function error(error)
+					{
+						errorCount++;
+						_removeStep();
+					} );
+		}
+
+		function _end()
+		{
+			if (success_f)
+				success_f(successCount)
+		}
+	};
+
+/*
+ * deleteMultiple doesn't seems to work. see:
+ *   https://github.com/LearnBoost/knox/issues/121
+ */
+
+s3.delete_buggy =
+	function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
+	{
+		s3.assert_client(client);
+		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
+		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		var questToS3 = client.del(filePath);
+		// console.log(typeof filePath_or_arrayOfPaths);
 
-		questToS3.on('response',
-			function(ponse){
-				if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
+		var deleteMethod = null;
+
+		if ( _.isString(filePath_or_arrayOfPaths) )
+			deleteMethod = 'deleteFile';
+		else if ( _.isArray(filePath_or_arrayOfPaths) )
+			deleteMethod = 'deleteMultiple';
+
+		assert(deleteMethod != null, 'Couldnt find method to deal with input type');
+
+		client[deleteMethod](filePath_or_arrayOfPaths,
+			function(err, ponse){
+				if (err)
+					error_f(err);
+				else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
 				{
-					success_f(ponse);	
-				}
-				else
-				{
-					var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-					e.response = ponse;
-					error_f(e);
-				}
-			});
+					console.log('deleteMethod: ' + deleteMethod);
+					console.log('ponse.statusCode: ' + ponse.statusCode);
+					
+					console.log('ponse.headers: ' + ponse.headers);
+					console.log(ponse.headers);
 
-		questToS3.on('error', 
-			function(e) { error_f(e); } );
+					success_f(ponse);
 
-		questToS3.end();
+					var bufferString = '';
+
+					ponse.on('data',
+						function (chunk) {
+							bufferString += chunk;
+						});
+
+					ponse.on('end',	function () {
+							console.log(deleteMethod + ' response:');
+							console.log(bufferString );
+						});
+				}
+			} );
 	};
+
 
 /**
  *
@@ -197,11 +340,11 @@ exports.delete =
  *	
  */
 
-exports.copyURL =
+s3.copyURL =
 	function( client, fileURL, filePath, success_f, error_f, progress_f )
 	{
-		exports.assert_client(client);
-		exports.assert_path(filePath);
+		s3.assert_client(client);
+		s3.assert_path(filePath);
 		handy.assert_http_url(fileURL);
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
@@ -300,7 +443,7 @@ exports.copyURL =
 /* ============================================== */
 
 
-exports.assert_client =
+s3.assert_client =
 	function(client)
 	{
 		assert( client != undefined,		'client is undefined');
@@ -310,7 +453,7 @@ exports.assert_client =
 	};
 
 
-exports.assert_path =
+s3.assert_path =
 	function(filePath)
 	{
 		assert( filePath != undefined,	'filePath is undefined');

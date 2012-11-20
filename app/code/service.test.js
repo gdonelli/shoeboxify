@@ -12,25 +12,6 @@ describe('service.js',
 	function() {
 
 
-		/* Authetication setup */
-/*
-		it( 'getPseudoRequest should succeed', 
-			function(done) 
-			{
-				authTest.getPseudoRequest(
-						function success(quest){
-							assert(authTest.pseudoRequest != undefined, 'authTest.pseudoRequest is undefined');
-							done();
-						}
-					,	function error(e){
-							throw new Error(e);
-						});
-
-			} );
-
-*/
-
-
 		describe( 'objectForURL',
 			function() {
 				it( 'Placeholder Object',
@@ -169,7 +150,6 @@ describe('service.js',
 					} );
 			
 			} );
-
 
 
 	} );

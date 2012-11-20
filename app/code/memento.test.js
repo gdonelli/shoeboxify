@@ -40,7 +40,7 @@ describe('memento.js',
 
 				function _addSJPhoto(done, processOptions_f /* (options) */ )
 				{
-					memento.add( testUserId
+					memento.addFacebookObject( testUserId
 						,	sjPhotoId
 						,	authTest.pseudoRequest
 						,	function success(r, options)
@@ -96,8 +96,10 @@ describe('memento.js',
 					function(done)
 					{
 						memento.removeId(testUserId, addedEntryId
-							,	function success()
+							,	function success(elapsedTime)
 								{
+									console.log('memento.removeId took: ' + elapsedTime + 'ms');
+									
 									memento.findId(testUserId, addedEntryId
 										,	function success(entry)
 											{
