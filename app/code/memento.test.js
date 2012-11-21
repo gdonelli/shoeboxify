@@ -98,8 +98,8 @@ describe('memento.js',
 						memento.removeId(testUserId, addedEntryId
 							,	function success(elapsedTime)
 								{
-									console.log('memento.removeId took: ' + elapsedTime + 'ms');
-									
+									// console.log('memento.removeId took: ' + elapsedTime + 'ms');
+
 									memento.findId(testUserId, addedEntryId
 										,	function success(entry)
 											{

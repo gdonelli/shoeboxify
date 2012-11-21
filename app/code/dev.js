@@ -503,7 +503,7 @@ exports.shoeboxified=
 		ponse.write('<html><body>');
 		ponse.write('<h1>' + 'Shoeboxified' + '</h1><div>');
 
-		mongo.user.findAllFacebookObjects( fb.me(quest, 'id')
+		mongo.memento.findAllFacebookObjects( fb.me(quest, 'id')
 			,	function success(r)
 				{
 					for (var i in r)

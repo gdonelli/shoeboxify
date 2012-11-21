@@ -44,6 +44,23 @@ s3.test.clientR		= function(){ return _getCachedClient(s3.test.bucketName, 'R' )
 s3.test.clientRW	= function(){ return _getCachedClient(s3.test.bucketName, 'RW'); };
 
 
+s3.validBucket = 
+	function(bucket)
+	{
+		return (bucket == s3.test.bucketName ||
+				bucket == s3.object.bucketName);		
+	}
+
+
+s3.getClient = 
+	function(bucket, permission)
+	{
+		assert( s3.validBucket(bucket), bucket + ' is not valid' );
+
+		return _getCachedClient(bucket, permission);
+	};
+
+
 var _clientCache = {
 			test: {
 					R:  null
@@ -53,7 +70,7 @@ var _clientCache = {
 					R:  null
 				,	RW: null
 			}
-	}
+	};
 
 
 function _getCachedClient(bucketName, permission)
@@ -112,37 +129,67 @@ function _s3client( bucket, permission )
 	return result;
 }
 
-s3.infoForURL =
+
+/*
+ *	Given a URL returns {	bucket: ... , 
+ *						,	  path: ... } 
+ */
+
+s3.getInfoForURL =
 	function(theURL)
-{
-	var result = {};
-
-	var urlElements = url.parse(theURL);
-	assert( urlElements.host == S3_HOST_NAME, 'url host (' + urlElements.host + ') doesnt match expected s3 host:' + S3_HOST_NAME);
-
-	var urlPath = urlElements.path;
-	var urlPathElements = urlPath.split('/');
-
-	var s3Bucket = urlPathElements[1];
-	var s3Path = '';
-	
-	for (var i=2; i<urlPathElements.length; i++) {
-		s3Path += '/' + urlPathElements[i];
-	}
-
-	result.path	 = s3Path;
-	result.bucket= s3Bucket;
-
-	return result;	
-}
-
-s3.clientForURL =
-	function(theURL, permission)
 	{
-		var meta = s3.infoForURL(theURL);
+		var result = {};
 
-		return _getCachedClient(meta.bucket, permission);
-	}
+		var urlElements = url.parse(theURL);
+		assert( urlElements.host == S3_HOST_NAME, 'url host (' + urlElements.host + ') doesnt match expected s3 host:' + S3_HOST_NAME);
+
+		var urlPath = urlElements.path;
+		var urlPathElements = urlPath.split('/');
+
+		var s3Bucket = urlPathElements[1];
+		var s3Path = '';
+		
+		for (var i=2; i<urlPathElements.length; i++) {
+			s3Path += '/' + urlPathElements[i];
+		}
+
+		result.path	 = s3Path;
+		result.bucket= s3Bucket;
+
+		return result;	
+	};
+
+
+/*
+ *	Given a URL returns {	bucket: ... , 
+ *							 paths: [...] } 
+ *
+ *  if the URLs are on a different bucket it will throw an exception
+ */
+
+s3.getInfoForURLs =
+	function(arrayOfURLs)
+	{
+		var result = {};
+
+		result.bucket = null;
+		result.paths = [];
+
+		for (var i in arrayOfURLs)
+		{
+			var URL_i = arrayOfURLs[i];
+			var info_i = s3.getInfoForURL(URL_i);
+
+			if (!result.bucket)
+				result.bucket = info_i.bucket;
+			else
+				assert(result.bucket == info_i.bucket, ' URLs are in different buckets');
+
+			result.paths.push(info_i.path);
+		}
+
+		return result;
+	};
 
 
 /* =================================================== */
@@ -238,9 +285,12 @@ s3.delete =
 
 		if ( _.isString(filePath_or_arrayOfPaths) )
 			filesToRemove = [ filePath_or_arrayOfPaths ];
-		else
+		else if ( _.isArray(filePath_or_arrayOfPaths) )
 			filesToRemove = filePath_or_arrayOfPaths;
+		else
+			assert('filePath_or_arrayOfPaths is neither string or array');
 
+		assert(filesToRemove.length > 0, 'filesToRemove.length is not > 0');
 
 		var removeIndex = 0;
 		var successCount = 0;
@@ -281,6 +331,7 @@ s3.delete =
  * deleteMultiple doesn't seems to work. see:
  *   https://github.com/LearnBoost/knox/issues/121
  */
+
 
 s3.delete_buggy =
 	function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 

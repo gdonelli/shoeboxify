@@ -65,37 +65,41 @@ memento.removeId =
 		handy.assert_f(error_f);
 		var startTimestamp = new Date();
 
-
 		mongo.memento.findId(userId, mongoId
 			,	function success(entry) 
 				{
-					assert( entry != undefined, 'found entry is undefined');
-
-					// we only know how to deal with photo objects
-					var entryType = mongo.memento.entity.getType(entry);
-					assert(entryType == mongo.const.mementoPhotoType, 'found entry is not mementoPhotoType is ' + entryType);
-
-					var photoURLs = _getCopyURLsForPhotoEntry(entry);
-
-					assert(photoURLs.length > 0 , 'photoURLs.length expected to be > 0');
-
-					var c = s3.clientForURL(photoURLs[0], 'RW');
-
-
-					console.log('photoURLs:');
-					console.log(photoURLs);
-
-					var elapsedTime = handy.elapsedTime(startTimestamp);
-
-					success_f(elapsedTime);
+					assert(entry != undefined, 'found entry is undefined');
+					_remove(entry);
 				}
-			,	function error(error) {
-					error_f(error);	
+			,	function error(e)
+				{
+					console.error('mongo.memento.findId failed ' + e );
+					error_f(e);	
 				} 
 			);
 
-
 		/* =================================================== */
+		
+		function _remove(entry)
+		{
+			mongo.memento.removeId(userId, mongoId
+				,	function mongoSuccess() {
+						_deleteFilesFromS3(entry
+							,	function s3success() 
+								{
+									success_f(handy.elapsedTime(startTimestamp));
+								}
+							,	function s3error(e)
+								{
+									console.error('_deleteFilesFromS3 failed ' + e );
+									error_f(e);
+								});
+					}
+				,	function mongoError(e) {
+						console.error('mongo.memento.removeId failed ' + e );
+						error_f(e);
+					});			
+		}
 
 		function _getCopyURLsForPhotoEntry(entry)
 		{
@@ -109,6 +113,29 @@ memento.removeId =
 				result.push(copyObject.images[i].source);
 
 			return result;
+		}
+
+		function _deleteFilesFromS3(entry, success_f, error_f)
+		{
+			// we only know how to deal with photo objects
+			var entryType = mongo.memento.entity.getType(entry);
+			assert(entryType == mongo.const.mementoPhotoType, 'found entry is not mementoPhotoType is ' + entryType);
+
+			var photoURLs = _getCopyURLsForPhotoEntry(entry);
+			assert(photoURLs.length > 0 , 'photoURLs.length expected to be > 0');
+
+			var info = s3.getInfoForURLs(photoURLs);
+
+			var s3client = s3.getClient(info.bucket, 'RW');
+
+			s3.delete(s3client, info.paths
+				,	function success(num) {
+						console.log('removed ' +  num + ' s3 files');
+						success_f();
+					} 
+				,	function error(e) {
+						error_f(e);
+					} );
 		}
 
 	};
@@ -216,7 +243,7 @@ memento.addFacebookObject =
 
 
 /*
- *	success_f( copyObject )
+ *	copy Facebook URLs to S3
  */
 
 function _copyPhotoObject(quest, photoObject, success_f, error_f)
@@ -306,7 +333,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 	{
 		if (totCount == (successCount + errorCount))
 		{
-			console.log('Total bytes written to S3: ' + totalBytesWrittenToS3/1024 + ' KB' );
+			// console.log('Total bytes written to S3: ' + totalBytesWrittenToS3/1024 + ' KB' );
 
 			if (errorCount == 0)
 			{

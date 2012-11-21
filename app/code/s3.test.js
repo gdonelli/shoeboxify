@@ -191,14 +191,29 @@ describe('s3.js',
 		describe('utils',
 			function()
 			{
-				it( 's3.infoForURL',
+				it( 's3.getInfoForURL',
 					function() {
-						var meta = s3.infoForURL('https://s3-us-west-2.amazonaws.com/shoeboxify.object/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg');
+						var meta = s3.getInfoForURL('https://s3-us-west-2.amazonaws.com/shoeboxify.object/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg');
 
-						console.log(meta);
+						// console.log(meta);
 
 						assert(meta.path	== '/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg', 'path doesnt match its: ' + meta.path);
 						assert(meta.bucket	== 'shoeboxify.object', 'meta.bucket is ' + meta.bucket + 'expected: shoeboxify.object');
+					} );
+
+				it( 's3.getInfoForURLs',
+					function() {
+						var URLs = [	'https://s3-us-west-2.amazonaws.com/shoeboxify.object/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg'
+									,	'https://s3-us-west-2.amazonaws.com/shoeboxify.object/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg'	];
+
+						var meta = s3.getInfoForURLs(URLs);
+
+						// console.log(meta);
+						var expectedPath = '/130/554390706_A_F_10151242148911730_2012M10D20H4M49_i8.jpg';
+
+						assert(meta.bucket	== 'shoeboxify.object', 'meta.bucket is ' + meta.bucket + 'expected: shoeboxify.object');
+						assert(meta.paths[0]== expectedPath, 'path doesnt match its: ' + meta.paths[0]);
+						assert(meta.paths[1]== expectedPath, 'path doesnt match its: ' + meta.paths[1]);
 					} );
 
 			} );
