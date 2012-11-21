@@ -3,13 +3,13 @@ var		assert	= require("assert")
 	,	fs		= require("fs")
 	,	spawn	= require('child_process').spawn
 	,	fb		= require("./fb")
+	
 	,	shoeboxify	= require("./shoeboxify")
+	,	utest		= require("./utest")
 	;
 
 
-
 var ACCESS_TOKEN_CACHE_MAX_AGE = 1000 * 60 * 60; // 1 hour
-
 
 /* ============================================================= */
 /* ======================= TEST AUTH =========================== */
@@ -104,34 +104,39 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
 authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 	{
-		var cacheFilePath = '/tmp/authTest.cache';
-
-		fs.readFile(cacheFilePath,
+		fs.readFile(utest.accessTokenCacheFilePath,
 			function (err, data) {
   				if (err) 
   				{
   					console.log('no cache');
-
   					_miss();
   				}
   				else
+  				{
   					var fileContent = data.toString();
   					var cache =  JSON.parse(fileContent);
+  					var cacheValid = true;
 
-  					var now = new Date();
-  					var then = new Date(cache.date);
-
-  					var cacheAge = now.getTime() - then.getTime();
-  					console.log( 'Using cached AccessToken');
-  					console.log( 'CacheFile: ' + cacheFilePath);
-  					console.log( 'CacheAge:  ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes');	
-
-  					if ( cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE )
+  					if (cache.date)
   					{
-  						_useAuth(cache.payload)
+	  					var now = new Date();
+	  					var then = new Date(cache.date);
+
+	  					var cacheAge = now.getTime() - then.getTime();
+	  					console.log( 'Using cached AccessToken');
+	  					console.log( 'CacheFile: ' + utest.accessTokenCacheFilePath);
+	  					console.log( 'CacheAge:  ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes');	
+
+	  					cacheValid = (cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE);
   					}
   					else
+  						console.log('no cache.date -> assume cache is valid');
+
+  					if (cacheValid)
+  						_useAuth(cache.payload);
+  					else
   						_miss();
+				} 
 			} );
 
 		function _useAuth(jsonData)
@@ -151,10 +156,9 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 						cache.date = new Date();
 						cache.payload = jsonData;
 
-						fs.writeFile(cacheFilePath, JSON.stringify(cache) );
-
+						fs.writeFile(utest.accessTokenCacheFilePath, JSON.stringify(cache) );
 					}
-				,		error_f );
+				,	error_f );
 		}
 	}
 

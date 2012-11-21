@@ -1,19 +1,21 @@
 
 var assert = require('assert');
 
+var shoeboxify = exports;
+
 /**********************/
 /* Facebook App Stuff */
 /**********************/
 
-exports.appID = function() {
+shoeboxify.appID = function() {
 		return _env('APP_ID');
 	};
 
-exports.appSecret = function() {
+shoeboxify.appSecret = function() {
 		return _env('APP_SECRET');
 	};
 
-exports.appPermissions = function() {
+shoeboxify.appPermissions = function() {
 		var result = '';
 
 		// For email notifications
@@ -29,7 +31,7 @@ exports.appPermissions = function() {
 		return result;
 	};
 
-exports.dialogRedirectURL = function(req) {
+shoeboxify.dialogRedirectURL = function(req) {
 		var reqHeaders = req.headers;
 		var reqHost    = reqHeaders.host;
 		
@@ -41,22 +43,22 @@ exports.dialogRedirectURL = function(req) {
 /* Session */
 /***********/
 
-exports.sessionSecret = function() 
+shoeboxify.sessionSecret = function() 
 	{
 		return _env('SESSION_SECRET');
 	};
 
-exports.sessionDatabaseName = function() 
+shoeboxify.sessionDatabaseName = function() 
 	{
 		return _env('SESSION_DB_NAME');
 	};
 
-exports.sessionDatabaseURL = function() 
+shoeboxify.sessionDatabaseURL = function() 
 	{
 		return _env('SESSION_DB_URL');
 	};
 
-exports.adminID = function() {
+shoeboxify.adminID = function() {
 		return _env('ADMIN_ID');
 	};
 
@@ -64,7 +66,7 @@ exports.adminID = function() {
 /* Amazon Web Services */
 /***********************/
 
-exports.s3 = {
+shoeboxify.s3 = {
 		key: {
 				R:	function(){ return _env('S3_R_KEY');	}
 			,	RW:	function(){ return _env('S3_RW_KEY');	}
@@ -82,15 +84,15 @@ exports.s3 = {
 /* Logging */
 /***********/
 
-exports.log  = function(string) {
+shoeboxify.log  = function(string) {
 		console.log(string);
 	};
 
-exports.debug  = function(string) {
+shoeboxify.debug  = function(string) {
 		console.log(string);
 	};
 
-exports.error  = function(string) {
+shoeboxify.error  = function(string) {
 		console.error( '***** ERROR: ' + string);
 	};
 
@@ -99,27 +101,27 @@ exports.error  = function(string) {
 /* Database */
 /************/
 
-exports.dbServerHost = function() 
+shoeboxify.dbServerHost = function() 
 	{
 		return _env('DB_SERVER_HOST');
 	};
 
-exports.dbServerPort = function() 
+shoeboxify.dbServerPort = function() 
 	{
 		return Math.round( _env('DB_SERVER_PORT') );
 	};
 
-exports.dbServerUsername = function() 
+shoeboxify.dbServerUsername = function() 
 	{
 		return _env('DB_SERVER_USERNAME');
 	};
 
-exports.dbServerPassword = function() 
+shoeboxify.dbServerPassword = function() 
 	{
 		return _env('DB_SERVER_PASSWORD');
 	};
 
-exports.dbName = function() 
+shoeboxify.dbName = function() 
 	{
 		return _env('DB_NAME');
 	};
@@ -137,31 +139,32 @@ function _env(name)
 	return result;
 }
 
+
 /*********/
 /* Tests */
 /*********/
 
-exports.validateEnviroment = function() 
+shoeboxify.validateEnviroment = function() 
 	{
 		// App
-		exports.appSecret();
-		exports.appID();
+		shoeboxify.appSecret();
+		shoeboxify.appID();
 
 		// AWS
-		exports.s3.key.R();
-		exports.s3.key.RW();
-		exports.s3.secret.R();
-		exports.s3.secret.RW();
+		shoeboxify.s3.key.R();
+		shoeboxify.s3.key.RW();
+		shoeboxify.s3.secret.R();
+		shoeboxify.s3.secret.RW();
 
 		// Session
-		exports.sessionSecret();
-		exports.sessionDatabaseName();
-		exports.sessionDatabaseURL();
+		shoeboxify.sessionSecret();
+		shoeboxify.sessionDatabaseName();
+		shoeboxify.sessionDatabaseURL();
 
 		// DB
-		exports.dbServerHost();
-		exports.dbServerPort();
-		exports.dbServerUsername();
-		exports.dbServerPassword();
-		exports.dbName();
+		shoeboxify.dbServerHost();
+		shoeboxify.dbServerPort();
+		shoeboxify.dbServerUsername();
+		shoeboxify.dbServerPassword();
+		shoeboxify.dbName();
 	};

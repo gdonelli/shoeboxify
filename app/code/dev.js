@@ -3,6 +3,7 @@ var		url		= require('url')
 	,	assert	= require('assert')
 	,	email	= require("emailjs/email")
 	,	knox	= require('knox')
+	,	_		= require('underscore')
 
 	,	fb	= require('./fb')
 	,	s3	= require('./s3')
@@ -532,3 +533,177 @@ exports.shoeboxified=
 
 	};
 
+
+function _getAllTestFiles( done_f /* arrayOfFiles */ )
+{
+	var fs = require('fs');
+
+	fs.readdir(__dirname,
+		function(err, files) {
+
+			var allTestFiles = [];
+
+			for (var i = 0; i < files.length; i++ )
+			{
+				var file_i = files[i];
+				
+				if (file_i.endsWith('.test.js'))
+					allTestFiles.push( __dirname + '/' + file_i);
+			}
+
+			done_f(allTestFiles);
+		} );
+
+}
+
+exports.utest =
+	function(quest, ponse)
+	{
+		var spawn = require('child_process').spawn;
+	
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+		ponse.write('<html><body>');
+		ponse.write('<h1>mocha tests</h1>');
+	
+		_getAllTestFiles( 
+			function(files){
+				// console.log(files);
+				RunTests(files);
+
+			} );
+	
+		function RunTests(files)
+		{
+			var mochaBin = __dirname + '/../node_modules/mocha/bin/mocha' ;
+			
+			var basicArgs = [mochaBin, '-t', '10000', '-R', 'spec', '--no-colors' ];
+
+			var args = _.union(basicArgs, files);
+
+			ponse.write('<p>' + args.toString() + '</p>');
+
+			var mochaProcess = spawn('node', args);
+
+			mochaProcess.stdout.on('data',
+				function (data) {
+
+					var dataString = data.toString();
+					// dataString = dataString.replace('\n', '<br>');
+					dataString = dataString.replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;');
+					dataString = dataString.replace(' ', '&nbsp;');
+					dataString = dataString.replace('✔', '[OK]');
+					dataString = dataString.replace('◦', '[--]');
+
+					dataString = dataString.replace('[2K', '');
+					dataString = dataString.replace('[0G', '');
+
+					ponse.write('<code>');
+					ponse.write( dataString );
+
+					if (data.length > 8)
+						ponse.write( '<br>' );
+
+					// console.log('buf.length '+ data.length + ':');
+					// console.log(dataString);
+
+					ponse.write('</code>');
+				});
+
+			mochaProcess.stderr.on('data',
+				function (data) {
+					ponse.write('<p style="color:red;">');
+					ponse.write( data.toString().replace('\n', '<br>') );
+					ponse.write('</p>');
+				});
+
+			mochaProcess.on('exit',
+				function (code) {
+					ponse.write('<p>exit with code: ' + code + '</p>');
+					ponse.end('</body></html>');
+				});
+		}
+
+
+	};
+
+exports.utest_off =
+	function(quest, ponse)
+	{
+		var mocha	= require('mocha')
+		var Base	= require('mocha/lib/reporters/base')
+  		var utils	= require('mocha/lib/utils');
+
+		ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+		ponse.write('<html><body>');
+		ponse.write('Shoeboxify Unit Tests');
+
+		var m = new mocha(  { timeout : 5000 }  );
+		m.addFile(__dirname + '/handy.test.js');
+		m.addFile(__dirname + '/mongo.test.js');
+		m.addFile(__dirname + '/s3.test.js');
+
+		m.reporter(Doc2);
+
+		m.run( function done(a) {
+			console.log('m.run done with failures: ' + a);
+			
+			ponse.write('<p> done! </p>');
+
+			ponse.end('</body></html>');
+		});
+
+		/* ------------ */
+
+		function Doc2(runner) {
+			Base.call(this, runner);
+
+			var		self = this
+				,	stats = this.stats
+				,	total = runner.total
+				,	indents = 2;
+
+			function indent() {
+				return Array(indents).join('  ');
+			}
+
+			runner.on('suite',
+				function(suite){
+					if (suite.root) return;
+					++indents;
+					ponse.write(indent() + '<section class="suite">');
+					++indents;
+					ponse.write(indent() + '<h1>' + utils.escape(suite.title) + '</h1>');
+					ponse.write(indent() + '<dl>');
+				} );
+
+			runner.on('suite end',
+				function(suite){
+					if (suite.root) return;
+					ponse.write(indent() + '</dl>');
+					--indents;
+					ponse.write(indent() + '</section>');
+					--indents;
+				} );
+
+			runner.on('pass',
+				function(test){
+					ponse.write(indent() + '  <dt style="color: green;">' + utils.escape(test.title) + ' (' + test.duration +'ms)'+ '</dt>');
+
+				} );
+
+			runner.on('fail',
+				function(test){
+					ponse.write(indent() + '  <dt style="color: red;">' + utils.escape(test.title) + '</dt>');
+					// ponse.write( JSON.stringify(test.error) );
+
+					console.log('test fail:');
+					console.log(test);
+
+				} );
+
+		}
+
+
+	};

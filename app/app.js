@@ -12,6 +12,7 @@ var		express	= require('express')
 	,	code	= require('./code')
 	,	fb		= require('./code/fb')
 	,	dev		= require('./code/dev')
+	,	utest	= require('./code/utest')
 	,	service	= require('./code/service')
 	,	view	= require('./code/view')
 
@@ -85,6 +86,8 @@ app.get( service.path.copyObject, 	service.route.copyObject );
 
 app.get( view.route.viewObject, view.viewObject );
 
+app.get( utest.path.utest, fb.requiresAuthentication, fb.requiresAdmin, utest.route.utest);
+
 /**************************/
 /*   Development Routes   */
 /**************************/
@@ -107,6 +110,7 @@ app.get('/dev/shoeboxified', fb.requiresAuthentication, fb.requiresAdmin, dev.sh
 
 app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
+
 
 
 /* Self Test */

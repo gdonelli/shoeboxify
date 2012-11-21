@@ -1,6 +1,6 @@
 {
   "name": "shoeboxify",
-  "version": "0.0.1-91",
+  "version": "0.0.1-100",
   "private": true,
   "scripts": {
     "start": "app.js"
@@ -15,7 +15,8 @@
     "connect-mongo": "0.2.x",
     "knox": "0.4.x",
     "mongodb": "1.1.x",
-    "underscore": "1.4.x"
+    "underscore": "1.4.x",
+    "mocha": "1.7.0"
   },
   "subdomain": "shoeboxify",
   "author": "Giovanni Donelli <giovanni@shoeboxify.com>",

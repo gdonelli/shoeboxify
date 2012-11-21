@@ -17,18 +17,18 @@ var 	https		= require('https')
 	,	stacktrace	= require('./stacktrace')
 	;
 
+fb = exports;
 
-
-exports.route = {};
-exports.path = {};
+fb.route = {};
+fb.path	 = {};
 
 /*	PAGE:	Start Facebook Login	
  * 	URL:	/facebook-login
  */ 
 
-exports.path.login = '/facebook-login';
+fb.path.login = '/facebook-login';
 
-exports.route.login = 
+fb.route.login = 
 	function(quest, ponse)
 	{
 		var urlElements = url.parse(quest.url, true);
@@ -61,9 +61,9 @@ exports.route.login =
  * 	URL:	/facebook-response
  */
 
-exports.path.response = '/facebook-response';
+fb.path.response = '/facebook-response';
 
-exports.route.response = 
+fb.route.response = 
 	function(quest, ponse)
 	{
 		var urlElements   = url.parse( quest['url'], true );
@@ -200,7 +200,7 @@ exports.route.response =
 			quest.session.cookie.maxAge = Math.floor(expiresInSeconds) * 1000; 
 
 			// Store me information in the Session
-			exports.graph('me', quest,
+			fb.graph('me', quest,
 				function(fbObject)
 				{
 					var meKeys = ['id', 'name', 'first_name', 'last_name', 'link', 'username', 'gender', 'email', 'timezone', 'locale', 'updated_time'];
@@ -271,8 +271,8 @@ exports.route.response =
 		{
 			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
 			
-			var object = {	'accessToken'	: _accessToken(quest),
-							'expires'		: _expiresToken(quest)	};
+			var object = {	'accessToken'	: fb.getAccessToken(quest),
+							'expires'		: fb.getExpiresToken(quest)	};
 
 			ponse.end( JSON.stringify(object) );	
 		}
@@ -292,8 +292,8 @@ exports.route.response =
 			ponse.write('<body>');
 			ponse.write('<h1>' + title + '</h1>');
 
-			ponse.write('<p><strong>accessToken: </strong>' + _accessToken(quest) + '</p>');
-			ponse.write('<p><strong>expires: </strong>' + _expiresToken(quest) + ' seconds (' + _expiresToken(quest)/(60*60*24) + ' days)</p>');
+			ponse.write('<p><strong>accessToken: </strong>' + fb.getAccessToken(quest) + '</p>');
+			ponse.write('<p><strong>expires: </strong>' + fb.getExpiresToken(quest) + ' seconds (' + fb.getExpiresToken(quest)/(60*60*24) + ' days)</p>');
 
 			ponse.write('</body>');
 			
@@ -357,7 +357,7 @@ exports.route.response =
 	};
 
 
-exports.me = function(quest, field)
+fb.me = function(quest, field)
 	{
 		assert(quest != undefined,				arguments.callee.name + ' quest is undefined');
 		assert(quest.session != undefined,		arguments.callee.name + ' quest.session is undefined');
@@ -379,7 +379,7 @@ exports.me = function(quest, field)
  * 	URL:	/logout
  */ 
 
-exports.path.logout = '/logout';
+fb.path.logout = '/logout';
 
 
 function _returnResponseWithMessage(ponse, message)
@@ -390,10 +390,10 @@ function _returnResponseWithMessage(ponse, message)
 	ponse.end('</body></html>');
 }
 
-exports.route.logout = 
+fb.route.logout = 
 	function(quest, ponse)
 	{
-		if (!exports.isAuthenticated(quest)) {
+		if (!fb.isAuthenticated(quest)) {
 			return _returnResponseWithMessage(ponse, 'Already Logged-out');
 		}
 
@@ -437,11 +437,11 @@ function WriteObject(quest, ponse)
 	ponse.end('</body></html>');
 }
 
-exports.redirectToAuthentication =
+fb.redirectToAuthentication =
 	function(quest, ponse)
 	{
 		var encodedURL = handy.ASCIItoBase64(quest.url);
-		var redirectURL = exports.path.login + '?source=' + encodedURL;
+		var redirectURL = fb.path.login + '?source=' + encodedURL;
 
 		ponse.redirect(redirectURL);
 
@@ -449,7 +449,7 @@ exports.redirectToAuthentication =
 	}
 
 
-exports.requiresAuthentication = 
+fb.requiresAuthentication = 
 	function(quest, ponse, next)
 	{
 		if ( quest.session.hasOwnProperty('accessToken') )
@@ -458,14 +458,14 @@ exports.requiresAuthentication =
 		}
 		else
 		{
-			exports.redirectToAuthentication(quest, ponse);
+			fb.redirectToAuthentication(quest, ponse);
 		}
 	}
 
-exports.requiresAdmin = 
+fb.requiresAdmin = 
 	function(quest, ponse, next)
 	{
-		if ( exports.me(quest, 'id') == shoeboxify.adminID() )
+		if ( fb.me(quest, 'id') == shoeboxify.adminID() )
 		{
 			next();
 		}
@@ -482,25 +482,24 @@ exports.requiresAdmin =
 	}
 
 
-exports.isAuthenticated = 
+fb.isAuthenticated = 
 	function(quest)
 	{
 		return quest.session.hasOwnProperty('accessToken');
 	}
 
 
+fb.getAccessToken = 
+	function(quest)
+	{
+		return quest.session.accessToken;
+	}
 
-
-function _accessToken(quest)
-{
-	return quest.session.accessToken;	
-}
-
-function _expiresToken(quest)
-{
-	return quest.session.expiresToken;	
-}
-
+fb.getExpiresToken = 
+	function(quest)
+	{
+		return quest.session.expiresToken;
+	}
 
 function _setAccessToken(quest, token, expires )
 {
@@ -545,7 +544,7 @@ function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /*
 		var questPath = ( path.startsWith('/') ? '' : '/');
 		questPath += path;
 		questPath += (path.indexOf('?') < 0 ? '?' : '&');
-		questPath += 'access_token='+ _accessToken(srcQuest);
+		questPath += 'access_token='+ fb.getAccessToken(srcQuest);
 
 		questOptions['hostname']	= 'graph.facebook.com';
 		questOptions['path']		= questPath;
@@ -610,14 +609,14 @@ function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /*
 	}
 }
 
-exports.graph = 
+fb.graph = 
 	function( path, srcQuest, success_f /*(fbObject)*/, error_f /* (error) */)
 	{
 		return _graphCall( 'GET', path, srcQuest, success_f, error_f );
 	}
 
 
-exports.batch =
+fb.batch =
 	function( paths, quest, success_f/* (fbObject) */, error_f/* (error) */)
 	{
 		var options = {
@@ -647,7 +646,7 @@ exports.batch =
 			});
 
 		// the data to POST needs to be a string or a buffer
-		outQuest.write( 'access_token=' + _accessToken(quest) );
+		outQuest.write( 'access_token=' + fb.getAccessToken(quest) );
 		outQuest.write( '&' );
 		outQuest.write( 'batch=' + JSON.stringify(batchAPI) ) ;
 		
@@ -656,7 +655,7 @@ exports.batch =
 
 
 
-exports.sanitizeObject = 
+fb.sanitizeObject = 
 	function(quest, ponse, object)
 	{
 		if (!object) 
@@ -672,7 +671,7 @@ exports.sanitizeObject =
 
 			if (type == 'OAuthException')
 			{
-				exports.redirectToAuthentication(quest, ponse);
+				fb.redirectToAuthentication(quest, ponse);
 				return false;
 			}
 		}
