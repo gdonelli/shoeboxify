@@ -26,7 +26,6 @@ utest.route.utest =
 		ponse.write('<html><body>');
 		ponse.write('<h1>Unit Testing</h1>');
 	
-
 		WriteAccessTokenCache(quest,
 			function() 
 			{
@@ -37,6 +36,7 @@ utest.route.utest =
 					} );
 			} );
 
+		/* ============================================================ */
 	
 		function RunTests(files)
 		{
@@ -68,7 +68,6 @@ utest.route.utest =
 				function (data) {
 
 					var dataString = data.toString();
-					// dataString = dataString.replace('\n', '<br>');
 					dataString = dataString.replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;');
 					dataString = dataString.replace(' ', '&nbsp;');
 					dataString = dataString.replace('✔', '<span style="color: green;">[OK]</span>');
