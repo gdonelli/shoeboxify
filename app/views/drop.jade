@@ -14,7 +14,12 @@ html
 				function()
 				{
 					// var target = 
-					InstallDropListener( document.body /* document.getElementById("body") */ );
+					// InstallDropListener( document.body /* document.getElementById("body") */ );
+
+					console.log($("html")[0]);
+
+					InstallDropListener( $("html")[0] );
+
 					ClearUI();
 				});
 
@@ -27,6 +32,7 @@ html
 		#button-area
 			button(onclick='ClearButtonAction()') Clear
 			button#shoeboxify(onclick='ShoeboxifyButtonAction()') Shoeboxify
+			div#elapsedTime
 
 		#sourceURL
 		#facebookObjectID

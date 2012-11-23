@@ -1,5 +1,9 @@
-/*
- *		memento.js
+/*		
+ *		memento.js - Facade to S3 and Mongo
+ *
+ *		memento module abstracts from the accessing directly the mongo db (mongo.js) and manipulation on amazon S3 (s3.js)
+ *	
+ *		[gdonelli, Nov 2012]
  */
 
 var		assert	= require('assert')	
@@ -87,7 +91,7 @@ memento.removeId =
 						_deleteFilesFromS3(entry
 							,	function s3success() 
 								{
-									success_f(handy.elapsedTime(startTimestamp));
+									success_f(handy.elapsedTimeSince(startTimestamp));
 								}
 							,	function s3error(e)
 								{
@@ -147,7 +151,7 @@ memento.findId =
 	};
 
 memento.addFacebookObject =
-	function(userId, graphId, quest, success_f /* (newEntry, options) */, error_f)
+	function(userId, graphId, quest, success_f /* (newEntry, meta) */, error_f)
 	{
 		var startDate = new Date();
 
@@ -219,18 +223,15 @@ memento.addFacebookObject =
 				)
 		}
 
-		function _exitWithSuccess(r, options)
+		function _exitWithSuccess(r, meta)
 		{
-			var endDate = new Date();
-			var timeLength = endDate.getTime() - startDate.getTime();
+			var allMeta = { time: handy.elapsedTimeSince(startDate) };
 
-			var allOptions = { time: timeLength };
-
-			if (options)
-				allOptions = _.extend(options, allOptions);
+			if (meta)
+				allMeta = _.extend(meta, allMeta);
 
 			if (success_f)
-				success_f( r, allOptions );
+				success_f( r, allMeta );
 		}
 
 		function _exitWithError(errstring)
@@ -413,16 +414,21 @@ function _generateFilePath(photoName, index, options, extension)
 {
 	var directory = 'picture'; // default directory
 
-	var optionString = '';
+	var DEFAULT_IMAGE_SIZES = [ 2048, 960, 720, 600, 480, 320, 240, 180, 130 ];
+
 	if (options && options.width && options.height)
 	{
-		var max = Math.max(options.width, options.height);		
-		directory = '' + max
+		var imageDimesion = Math.max(options.width, options.height);		
+			
+		for (var i in DEFAULT_IMAGE_SIZES)
+		{
+			var size_i = DEFAULT_IMAGE_SIZES[i];
 
-		if (directory.length <= 0) {
-			directory = 'picture';
+			if ( imageDimesion >= size_i ) {
+				directory = size_i.toString();
+				break;
+			}
 		}
-
 	}
 
 	var now = new Date();

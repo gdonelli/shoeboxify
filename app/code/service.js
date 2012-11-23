@@ -167,7 +167,7 @@ service.route.copyObject =
 				if (fbID)
 				{
 					service.copyObject(quest, fbID
-						,	function success(r)
+						,	function success(r, options)
 							{
 								exit_f({	status: 0
 										,	source: input
@@ -187,7 +187,7 @@ service.route.copyObject =
 
 
 service.copyObject =
-	function(quest, fbID, success_f, error_f)
+	function(quest, fbID, success_f /* (entry, meta) */, error_f  /* (error) */ )
 	{
 		assert(quest != undefined, 'quest is undefined');
 		assert(fbID != undefined, 'fbID is undefined');
@@ -195,6 +195,8 @@ service.copyObject =
 		memento.addFacebookObject(	fb.me(quest, 'id'), fbID, quest
 								,	function success(r, options)
 									{
+										console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
+
 										if (success_f)
 											success_f(r, options);
 									}
@@ -216,9 +218,14 @@ service.copyObject =
 		,	  data: <something>
 		}
 */
-function _sevice_processInputURL(quest, ponse, process_f)
+
+function _sevice_processInputURL(	quest
+								,	ponse
+								,	process_f /* (input, exit_f) */
+								)
 {
 	assert(process_f != undefined, 'processObjectF undefined');
+	var startDate = new Date();
 
 	var urlElements = url.parse(quest.url, true);
 	var urlQuery = urlElements['query'];
@@ -261,6 +268,11 @@ function _sevice_processInputURL(quest, ponse, process_f)
 
 	function _exit(result)
 	{
+		if (!result.meta)
+			result.meta = {};
+
+		result.meta.time = handy.elapsedTimeSince(startDate);
+
 		ponse.end( JSON.stringify(result) );
 	}
 	

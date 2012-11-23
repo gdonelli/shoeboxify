@@ -250,6 +250,8 @@ function ShoeboxifyButtonAction()
 
 				$('#shoeboxify').css('background-color', 'green');
 				$('#shoeboxify').removeAttr('disabled');
+
+				$('#elapsedTime').text( ponse.meta.time + 'ms');
 			}
 		,	function error(error) {
 				console.log('error:');

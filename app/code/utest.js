@@ -6,6 +6,7 @@ var 	assert	= require('assert')
 	,	_		= require('underscore')
 
 	,	fb		= require('./fb')
+	,	handy	= require('./handy')
 	;
 
 
