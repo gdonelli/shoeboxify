@@ -271,8 +271,13 @@ function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /
 		} );
 }
 
+/*
+ * s3.delete
+ * deletes one file at the time
+ *
+ */
 
-s3.delete =
+s3.delete_one_by_one =
 	function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
 	{
 		s3.assert_client(client);
@@ -328,12 +333,14 @@ s3.delete =
 	};
 
 /*
- * deleteMultiple doesn't seems to work. see:
- *   https://github.com/LearnBoost/knox/issues/121
+ * s3.delete
+ * it will use 'deleteMultiple' when removing multiple files
+ *
+ * might be buggy see discussion on https://github.com/LearnBoost/knox/issues/121
  */
 
 
-s3.delete_buggy =
+s3.delete /* _using_deleteMultiple */ =
 	function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
 		s3.assert_client(client);
@@ -349,7 +356,21 @@ s3.delete_buggy =
 		if ( _.isString(filePath_or_arrayOfPaths) )
 			deleteMethod = 'deleteFile';
 		else if ( _.isArray(filePath_or_arrayOfPaths) )
+		{
+			// Removing leading slash because of a bug in knox
+			// See discussion here:
+			// https://github.com/LearnBoost/knox/issues/121
+
+			filePath_or_arrayOfPaths = _.map(	filePath_or_arrayOfPaths
+											,	function(path) {
+													if (path.startsWith('/'))
+														return path.substring(1, path.length);
+													else
+														return path;
+												} );
+				
 			deleteMethod = 'deleteMultiple';
+		}
 
 		assert(deleteMethod != null, 'Couldnt find method to deal with input type');
 
@@ -359,11 +380,10 @@ s3.delete_buggy =
 					error_f(err);
 				else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
 				{
-					console.log('deleteMethod: ' + deleteMethod);
-					console.log('ponse.statusCode: ' + ponse.statusCode);
-					
-					console.log('ponse.headers: ' + ponse.headers);
-					console.log(ponse.headers);
+					// console.log('deleteMethod: ' + deleteMethod);
+					// console.log('ponse.statusCode: ' + ponse.statusCode);
+					// console.log('ponse.headers: ' + ponse.headers);
+					// console.log(ponse.headers);
 
 					success_f(ponse);
 
@@ -375,8 +395,8 @@ s3.delete_buggy =
 						});
 
 					ponse.on('end',	function () {
-							console.log(deleteMethod + ' response:');
-							console.log(bufferString );
+							// console.log(deleteMethod + ' response:');
+							// console.log(bufferString );
 						});
 				}
 			} );
