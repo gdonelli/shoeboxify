@@ -1,14 +1,55 @@
 /*
- * Shoeboxify layer to interface with the mongo database.
- *
- * Built on top of the mongodb native driver:
- * http://mongodb.github.com/node-mongodb-native
- *
- */
+
+==========================[   Mongo   ]==========================
+
+Shoeboxify layer to interface with the mongo database.
+Built on top of the mongodb native driver:
+http://mongodb.github.com/node-mongodb-native
+
+Setup:	
+			mongo.init
+Collection:
+			mongo.collection.get
+			mongo.collection.add
+			mongo.collection.findOne
+			mongo.collection.findAll
+			mongo.collection.remove
+			mongo.collection.drop
+Memento:
+			mongo.memento.init
+			mongo.memento.getCollection
+			mongo.memento.add
+			mongo.memento.findOne	- find
+			mongo.memento.findAll
+			mongo.memento.findId
+			mongo.memento.remove	- multi-pourpose remove
+			mongo.memento.removeId
+			mongo.memento.drop	
+Facebook:
+			mongo.memento.addFacebookObject
+			mongo.memento.findOneFacebookObject
+			mongo.memento.findAllFacebookObjects
+			mongo.memento.removeFacebookObject 
+Entry:
+			mongo.entity.getId
+			mongo.memento.entity.newWithFacebookId	- entry scafolding
+			mongo.memento.entity.newWithId
+			mongo.memento.entity.getType
+			mongo.memento.entity.getFacebookId
+			mongo.memento.entity.getFacebookUserId
+			mongo.memento.entity.getSourceObject
+			mongo.memento.entity.getCopyObject
+Utils:
+			mongo.LongFromString
+
+=================================================================
+
+*/
 
 var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
 		,	_			= require('underscore')
+
 		,	handy		= require('./handy')
 		,	identity	= require('./identity')
 		;
@@ -77,26 +118,6 @@ function _init(	host, port, name, username, password,
 				} );
 		} );
 }
-
-
-/* ====================================================== */
-/* ====================================================== */
-/* =====================[  utils  ]====================== */
-/* ====================================================== */
-/* ====================================================== */
-
-mongo.LongFromString =
-	function(string)
-	{
-		return mongodb.Long.fromString(string);
-	};
-
-
-/*{
-	graph_id:_LongFromString(graphId), 
-}*/
-// { user_id: _LongFromString(userIdstr) }
-
 
 
 /* ================================================================== */
@@ -268,12 +289,11 @@ mongo.collection.drop =
 
 mongo.memento = {};	
 
-mongo.memento.collectionName =
-	function(userId)
-	{
-		assert( userId != undefined, 'userId is undefined' );
-		return 'fb_' + userId + '_memento';
-	};
+function _memento_collectionName(userId)
+{
+	assert( userId != undefined, 'userId is undefined' );
+	return 'fb_' + userId + '_memento';
+};
 
 mongo.memento.getCollection = 
 	function(userId, success_f, error_f)
@@ -281,7 +301,7 @@ mongo.memento.getCollection =
 		assert( userId!=undefined, 'userId is undefined');
 		assert( userId.length > 0, 'userId.length <= 0');
 		
-		var collectionName = mongo.memento.collectionName(userId);
+		var collectionName = _memento_collectionName(userId);
 	
 		mongo.collection.get(collectionName
 				,	function success(c) { success_f(c); }
@@ -563,4 +583,17 @@ function _getLongProperty(entry, property)
 
 	return value.toString();
 }
+
+
+/* ====================================================== */
+/* ====================================================== */
+/* =====================[  utils  ]====================== */
+/* ====================================================== */
+/* ====================================================== */
+
+mongo.LongFromString =
+	function(string)
+	{
+		return mongodb.Long.fromString(string);
+	};
 

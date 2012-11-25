@@ -102,7 +102,7 @@ app.get('/dev/permissions',	fb.requiresAuthentication, dev.permissions);
 
 app.get('/dev/s3test',	dev.s3test);
 
-app.get('/dev/shoeboxified', fb.requiresAuthentication, fb.requiresAdmin, dev.shoeboxified);
+app.get('/dev/shoeboxified', fb.requiresAuthentication, dev.shoeboxified);
 
 app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);

@@ -1,10 +1,27 @@
-/*		
- *		memento.js - Facade to S3 and Mongo
- *
- *		memento module abstracts from the accessing directly the mongo db (mongo.js) and manipulation on amazon S3 (s3.js)
- *	
- *		[gdonelli, Nov 2012]
- */
+/*
+
+========================[   Memento   ]========================
+
+Memento rappresent a user memory/entry (example: a photo). 
+It corresponds to some data stored in S3 and some meta-data 
+stored in the Mongo DB.
+
+The Memento module abstracts from the accessing directly the 
+mongo db (mongo.js) and manipulation on amazon S3 (s3.js)
+
+Setup:
+			memento.init
+			memento.initUser
+
+Operations:
+			memento.removeId
+			memento.findId
+			memento.addFacebookObject
+
+================================================================
+
+*/
+
 
 var		assert	= require('assert')	
 	,	url 	= require('url')
