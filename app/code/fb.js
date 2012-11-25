@@ -3,9 +3,9 @@
 ==================[   Facebook   ]==================
 
 Routes:
-			fb.route.login	
-			fb.route.response
-			fb.route.logout
+			fb.route.login		(fb.path.login)
+			fb.route.response	(fb.path.response)
+			fb.route.logout		(fb.path.logout)
 
 Middleware:
 			fb.requiresAuthentication

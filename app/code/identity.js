@@ -2,6 +2,38 @@
 
 ========[   App identity properties and secrets   ]========
 
+Facebook App:
+			identity.appID 
+			identity.appSecret
+			identity.appPermissions
+Session:
+			identity.sessionSecret
+			identity.sessionDatabaseName
+			identity.sessionDatabaseURL
+S3:
+			identity.s3.host
+			identity.s3.user.R.key 
+			identity.s3.user.R.secret
+			identity.s3.user.RW.key
+			identity.s3.user.RW.secret
+			identity.s3.bucket.test
+			identity.s3.bucket.production
+Mongo:
+			identity.dbServerHost
+			identity.dbServerPort
+			identity.dbServerUsername
+			identity.dbServerPassword
+			identity.dbName
+Email:
+			identity.emailAddress
+			identity.SMTPUser
+			identity.SMTPPassword
+			identity.SMTPHost
+Other:
+			identity.adminID
+
+===========================================================
+
 */
 
 var 	assert	= require('assert')
@@ -66,25 +98,25 @@ identity.sessionDatabaseURL =
 identity.s3			= { user: { R:{}, RW:{} }, bucket: {} };
 
 identity.s3.host =
-	function(){ return _env('S3_HOST_NAME');	}
+	function(){ return _env('S3_HOST_NAME');	};
 
 identity.s3.user.R.key =
-	function(){ return _env('S3_R_KEY');	}
+	function(){ return _env('S3_R_KEY');	};
 
 identity.s3.user.R.secret =
-	function(){ return _env('S3_R_SECRET');	}
+	function(){ return _env('S3_R_SECRET');	};
 
 identity.s3.user.RW.key =
-	function(){ return _env('S3_RW_KEY');	}
+	function(){ return _env('S3_RW_KEY');	};
 
 identity.s3.user.RW.secret =
-	function(){ return _env('S3_RW_SECRET');	}
+	function(){ return _env('S3_RW_SECRET');	};
 
 identity.s3.bucket.test =
-	function(){ return _env('S3_TEST_BUCKET');	}
+	function(){ return _env('S3_TEST_BUCKET');	};
 
 identity.s3.bucket.production =
-	function(){ return _env('S3_PRODUCTION_BUCKET');	}
+	function(){ return _env('S3_PRODUCTION_BUCKET');	};
 
 
 /* ===================================================== */
@@ -137,7 +169,9 @@ identity.SMTPHost =
 identity.adminID =
 	function() {	return _env('ADMIN_ID');	};
 
+
 /* ===================================================== */
+
 
 function _env(name)
 {
@@ -214,5 +248,4 @@ identity.validateEnviroment = function()
 					console.error('dont know what to do with key: ' + key + 'value: ' + valueForKey);
 			}
 		}
-
 	};

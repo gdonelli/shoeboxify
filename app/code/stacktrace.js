@@ -1,9 +1,22 @@
-// based on http://stacktracejs.com
-// stacktrace-min-0.4.js
+/* 
+
+==================[   Stacktrace   ]==================
+
+Based on http://stacktracejs.com, stacktrace-min-0.4.js
+
+API:
+        stacktrace.process  returns array of the JS stack
+                            pass { e: error }        
+            
+======================================================
+
+*/
+
+var stacktrace = exports;
 
 
-exports.process = 
-	function(o)
+stacktrace.process = 
+	function(o) // option with  { e : error... }
 	{
 		return printStackTrace(o);
 	}
