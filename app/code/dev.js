@@ -11,7 +11,7 @@ var		url		= require('url')
 	,	debug	= require('./debug-lib')
 	,	handy	= require('./handy')
 	,	mongo	= require('./mongo')
-	,	shoeboxify	= require('./shoeboxify')
+	// ,	ide	= require('./shoeboxify')
 	;
 
 /* ================================ EXPORTS ==================================== */
@@ -44,61 +44,63 @@ exports.testEmail =
 	}
 
 
+function _emailServerConnect()
+{
+	return email.server.connect(
+		{
+				user:		identity.SMTPUser()
+			,	password:	identity.SMTPPassword()
+			,	host:		identity.SMTPHost()
+			,	ssl:		true
+		} );
+}
+
 function SendTextEmail( toAddress, subject, textMessage )
 {
-		var server = email.server.connect(
-			{
-				user:		"hello+shoeboxify.com", 
-				password:	"camper12", 
-				host:		"server49.web-hosting.com", 
-				ssl:		true
-			} );
+	var server = _emailServerConnect();
+	// send the message and get a callback with an error or details of the message that was sent
 
-		// send the message and get a callback with an error or details of the message that was sent
+	var senderField = "Shoeboxify Survey <" + identity.emailAddress + ">";
 
-		var message = {
-		   text:    textMessage,
-		   from:    "Shoeboxify Survey <hello@shoeboxify.com>", 
-		   to:      toAddress,
-		   cc:      "Shoeboxify Survey <hello@shoeboxify.com>",
-		   subject: subject
-		};
+	var message = {
+	   		text:		textMessage
+	   ,	from:		senderField
+	   ,	to:			toAddress	
+	   ,	cc:			senderField	
+	   ,	subject:	subject
+	};
 
-		server.send( message, 
-			function(err, message)
-			{	
-				console.log(err || message); 
-			} );
+	server.send( message, 
+		function(err, message)
+		{	
+			console.log(err || message); 
+		} );
 }
 
 
 function SendHTMLEmail( toAddress, subject, htmlMessage )
 {
-		var server = email.server.connect(
-			{
-				user:		"hello+shoeboxify.com", 
-				password:	"camper12", 
-				host:		"server49.web-hosting.com", 
-				ssl:		true
-			} );
+	var server = _emailServerConnect();
 
-		// send the message and get a callback with an error or details of the message that was sent
+	// send the message and get a callback with an error or details of the message that was sent
 
-		var message = {
-		   text:    "This is Shoeboxify stats email",
-		   from:    "Shoeboxify Survey <hello@shoeboxify.com>", 
-		   to:      toAddress,
-		   cc:      "Shoeboxify Survey <hello@shoeboxify.com>",
-		   subject: subject,
+	var senderField = "Shoeboxify Survey <" + identity.emailAddress + ">";
 
-		   attachment: [ { data: htmlMessage, alternative:true } ]
-		};
+	var message = {
+	   text:    "This is Shoeboxify stats email",
+	   from:    senderField,
+	   to:      toAddress,
+	   cc:      senderField,
+	   subject: subject,
 
-		server.send( message, 
-			function(err, message)
-			{	
-				console.log(err || message); 
-			} );
+	   attachment: [ { data: htmlMessage, alternative:true } ]
+	};
+
+	server.send( message, 
+		function(err, message)
+		{	
+			console.log(err || message); 
+		} );
 }
 
 
@@ -288,7 +290,7 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
 	fb.graph(graphURL, quest, 
 		function success(fbObject)
 		{
-			shoeboxify.debug('_ponsepondWithGraphInfoPage - sucess');
+			console.log('_ponsepondWithGraphInfoPage - sucess');
 
 			if ( !fb.sanitizeObject(quest, ponse, fbObject) )
 				return;
@@ -300,7 +302,7 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
 		},
 		function fail(error)
 		{
-			shoeboxify.debug('_respondWithGraphInfoPage - error:' + error);
+			console.log('_respondWithGraphInfoPage - error:' + error);
 
 			return;
 		} );

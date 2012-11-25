@@ -6,7 +6,6 @@ var		assert	= require("assert")
 
 	,	s3 			= require("./s3")
 	,	handy		= require("./handy")
-	,	shoeboxify	= require("./shoeboxify")
 	;
 
 
@@ -43,7 +42,7 @@ describe('s3.js',
 
 				it( 's3.writeJSON ' + jsonTestPath + ' to s3.object',
 					function(done) {
-						_simpleJSONWrite( s3.object, jsonTestPath, done, true );
+						_simpleJSONWrite( s3.production, jsonTestPath, done, true );
 					} );
 
 				it( 's3.writeJSON ' + jsonTestPath + ' to s3.test',
@@ -109,7 +108,7 @@ describe('s3.js',
 
 				it ( 's3.delete ' + jsonTestPath + ' from s3.test',
 					function(done) {
-						_deleteFile(s3.object, jsonTestPath, done);
+						_deleteFile(s3.production, jsonTestPath, done);
 					} );
 
 /*
@@ -260,11 +259,17 @@ function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
 	else
 		clientS3 = destination.clientR();
 
+	assert(clientS3 != undefined, 'clientS3 is undefined');
+
 	// console.log('thePath: ' + thePath);
 
 	var stringWritten = s3.writeJSON( clientS3, object, thePath,
 		function success(ponse) {
 			assert.equal(ponse.statusCode, 200);
+
+			assert(clientS3.URLForPath != undefined, 'clientS3.URLForPath is undefined');
+
+			// console.log('clientS3.URLForPath(thePath): ' + clientS3.URLForPath(thePath) );
 
 			handy.GET(	clientS3.URLForPath(thePath)
 					,	function _200OK(readBuffer) {

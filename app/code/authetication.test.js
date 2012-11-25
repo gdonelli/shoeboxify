@@ -2,10 +2,9 @@
 var		assert	= require("assert")
 	,	fs		= require("fs")
 	,	spawn	= require('child_process').spawn
-	,	fb		= require("./fb")
-	
-	,	shoeboxify	= require("./shoeboxify")
-	,	utest		= require("./utest")
+
+	,	fb		= require("./fb")	
+	,	utest	= require("./utest")
 	;
 
 
@@ -108,7 +107,7 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 			function (err, data) {
   				if (err) 
   				{
-  					console.log('no cache');
+  					console.log('no cache file in ' + utest.accessTokenCacheFilePath);
   					_miss();
   				}
   				else
@@ -130,8 +129,12 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 	  					cacheValid = (cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE);
   					}
   					else
-  						console.log('no cache.date -> assume cache is valid');
-
+  					{
+						console.log( 'Using cached AccessToken');
+	  					console.log( 'CacheFile: ' + utest.accessTokenCacheFilePath);
+						console.log('no cache.date -> assume cache is valid');
+  					}
+  						
   					if (cacheValid)
   						_useAuth(cache.payload);
   					else

@@ -1,7 +1,3 @@
-/**************************/
-/*   SHOEBOXIFY: App.js   */
-/**************************/
-
 var		express	= require('express')
 	,	assert	= require('assert')
 	,	http	= require('http')
@@ -18,7 +14,7 @@ var		express	= require('express')
 
 	/* libs */
 
-	,	shoeboxify	= require('./code/shoeboxify')
+	,	identity	= require('./code/identity')
 	,	memento		= require('./code/memento')
 	;
 
@@ -40,9 +36,9 @@ app.configure(
 		app.use(express.cookieParser());
 
 		app.use(express.session({
-		    	secret: shoeboxify.sessionSecret()
+		    	secret: identity.sessionSecret()
 		    ,	store: new MongoStore({		cookie: { maxAge: 60000 * 60 }
-										,	url: shoeboxify.sessionDatabaseURL()
+										,	url: identity.sessionDatabaseURL()
 										,	auto_reconnect: true })
 
 		  	}));
@@ -114,7 +110,7 @@ app.get('/dev/rmsession',	dev.rmsession);
 
 
 /* Self Test */
-shoeboxify.validateEnviroment();
+identity.validateEnviroment();
 
 /*******************/
 /*   HTTP Server   */

@@ -1,8 +1,6 @@
 
 var		assert	= require("assert")
 	,	handy	= require("./handy")
-
-	,	shoeboxify	= require("./shoeboxify")
 	;
 
 

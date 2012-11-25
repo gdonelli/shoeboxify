@@ -1,6 +1,6 @@
 {
   "name": "shoeboxify",
-  "version": "0.0.1-102",
+  "version": "0.0.1-104",
   "private": true,
   "scripts": {
     "start": "app.js"

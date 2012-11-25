@@ -10,7 +10,7 @@ var			assert		= require('assert')
 		,	mongodb		= require('mongodb')
 		,	_			= require('underscore')
 		,	handy		= require('./handy')
-		,	shoeboxify	= require('./shoeboxify')
+		,	identity	= require('./identity')
 		;
 
 
@@ -28,11 +28,11 @@ mongo.const = {};
 mongo.init = 
 	function(success_f, error_f)
 	{
-		_init(	shoeboxify.dbServerHost()
-			, 	shoeboxify.dbServerPort()
-			,	shoeboxify.dbName()
-			,	shoeboxify.dbServerUsername()
-			,	shoeboxify.dbServerPassword()
+		_init(	identity.dbServerHost()
+			, 	identity.dbServerPort()
+			,	identity.dbName()
+			,	identity.dbServerUsername()
+			,	identity.dbServerPassword()
 			,	success_f
 			,	error_f
 			);

@@ -1,7 +1,32 @@
+/* 
 
-/*
- *		Shoeboxify	<--->	Facebook plumbing
- */
+==================[   Facebook   ]==================
+
+Routes:
+			fb.route.login	
+			fb.route.response
+			fb.route.logout
+
+Middleware:
+			fb.requiresAuthentication
+			fb.requiresAdmin
+			fb.redirectToAuthentication
+			fb.sanitizeObject
+
+User
+			fb.me		get /me object from session
+			fb.isAuthenticated
+			fb.getAccessToken
+			fb.getExpiresToken
+
+Query
+			fb.graph	Facebook Graph API
+			fb.batch	Batch Graph API requests
+			
+====================================================
+
+
+*/
 
 var 	https		= require('https')
 	,	querystring	= require('querystring')
@@ -13,7 +38,7 @@ var 	https		= require('https')
 
 	,	handy		= require('./handy')
 	,	mongo		= require('./mongo')
-	,	shoeboxify	= require('./shoeboxify')
+	,	identity	= require('./identity')
 	,	stacktrace	= require('./stacktrace')
 	;
 
@@ -21,6 +46,22 @@ fb = exports;
 
 fb.route = {};
 fb.path	 = {};
+
+
+/* ======================================================== */
+/* ======================================================== */
+/* ======================== Routes ======================== */
+/* ======================================================== */
+/* ======================================================== */
+
+function _dialogRedirectURL(req)
+{
+	var reqHeaders = req.headers;
+	var reqHost    = reqHeaders.host;
+	
+	return 'http://' + reqHost + fb.path.response;
+}
+
 
 /*	PAGE:	Start Facebook Login	
  * 	URL:	/facebook-login
@@ -46,9 +87,9 @@ fb.route.login =
 		quest.session.loginState = state;
 
 		var query = {
-				  'client_id'		: shoeboxify.appID()
-				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(quest)
-				, 'scope'			: shoeboxify.appPermissions()
+				  'client_id'		: identity.appID()
+				, 'redirect_uri'	: _dialogRedirectURL(quest)
+				, 'scope'			: identity.appPermissions()
 				, 'state'			: state
 			};
 
@@ -130,9 +171,9 @@ fb.route.response =
 
 			var query = {
 				  'code'			: code
-				, 'client_id'		: shoeboxify.appID()
-				, 'client_secret'	: shoeboxify.appSecret()
-				, 'redirect_uri'	: shoeboxify.dialogRedirectURL(quest)
+				, 'client_id'		: identity.appID()
+				, 'client_secret'	: identity.appSecret()
+				, 'redirect_uri'	: _dialogRedirectURL(quest)
 				
 			};
 
@@ -205,7 +246,7 @@ fb.route.response =
 				{
 					var meKeys = ['id', 'name', 'first_name', 'last_name', 'link', 'username', 'gender', 'email', 'timezone', 'locale', 'updated_time'];
 
-					var meInfo = DictionaryWithOnlyKeys(fbObject, meKeys);
+					var meInfo = _dictionaryWithOnlyKeys(fbObject, meKeys);
 
 					quest.session.regenerate(
 						function (err) {
@@ -310,7 +351,7 @@ fb.route.response =
 		
 		function RespondWithJSONError(title, e)
 		{
-			shoeboxify.error('Login: ' + e);
+			console.error('Login: ' + e);
 
 			ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
 
@@ -325,7 +366,7 @@ fb.route.response =
 
 		function RespondWithHTMLError(title, e)
 		{
-			shoeboxify.error('Login: ' + e);
+			console.error('Login: ' + e);
 
 			ponse.writeHead(200, {'Content-Type': 'text/html'});
 
@@ -356,23 +397,22 @@ fb.route.response =
 
 	};
 
+function _dictionaryWithOnlyKeys(sourceDictionary, keyArray)
+{
+	var result = {};
 
-fb.me = function(quest, field)
+	for (var aKeyIndex in keyArray)
 	{
-		assert(quest != undefined,				arguments.callee.name + ' quest is undefined');
-		assert(quest.session != undefined,		arguments.callee.name + ' quest.session is undefined');
-		assert(quest.session.me != undefined,	arguments.callee.name + ' quest.session.me is undefined');
+		var aKey = keyArray[aKeyIndex];
 
-		if (field) {
-			assert(quest.session.me[field] != undefined, arguments.callee.name +' quest.session.me[field] is undefined');			
-			return quest.session.me[field];
-		}
-		else
+		if (sourceDictionary.hasOwnProperty(aKey))
 		{
-			return quest.session.me;
+			result[aKey] = sourceDictionary[aKey];
 		}
 	}
 
+	return result;
+}
 
 
 /*	PAGE:	Facebook App Logout
@@ -380,15 +420,6 @@ fb.me = function(quest, field)
  */ 
 
 fb.path.logout = '/logout';
-
-
-function _returnResponseWithMessage(ponse, message)
-{
-	ponse.writeHead(200, {'Content-Type': 'text/html'});
-	ponse.write('<html><body>');
-	ponse.write('<html><body> ' + message + ' </body></html>');
-	ponse.end('</body></html>');
-}
 
 fb.route.logout = 
 	function(quest, ponse)
@@ -418,6 +449,16 @@ fb.route.logout =
 				});
 
 		quest.session.destroy();
+
+
+		function _returnResponseWithMessage(ponse, message)
+		{
+			ponse.writeHead(200, {'Content-Type': 'text/html'});
+			ponse.write('<html><body>');
+			ponse.write('<html><body> ' + message + ' </body></html>');
+			ponse.end('</body></html>');
+		}
+
 	}
 
 
@@ -437,16 +478,12 @@ function WriteObject(quest, ponse)
 	ponse.end('</body></html>');
 }
 
-fb.redirectToAuthentication =
-	function(quest, ponse)
-	{
-		var encodedURL = handy.ASCIItoBase64(quest.url);
-		var redirectURL = fb.path.login + '?source=' + encodedURL;
 
-		ponse.redirect(redirectURL);
-
-		shoeboxify.debug('AUTH-Redirect: ' + redirectURL);
-	}
+/* ======================================================== */
+/* ======================================================== */
+/* ====================== Middleware ====================== */
+/* ======================================================== */
+/* ======================================================== */
 
 
 fb.requiresAuthentication = 
@@ -462,10 +499,11 @@ fb.requiresAuthentication =
 		}
 	}
 
+
 fb.requiresAdmin = 
 	function(quest, ponse, next)
 	{
-		if ( fb.me(quest, 'id') == shoeboxify.adminID() )
+		if ( fb.me(quest, 'id') == identity.adminID() )
 		{
 			next();
 		}
@@ -478,6 +516,76 @@ fb.requiresAdmin =
 			ponse.write('</body></html>');
 			ponse.end();
 
+		}
+	}
+
+
+fb.redirectToAuthentication =
+	function(quest, ponse)
+	{
+		var encodedURL = handy.ASCIItoBase64(quest.url);
+		var redirectURL = fb.path.login + '?source=' + encodedURL;
+
+		ponse.redirect(redirectURL);
+
+		console.log('AUTH-Redirect: ' + redirectURL);
+	}
+
+
+fb.sanitizeObject = 
+	function(quest, ponse, object)
+	{
+		if (!object) 
+		{
+			return RespondWithErrorPage('facebook object is undefined');
+		}
+
+		var graphError = object['error'];
+
+		if (graphError)
+		{
+			var type = graphError['type'];
+
+			if (type == 'OAuthException')
+			{
+				fb.redirectToAuthentication(quest, ponse);
+				return false;
+			}
+		}
+		
+		return true;
+
+		function RespondWithErrorPage(error)
+		{
+			ponse.writeHead(200, {'Content-Type': 'text/html'} );
+			ponse.write('<html><body>');
+			ponse.write(error);
+			ponse.end('</body></html>');
+			return false;
+		}
+	}
+
+
+/* ======================================================== */
+/* ======================================================== */
+/* ======================== User ========================== */
+/* ======================================================== */
+/* ======================================================== */
+
+
+fb.me = function(quest, field)
+	{
+		assert(quest != undefined,				arguments.callee.name + ' quest is undefined');
+		assert(quest.session != undefined,		arguments.callee.name + ' quest.session is undefined');
+		assert(quest.session.me != undefined,	arguments.callee.name + ' quest.session.me is undefined');
+
+		if (field) {
+			assert(quest.session.me[field] != undefined, arguments.callee.name +' quest.session.me[field] is undefined');			
+			return quest.session.me[field];
+		}
+		else
+		{
+			return quest.session.me;
 		}
 	}
 
@@ -495,11 +603,13 @@ fb.getAccessToken =
 		return quest.session.accessToken;
 	}
 
+
 fb.getExpiresToken = 
 	function(quest)
 	{
 		return quest.session.expiresToken;
 	}
+
 
 function _setAccessToken(quest, token, expires )
 {
@@ -507,26 +617,17 @@ function _setAccessToken(quest, token, expires )
 	quest.session.expiresToken = expires;
 }
 
-function DictionaryWithOnlyKeys(sourceDictionary, keyArray)
-{
-	var result = {};
 
-	for (var aKeyIndex in keyArray)
-	{
-		var aKey = keyArray[aKeyIndex];
+/* ======================================================== */
+/* ======================================================== */
+/* ======================== Query ========================= */
+/* ======================================================== */
+/* ======================================================== */
 
-		if (sourceDictionary.hasOwnProperty(aKey))
-		{
-			result[aKey] = sourceDictionary[aKey];
-		}
-	}
-
-	return result;
-}
 
 function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /* (error) */)
 {
-	// shoeboxify.debug(method + ' GRAPH: ' + path);
+	// console.log(method + ' GRAPH: ' + path);
 
 	var questOptions = { method: method };
 
@@ -550,7 +651,7 @@ function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /*
 		questOptions['path']		= questPath;
 	}
 
-	// shoeboxify.debug('questOptions: ' + JSON.stringify(questOptions) );
+	// console.log('questOptions: ' + JSON.stringify(questOptions) );
 
 	var apiQuest = https.request( questOptions, _processGraphResponse );
 
@@ -565,7 +666,7 @@ function _graphCall(method, path, srcQuest, success_f /*(fbObject)*/, error_f /*
 		apiQuest.on('error', 
 			function(e)
 			{
-				shoeboxify.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
+				console.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
 
 				if (error_f)
 					error_f(e);
@@ -653,37 +754,3 @@ fb.batch =
 		outQuest.end();
 	}
 
-
-
-fb.sanitizeObject = 
-	function(quest, ponse, object)
-	{
-		if (!object) 
-		{
-			return RespondWithErrorPage('facebook object is undefined');
-		}
-
-		var graphError = object['error'];
-
-		if (graphError)
-		{
-			var type = graphError['type'];
-
-			if (type == 'OAuthException')
-			{
-				fb.redirectToAuthentication(quest, ponse);
-				return false;
-			}
-		}
-		
-		return true;
-
-		function RespondWithErrorPage(error)
-		{
-			ponse.writeHead(200, {'Content-Type': 'text/html'} );
-			ponse.write('<html><body>');
-			ponse.write(error);
-			ponse.end('</body></html>');
-			return false;
-		}
-	}

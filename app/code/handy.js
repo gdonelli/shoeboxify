@@ -1,5 +1,31 @@
+/* 
 
-/* utils */
+====================[   Handy   ]====================
+
+Data:	
+			handy.ASCIItoBase64
+			handy.Base64toASCII
+
+HTTP:
+			handy.is200OK
+			handy.HEAD
+			handy.GET
+
+Debug:
+			handy.assert_f
+			handy.assert_http_url
+			handy.writeHTMLstacktrace
+			handy.errorLogStacktrace
+
+Other:
+			String.startsWith
+			String.endsWith
+			handy.elapsedTimeSince
+
+======================================================
+
+*/
+
 
 var		url		= require('url')
 	,	http	= require('http')
@@ -65,7 +91,7 @@ handy.HEAD =
 			,	error_f		/*	(error)	*/
 			)
 	{
-		return handy.makeHTTPRequest(
+		return _makeHTTPRequest(
 					fileUrl
 				,	'HEAD'
 				,	function(read_s, ponse)
@@ -95,7 +121,7 @@ handy.GET =
 			,	traverse
 			)
 	{
-		return handy.makeHTTPRequest(
+		return _makeHTTPRequest(
 					fileUrl
 				,	'GET'
 				,	function(read_s, ponse)
@@ -125,13 +151,12 @@ handy.GET =
 	};
 
 
-handy.makeHTTPRequest =
-	function(	fileUrl
-			,	httpMethod
-			,	success_f	/*	(read_s, ponse)	*/
-			,	error_f		/*	(error)		*/
-			,	traverse
-			)
+function _makeHTTPRequest(	fileUrl
+						,	httpMethod
+						,	success_f	/*	(read_s, ponse)	*/
+						,	error_f		/*	(error)		*/
+						,	traverse
+						)
 	{
 		// console.log('GET ' + fileUrl);
 
@@ -141,13 +166,7 @@ handy.makeHTTPRequest =
 					  method:	httpMethod
 				,	hostname:	fileUrlElements['hostname']
 				,		path:	fileUrlElements['path']
-
-//				,	 headers: {
-//							'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/536.26.17 (KHTML, like Gecko) Version/6.0.2 Safari/536.26.17'
-//						,	'Accept' : 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-//						,	'Connection' : 'keep-alive'
-
- 					}
+ 				}
 
 		if (fileUrlElements['port'] != undefined)
 			questOptions['port'] = fileUrlElements['port'];
@@ -191,11 +210,11 @@ handy.makeHTTPRequest =
 	};
 
 
-/* ========================================================== */
-/* ========================================================== */
-/* ========================= Assert ========================= */
-/* ========================================================== */
-/* ========================================================== */
+/* ========================================================= */
+/* ========================================================= */
+/* ========================= Debug ========================= */
+/* ========================================================= */
+/* ========================================================= */
 
 
 handy.assert_f = 
@@ -254,22 +273,11 @@ handy.errorLogStacktrace =
 	};
 
 
-handy.elapsedTimeSince =
-	function(startTime)
-	{
-		assert(startTime != undefined, 'startTime is undefined');
-
-		var now = new Date();
-
-		return now.getTime() - startTime.getTime();
-	}
-
-
-/* ============================================================= */
-/* ============================================================= */
-/* ========================= Extension ========================= */
-/* ============================================================= */
-/* ============================================================= */
+/* ========================================================= */
+/* ========================================================= */
+/* ========================= Other ========================= */
+/* ========================================================= */
+/* ========================================================= */
 
 
 if (typeof String.prototype.startsWith != 'function') {
@@ -287,3 +295,13 @@ if (typeof String.prototype.endsWith != 'function') {
 		};
 }
 
+
+handy.elapsedTimeSince =
+	function(startTime)
+	{
+		assert(startTime != undefined, 'startTime is undefined');
+
+		var now = new Date();
+
+		return now.getTime() - startTime.getTime();
+	}

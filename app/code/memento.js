@@ -15,8 +15,6 @@ var		assert	= require('assert')
 	,	s3		= require('./s3')
 	,	mongo	= require('./mongo')
 	,	handy	= require('./handy')
-
-	,	shoeboxify	= require('./shoeboxify')
 	;
 
 
@@ -134,7 +132,7 @@ memento.removeId =
 
 			s3.delete(s3client, info.paths
 				,	function success(num) {
-						console.log('removed ' +  num + ' s3 files');
+						// console.log('removed ' +  num + ' s3 files');
 						success_f();
 					} 
 				,	function error(e) {
@@ -172,8 +170,8 @@ memento.addFacebookObject =
 					}
 				}
 			,	function error(e) {
-					shoeboxify.error('mongo.object.find(' + graphId + ', ' + userId + ') failed');
-					shoeboxify.error(e);
+					console.error('mongo.object.find(' + graphId + ', ' + userId + ') failed');
+					console.error(e);
 
 					_exitWithError(e);
 				} );		
@@ -261,7 +259,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 
 	var imageDictionary = _collectAllImages(photoObject);
 
-	var s3client = s3.object.clientRW();
+	var s3client = s3.production.clientRW();
 
 	var imageIndex = 0;
 
@@ -277,7 +275,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 		var newFilePath = _generateFilePath(newName, imageIndex++, meta, path.extname(imageURL));
 		
 		// console.log('original: ' + imageURL);
-		// console.log('copy:     ' + s3.object.URL(newFilePath) );
+		// console.log('copy:     ' + s3.production.URL(newFilePath) );
 		
 		_performOneCopyOperationToS3( s3client, imageURL, newFilePath);
 		
@@ -393,7 +391,7 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 				}
 				else
 				{
-					shoeboxify.error(	'Duplicate image with size not matching: ' + 
+					console.error(	'Duplicate image with size not matching: ' + 
 										hitWidth + 'x' + hitHeight + ' vs ' +
 										sourceWidth + 'x' + sourceHeight);
 				}

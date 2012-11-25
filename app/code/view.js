@@ -11,7 +11,6 @@ var 	https	= require('https')
 	,	fb = require('./fb')
 	,	handy = require('./handy')
 	,	debug = require('./debug-lib')
-	,	shoeboxify = require('./shoeboxify')
 	;
 
 exports.route = {}; 

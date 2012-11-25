@@ -1,6 +1,23 @@
 /*
- * 		s3
- */
+
+====================[   Amazon S3 Facade   ]====================
+
+S3 Client:	
+			s3.getClient()
+			s3.object.clientRW()	defult client with RW permissions
+
+Operations:
+			s3.writeJSON	write JSON file to s3
+			s3.delete		delete files from s3
+			s3.copyURL		copy content from any URL to s3
+
+Meta:
+			s3.getInfoForURL	{ bucket, path } from s3 URL
+
+================================================================
+
+*/
+
 
 var		assert= require('assert')
 	,	knox = require('knox')
@@ -10,8 +27,8 @@ var		assert= require('assert')
 	,	https = require("https")
 	,	_ = require("underscore")
 
-	,	handy = require('./handy')
-	,	shoeboxify	= require('./shoeboxify')
+	,	handy 		= require('./handy')
+	,	identity	= require('./identity')
 	;
 
 
@@ -19,46 +36,31 @@ var s3 = exports;
 
 /* ====================================================== */
 /* ====================================================== */
-/* ===============[   Built in Clients   ]=============== */
+/* ===================[   Clients   ]==================== */
 /* ====================================================== */
 /* ====================================================== */
 
-/* 
- *
- *	 client.URLForPath(aPath) 
- *
- *   returns the URL of a file for a given path
- *
- */
-
-var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
-
-s3.object = {};
-s3.object.bucketName= "shoeboxify.object";
-s3.object.clientR	= function(){ return _getCachedClient(s3.object.bucketName, 'R' ); };
-s3.object.clientRW	= function(){ return _getCachedClient(s3.object.bucketName, 'RW'); };
+s3.production = {};
+s3.production.bucket	= identity.s3.bucket.production();
+s3.production.clientR	= function(){ return s3.getClient(s3.production.bucket, 'R' ); };
+s3.production.clientRW	= function(){ return s3.getClient(s3.production.bucket, 'RW'); };
 
 s3.test = {};
-s3.test.bucketName	= "shoeboxify.test";
-s3.test.clientR		= function(){ return _getCachedClient(s3.test.bucketName, 'R' ); };
-s3.test.clientRW	= function(){ return _getCachedClient(s3.test.bucketName, 'RW'); };
-
-
-s3.validBucket = 
-	function(bucket)
-	{
-		return (bucket == s3.test.bucketName ||
-				bucket == s3.object.bucketName);		
-	}
+s3.test.bucket		= identity.s3.bucket.test();
+s3.test.clientR		= function(){ return s3.getClient(s3.test.bucket, 'R' ); };
+s3.test.clientRW	= function(){ return s3.getClient(s3.test.bucket, 'RW'); };
 
 
 s3.getClient = 
 	function(bucket, permission)
 	{
-		assert( s3.validBucket(bucket), bucket + ' is not valid' );
+		_s3_assert_bucket(bucket);
 
 		return _getCachedClient(bucket, permission);
 	};
+
+
+var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
 
 
 var _clientCache = {
@@ -73,9 +75,9 @@ var _clientCache = {
 	};
 
 
-function _getCachedClient(bucketName, permission)
+function _getCachedClient(bucket, permission)
 {
-	var bucketEndName = bucketName.split('.')[1];
+	var bucketEndName = bucket.split('.')[1];
 
 	assert(bucketEndName == 'test' || bucketEndName == 'object', 'bucketEndName is not valid: ' + bucketEndName);
 
@@ -83,7 +85,7 @@ function _getCachedClient(bucketName, permission)
 
 		// console.log('_getCachedClient ' + bucketEndName + ' ' + permission );
 
-		_clientCache[bucketEndName][permission] = _s3client(bucketName, permission);
+		_clientCache[bucketEndName][permission] = _s3client(bucket, permission);
 		_clearCache(bucketEndName, permission);
 	}
 
@@ -101,14 +103,12 @@ function _getCachedClient(bucketName, permission)
 	}
 }
 
-var S3_HOST_NAME = 's3-us-west-2.amazonaws.com';
-
  // do not use directly. Use _getCachedClient instead
 
 function _s3client( bucket, permission )
 {
-	var key		= shoeboxify.s3.key[permission]();
-	var secret	= shoeboxify.s3.secret[permission]();
+	var key		= identity.s3.user[permission].key();
+	var secret	= identity.s3.user[permission].secret();
 
 	assert( (key != undefined),		's3 key is undefined');
 	assert( (secret != undefined),	's3 secret is undefined');
@@ -123,17 +123,22 @@ function _s3client( bucket, permission )
 
 	result.URLForPath = 
 		function(filePath) {
-			return 'https://' + S3_HOST_NAME + '/' + path.normalize(bucket + '/' + filePath);			
+			return 'https://' + identity.s3.host() + '/' + path.normalize(bucket + '/' + filePath);			
 		};
 
 	return result;
 }
 
 
-/*
- *	Given a URL returns {	bucket: ... , 
- *						,	  path: ... } 
- */
+/**
+*	Given a URL of a S3 object it returns an object:
+*		{	bucket: ... , 
+*		,	  path: ... } 
+*
+*	@method s3.getInfoForURL
+*	@param {String} an s3 URL
+*	@return {Object} Returns object with 'bucket' and 'path' property
+**/
 
 s3.getInfoForURL =
 	function(theURL)
@@ -141,7 +146,8 @@ s3.getInfoForURL =
 		var result = {};
 
 		var urlElements = url.parse(theURL);
-		assert( urlElements.host == S3_HOST_NAME, 'url host (' + urlElements.host + ') doesnt match expected s3 host:' + S3_HOST_NAME);
+		assert( urlElements.host == identity.s3.host(), 
+				'url host (' + urlElements.host + ') doesnt match expected s3 host:' + identity.s3.host());
 
 		var urlPath = urlElements.path;
 		var urlPathElements = urlPath.split('/');
@@ -199,7 +205,6 @@ s3.getInfoForURLs =
 /* =================================================== */
 
 
-
 // http://docs.amazonwebservices.com/AmazonS3/latest/API/RESTObjectPUT.html
 /*
  * success_f(ponse)
@@ -209,9 +214,9 @@ s3.getInfoForURLs =
 s3.writeJSON =
 	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
-		s3.assert_client(client);
+		_s3_assert_client(client);
 		assert(object != undefined, " object is undefined");
-		s3.assert_path(filePath);
+		_s3_assert_path(filePath);
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
@@ -248,7 +253,7 @@ s3.writeJSON =
 
 function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 {
-	s3.assert_client(client);
+	_s3_assert_client(client);
 	assert(filePath != undefined, 'filePath is undefined' );
 	assert(_.isString(filePath), 'filePath is not a string');	
 	handy.assert_f(success_f);
@@ -280,7 +285,7 @@ function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /
 s3.delete_one_by_one =
 	function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
 	{
-		s3.assert_client(client);
+		_s3_assert_client(client);
 		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
 		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
 		handy.assert_f(success_f);
@@ -336,14 +341,13 @@ s3.delete_one_by_one =
  * s3.delete
  * it will use 'deleteMultiple' when removing multiple files
  *
- * might be buggy see discussion on https://github.com/LearnBoost/knox/issues/121
  */
 
 
 s3.delete /* _using_deleteMultiple */ =
 	function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
 	{
-		s3.assert_client(client);
+		_s3_assert_client(client);
 		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
 		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
 		handy.assert_f(success_f);
@@ -357,18 +361,6 @@ s3.delete /* _using_deleteMultiple */ =
 			deleteMethod = 'deleteFile';
 		else if ( _.isArray(filePath_or_arrayOfPaths) )
 		{
-			// Removing leading slash because of a bug in knox
-			// See discussion here:
-			// https://github.com/LearnBoost/knox/issues/121
-
-			filePath_or_arrayOfPaths = _.map(	filePath_or_arrayOfPaths
-											,	function(path) {
-													if (path.startsWith('/'))
-														return path.substring(1, path.length);
-													else
-														return path;
-												} );
-				
 			deleteMethod = 'deleteMultiple';
 		}
 
@@ -380,11 +372,6 @@ s3.delete /* _using_deleteMultiple */ =
 					error_f(err);
 				else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
 				{
-					// console.log('deleteMethod: ' + deleteMethod);
-					// console.log('ponse.statusCode: ' + ponse.statusCode);
-					// console.log('ponse.headers: ' + ponse.headers);
-					// console.log(ponse.headers);
-
 					success_f(ponse);
 
 					var bufferString = '';
@@ -414,8 +401,8 @@ s3.delete /* _using_deleteMultiple */ =
 s3.copyURL =
 	function( client, fileURL, filePath, success_f, error_f, progress_f )
 	{
-		s3.assert_client(client);
-		s3.assert_path(filePath);
+		_s3_assert_client(client);
+		_s3_assert_path(filePath);
 		handy.assert_http_url(fileURL);
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
@@ -513,22 +500,28 @@ s3.copyURL =
 /* ============================================== */
 /* ============================================== */
 
+ 
+function _s3_assert_client(client)
+{
+	assert( client != undefined,		'client is undefined');
+	assert( client.key != undefined,	'client.key is undefined');
+	assert( client.secret != undefined,	'client.secret is undefined');
+	assert( client.bucket != undefined,	'client.bucket is undefined');
+};
 
-s3.assert_client =
-	function(client)
-	{
-		assert( client != undefined,		'client is undefined');
-		assert( client.key != undefined,	'client.key is undefined');
-		assert( client.secret != undefined,	'client.secret is undefined');
-		assert( client.bucket != undefined,	'client.bucket is undefined');
-	};
+
+function _s3_assert_path(filePath)
+{
+	assert( filePath != undefined,	'filePath is undefined');
+	assert( _.isString(filePath),	'filePath is not string');
+	assert( filePath.length > 1,	'filePath.length not valid');
+};
 
 
-s3.assert_path =
-	function(filePath)
-	{
-		assert( filePath != undefined,	'filePath is undefined');
-		assert( _.isString(filePath),	'filePath is not string');
-		assert( filePath.length > 1,	'filePath.length not valid');
-	};
+function _s3_assert_bucket(bucket)
+{
+	assert( bucket != undefined,	'bucket is undefined');
+	assert( bucket == s3.test.bucket ||
+			bucket == s3.production.bucket,	'bucket is not test or production, is: ' + bucket);
+}
 

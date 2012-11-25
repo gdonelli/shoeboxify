@@ -2,7 +2,6 @@
 var		assert	= require("assert")
 	,	fb		= require("./fb")
 	,	authTest = require("./authetication.test")
-	,	shoeboxify	= require("./shoeboxify")
 	;
 
 

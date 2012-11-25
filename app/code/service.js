@@ -1,7 +1,19 @@
+/* 
 
-/*
- *		Service API
- */
+==================[   Service   ]==================
+
+Routes:
+			service.route.objectForURL
+			service.route.copyObject
+
+Utils:
+			service.facebookIDForURL
+			
+====================================================
+
+
+*/
+
 
 var 	https	= require('https')
 	,	url		= require('url')
@@ -13,10 +25,15 @@ var 	https	= require('https')
 	
 	,	handy		= require('./handy')
 	,	memento		= require('./memento')
-	,	shoeboxify	= require('./shoeboxify')
 	;
 
 var service = exports;
+
+/* ====================================================== */
+/* ====================================================== */
+/* ===================[   Routes   ]==================== */
+/* ====================================================== */
+/* ====================================================== */
 
 service.path  = {}; 
 service.route = {}; 
@@ -195,7 +212,7 @@ service.copyObject =
 		memento.addFacebookObject(	fb.me(quest, 'id'), fbID, quest
 								,	function success(r, options)
 									{
-										console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
+										// console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
 
 										if (success_f)
 											success_f(r, options);
@@ -232,7 +249,7 @@ function _sevice_processInputURL(	quest
 
 	ponse.writeHead(200, { 'Content-Type': 'application/json' } );
 
-	shoeboxify.debug(quest.url);
+	console.log(quest.url);
 
 	var jsonResult;
 
@@ -243,7 +260,7 @@ function _sevice_processInputURL(	quest
 				,	 error: 'malformed request ?u= is empty'
 			});
 
-		shoeboxify.error('urlQuery is malformed');
+		console.error('urlQuery is malformed');
 
 		return;
 	}
@@ -259,7 +276,7 @@ function _sevice_processInputURL(	quest
 	}
 	else
 	{
-		shoeboxify.log(urlQuery);
+		console.log(urlQuery);
 		
 		process_f(input, _exit);
 	}
@@ -279,9 +296,12 @@ function _sevice_processInputURL(	quest
 }
 
 
-/* ======================================================== */
-/* ======================================================== */
-/* ======================================================== */
+/* ====================================================== */
+/* ====================================================== */
+/* ====================[   Utils   ]===================== */
+/* ====================================================== */
+/* ====================================================== */
+
 
 /*
  * Will extract the facebook ID from a URL if present
