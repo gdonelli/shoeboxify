@@ -49,31 +49,42 @@ var _common = (function ()
 			var result = '';
 			var objectType = Object.prototype.toString.call( obj );
 			
-			var isArray = IsArray(obj);
+			var isArray  = _isArray(obj);
+			var isObject = _isObject(obj);
+			var isError  = _isError(obj);
 
-			if ( IsExpandableObject(obj) )
+			if ( isArray || isObject || isError )
 			{
-				result += Indent(indentIndex) + (isArray ? '[' : '{') + '\n';
+				result += _indent(indentIndex);
+
+				if (isArray)
+					result += '[';
+				else if (isObject)
+					result += '{';
+				else if (isError)
+					result += '[Error]-{';
+
+				result += '\n';
 				
 				for (var aKey in obj)
 				{
-					result += Indent(indentIndex) + '<div class="key-value-pair">\n\t';
+					result += _indent(indentIndex) + '<div class="key-value-pair">\n\t';
 
 					var childObject = obj[aKey];
 
-					if ( IsExpandableObject(childObject) )
+					if ( _isExpandableObject(childObject) )
 					{
-						result += Indent(indentIndex) + '<span class="key">' + aKey + ' <a class="plus" onclick="debug_expand(this)">(-):</a></span>\n';
+						result += _indent(indentIndex) + '<span class="key">' + aKey + ' <a class="plus" onclick="debug_expand(this)">(-):</a></span>\n';
 					}
 					else
 					{
-						result += Indent(indentIndex) + '<span class="key">' + aKey + ':</span>\n';
+						result += _indent(indentIndex) + '<span class="key">' + aKey + ':</span>\n';
 					}
 
 					// Recursive call...
-					result += Indent(indentIndex) + '\t<span class="value">';
+					result += _indent(indentIndex) + '\t<span class="value">';
 
-					if (IsArray(childObject))
+					if (_isArray(childObject))
 						result += '<div class="array">';
 					else if (aKey == "id")
 						result += '<a class="id" onclick="debug_openString(this)">';
@@ -82,17 +93,25 @@ var _common = (function ()
 
 					result += _compose( childObject, '', indentIndex+2 );
 
-					if (IsArray(childObject))
+					if (_isArray(childObject))
 						result += '</div>';
 					else if (aKey == "id")
 						result += '</a>';
 
 					result += '</span>\n';
 					
-					result += Indent(indentIndex) + '</div>\n';
+					result += _indent(indentIndex) + '</div>\n';
 				}
 
-				result += Indent(indentIndex) + (isArray ? ']' : '}') + '\n';
+				if (isArray)
+					result += ']';
+				else if (isObject)
+					result += '}';
+				else if (isError)
+					result += '}-[Error]';
+
+				result += '\n';
+
 			}
 			else if ( objectType === '[object String]')
 			{
@@ -116,26 +135,45 @@ var _common = (function ()
 			{
 				result = '<span class="boolean">'+ obj + '</span>';
 			}
+			else
+			{
+				result = '<span class="string">' + objectType + ' [+] ' + obj.toString() + '</span>';	
+			}
 
 			return out + result;
 		}
 
-		function IsExpandableObject(obj)
+		function _isExpandableObject(obj)
 		{
 			var objectType = Object.prototype.toString.call( obj );
 
-			return (	(objectType === '[object Array]') || 
-						(objectType === '[object Object]') );
+			return (	(objectType === '[object Array]')	|| 
+						(objectType === '[object Object]')	||
+						(objectType === '[object Error]')	);
 		}
 
-		function IsArray(obj)
+		function _isArray(obj)
 		{
 			var objectType = Object.prototype.toString.call( obj );
 			
 			return (objectType === '[object Array]');
 		}
 
-		function Indent(index)
+		function _isObject(obj)
+		{
+			var objectType = Object.prototype.toString.call( obj );
+			
+			return (objectType === '[object Object]');
+		}
+
+		function _isError(obj)
+		{
+			var objectType = Object.prototype.toString.call( obj );
+			
+			return (objectType === '[object Error]');
+		}
+
+		function _indent(index)
 		{
 			var result = '';
 

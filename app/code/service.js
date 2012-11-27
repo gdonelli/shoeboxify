@@ -1,42 +1,41 @@
 /* 
 
-==================[   Service   ]==================
+==================[   /service/...   ]==================
 
 Routes:
-			service.route.objectForURL
-			service.route.copyObject
+			service.route.facebookObjectForURL
+			service.route.shoeboxifyFacebookObject
+			service.route.shoeboxifyURL
 
-Utils:
-			service.facebookIDForURL
+API:
+			service.facebookObjectForURL
 			
 ====================================================
-
 
 */
 
 
-var 	https	= require('https')
+var 	assert	= require('assert')
+	,	https	= require('https')
 	,	url		= require('url')
 	,	path	= require('path')
-	,	assert	= require('assert')
-
-	,	s3 = require('./s3')
-	,	fb = require('./fb')
+	,	_		= require('underscore')
 	
-	,	handy		= require('./handy')
-	,	memento		= require('./memento')
+	,	fb		= require('./fb')
+	,	handy	= require('./handy')
+	,	memento	= require('./memento')
 	;
 
 var service = exports;
 
-/* ====================================================== */
-/* ====================================================== */
-/* ===================[   Routes   ]==================== */
-/* ====================================================== */
-/* ====================================================== */
-
 service.path  = {}; 
 service.route = {}; 
+
+/* ====================================================== */
+/* ====================================================== */
+/* ====================[   Routes   ]==================== */
+/* ====================================================== */
+/* ====================================================== */
 
 /*	API:	objectForURL
  *	URL:	/o4u
@@ -61,15 +60,15 @@ service.route = {};
  *		}
  */
 
-service.path.objectForURL = '/o4u';
+service.path.facebookObjectForURL = '/service/facebookObjectForURL';
 
-service.route.objectForURL = 
+service.route.facebookObjectForURL = 
 	function(quest, ponse)
 	{
 		_sevice_processInputURL(quest, ponse, 
 			function(input, exit)
 			{
-				service.objectForURL(quest, input
+				service.facebookObjectForURL(quest, input
 					,	function success(o){
 							exit({		status: 0
 									,	fb_object: o
@@ -92,7 +91,7 @@ service.route.objectForURL =
 			});
 	}
 
-service.objectForURL = 
+service.facebookObjectForURL = 
 	function(	quest
 			,	inputURL
 			,	object_f		/* (fb_object) */
@@ -106,7 +105,7 @@ service.objectForURL =
 		assert( placeholder_f	!= undefined,	'placeholder_f is undefined');
 		assert( error_f 		!= undefined,	'error_f is undefined');
 
-		var fbID =  service.facebookIDForURL(inputURL);
+		var fbID =  memento.facebookIdForURL(inputURL);
 
 		if (fbID)
 			return _facebook_lookup(fbID);
@@ -159,6 +158,67 @@ service.objectForURL =
 	}
 
 
+/*	API:	shoeboxifyURL
+ *	URL:	/service/shoeboxifyURL
+ *	args:	?u=<url>
+ *
+ *	example: /service/shoeboxifyURL?u=https://www.facebook...
+ *
+ */
+
+service.path.shoeboxifyURL = '/service/shoeboxifyURL';
+
+service.route.shoeboxifyURL =
+	function(quest, ponse)
+	{
+		_sevice_processInputURL(quest, ponse, 
+			function(inputURL, exit_f)
+			{
+				service.shoeboxifyURL(quest, inputURL
+					,	function success(r, options)
+						{
+							exit_f({	status: 0
+									,	source: inputURL
+									,	  data: r });
+						}
+					,	function error(e)
+						{
+							exit_f({	status: 1
+									,	source: inputURL
+									,	 error: 'shoeboxifyURL failed ' + e });				
+						} );
+			} );
+	};
+
+
+service.shoeboxifyURL =
+	function(quest, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
+	{
+		assert(quest != undefined, 'quest is undefined');
+		assert(theURL != undefined, 'theURL is undefined');
+
+		memento.addFromURL(	fb.me(quest, 'id'), theURL, quest
+						,	function success(r, options)
+							{
+								// console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
+
+								if (success_f)
+									success_f(r, options);
+							}
+						,	function error(e)
+							{
+								if (error_f)
+									error_f(e);
+							} );
+	};
+
+
+
+
+// TODO...
+// service.path.shoeboxifyFile = '/service/shoeboxifyFile';
+
+
 /*	API:	Copy Object
  *	URL:	/cp
  *	args:	?u=<url>
@@ -171,19 +231,19 @@ service.objectForURL =
  *		}
  */
 
-service.path.copyObject = '/cp';
+service.path.shoeboxifyFacebookObject = '/service/shoeboxifyFB';
 
-service.route.copyObject =
+service.route.shoeboxifyFacebookObject =
 	function(quest, ponse)
 	{
 		_sevice_processInputURL(quest, ponse, 
 			function(input, exit_f)
 			{
-				var fbID =  service.facebookIDForURL(input);
+				var fbID =  memento.facebookIdForURL(input);
 
 				if (fbID)
 				{
-					service.copyObject(quest, fbID
+					service.shoeboxifyFacebookObject(quest, fbID
 						,	function success(r, options)
 							{
 								exit_f({	status: 0
@@ -203,7 +263,7 @@ service.route.copyObject =
 	};
 
 
-service.copyObject =
+service.shoeboxifyFacebookObject =
 	function(quest, fbID, success_f /* (entry, meta) */, error_f  /* (error) */ )
 	{
 		assert(quest != undefined, 'quest is undefined');
@@ -271,12 +331,12 @@ function _sevice_processInputURL(	quest
 	{
 		_exit({		status: 403
 				,   source: input
-				,	 error: 'User not logged-in in Shoeboxify'
+				,	 error: 'User is not logged-in'
 			});
 	}
 	else
 	{
-		console.log(urlQuery);
+		// console.log(urlQuery);
 		
 		process_f(input, _exit);
 	}
@@ -285,66 +345,23 @@ function _sevice_processInputURL(	quest
 
 	function _exit(result)
 	{
-		if (!result.meta)
+		assert(result != undefined, 'exiting with undefined result');
+		assert(_.isObject(result), 'exit result expected to be an object is: ' + result);
+
+		if (result.meta == undefined)
 			result.meta = {};
 
+		// console.log('result:');
+		// console.log(result);
+
+		// console.log('result.meta:');
+		// console.log(result.meta);
+		
+		// if (result.meta)
+		
 		result.meta.time = handy.elapsedTimeSince(startDate);
 
 		ponse.end( JSON.stringify(result) );
 	}
 	
 }
-
-
-/* ====================================================== */
-/* ====================================================== */
-/* ====================[   Utils   ]===================== */
-/* ====================================================== */
-/* ====================================================== */
-
-
-/*
- * Will extract the facebook ID from a URL if present
- * returns undefined if none is found.
- */
-service.facebookIDForURL =
-	function( srcString )
-	{
-		if (srcString.startsWith('http'))
-		{
-			// https://www.facebook.com/photo.php?fbid=426454000747131&set=a.156277567764777.33296.100001476042600&type=1&ref=nf
-
-			if (srcString.indexOf('photo.php?') > 0 && srcString.indexOf('fbid=') > 0 )
-			{
-				var stringElements = url.parse(srcString, true);
-				var stringQuery = stringElements['query'];
-				var fbid = stringQuery['fbid'];
-
-				return fbid;
-			}
-
-			// https://sphotos-b.xx.fbcdn.net/hphotos-ash3/599016_10151324834642873_1967677028_n.jpg
-			
-			var last4chars = srcString.substring((srcString.length-4), srcString.length );
-
-			if ( last4chars == '.jpg')
-			{
-				var srcStringSpliyElements = srcString.split('/');
-
-				var lastPathComponent = srcStringSpliyElements[srcStringSpliyElements.length-1];
-
-				var numbers = lastPathComponent.split('_');
-
-				var canditateResult = numbers[1];
-
-				var isnum = /^\d+$/.test(canditateResult);
-
-				if (isnum)
-					return canditateResult;
-			}
-		}
-
-		return undefined;
-	}
-
-

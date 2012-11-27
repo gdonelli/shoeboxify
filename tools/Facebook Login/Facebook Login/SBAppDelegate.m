@@ -22,7 +22,7 @@ extern NSString* gUrlToLoad;
    
     WebFrame* mainFrame = [self.webView mainFrame];
     
-    NSString* loginURLStr = @"http://local.shoeboxify.com:3000/facebook-login";
+    NSString* loginURLStr = @"http://local.shoeboxify.com:3000/login";
     
     NSURLRequest* urlQuest =[NSURLRequest requestWithURL:[NSURL URLWithString:loginURLStr]];
     

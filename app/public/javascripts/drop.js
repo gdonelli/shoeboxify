@@ -121,10 +121,12 @@ function InstallDropListener( target )
 			ui.log( dropEvent.type + ' droppedURL: ' +  droppedURL );
 
 		ClearUI();
-		
-		PerformDragExit(dropEvent);
 
-		serviceUI.objectForURL(droppedURL
+		window.droppedURL = droppedURL;
+		$('#sourceURL').text(droppedURL);
+		$('#shoeboxify').removeAttr('disabled');
+
+		serviceUI.facebookObjectForURL(droppedURL
 			,	function success(ponse) {
 
 					// Source
@@ -156,16 +158,16 @@ function InstallDropListener( target )
 						$('#dropimage').attr('src', objectToShow.picture );
 
 					$('#shoeboxify').removeAttr('disabled');
-
-					window.droppedURL = droppedURL;
 				}
 			,	function error(error) 
 				{
 					$('#droparea').css('background-color', '#AA3333');
-					$('#shoeboxify').attr('disabled', 'disabled');
-
+		
 					ui.error('ponse with error:');
 					ui.error(error);
+
+					$('#objectInfo').html( common.objectToHTML( error, 'Error response') );
+
 				} );
 
 		return false;
@@ -243,7 +245,7 @@ function ShoeboxifyButtonAction()
 	
 	ui.log('ShoeboxifyButtonAction');
 
-	serviceUI.copyObject(window.droppedURL
+	serviceUI.shoeboxifyURL(window.droppedURL
 		,	function success(ponse) {
 				console.log('ponse:');
 				console.log(ponse);
@@ -252,6 +254,8 @@ function ShoeboxifyButtonAction()
 				$('#shoeboxify').removeAttr('disabled');
 
 				$('#elapsedTime').text( ponse.meta.time + 'ms');
+
+				$('#objectInfo').html( common.objectToHTML(ponse.data, 'Shoeboxify Entry') );
 			}
 		,	function error(error) {
 				console.log('error:');
@@ -259,5 +263,7 @@ function ShoeboxifyButtonAction()
 			
 				$('#shoeboxify').css('background-color', 'red');
 				$('#shoeboxify').removeAttr('disabled');
+
+				$('#objectInfo').html( common.objectToHTML(error, 'Shoeboxify Entry') );
 			} );
 }

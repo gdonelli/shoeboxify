@@ -57,21 +57,29 @@ var _serviceUI = (function ()
 
 	// prototype
 	serviceUI.prototype = {
-		constructor: serviceUI
+			constructor		: serviceUI
 
-		,	objectForURL: objectForURL
-		,	copyObject: copyObject
+		,	facebookObjectForURL		: 	_facebookObjectForURL
+		,	shoeboxifyFacebookObject	: 	_shoeboxifyFacebookObject
+		,	shoeboxifyURL				:	_shoeboxifyURL
 	};
 
-	function objectForURL(theURL, success_f /* (ponseObject) */, error_f)
+	function _facebookObjectForURL(theURL, success_f /* (ponseObject) */, error_f)
 	{
-		return _sevice_processURL( '/o4u', theURL, success_f, error_f);
+		return _sevice_processURL( '/service/facebookObjectForURL', theURL, success_f, error_f);
 	}
 
-	function copyObject(theURL, success_f /* ponse */, error_f)
+	function _shoeboxifyFacebookObject(theURL, success_f /* ponse */, error_f)
 	{
-		return _sevice_processURL( '/cp', theURL, success_f, error_f);
+		return _sevice_processURL( '/service/shoeboxifyFB', theURL, success_f, error_f);
 	}
+
+	function _shoeboxifyURL(theURL, success_f /* ponse */, error_f)
+	{
+		return _sevice_processURL( '/service/shoeboxifyURL', theURL, success_f, error_f);
+	}
+
+	/* ============================================== */
 
 	function _sevice_processURL(servicePath, theURL, success_f /* ponse */, error_f)
 	{
@@ -128,9 +136,6 @@ var _serviceUI = (function ()
 		
 
 	}
-	
-
-
 
 	// return serviceUI
 	return serviceUI;

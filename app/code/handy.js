@@ -10,6 +10,7 @@ HTTP:
 			handy.is200OK
 			handy.HEAD
 			handy.GET
+			handy.requestURL
 
 Debug:
 			handy.assert_f
@@ -28,9 +29,13 @@ Other:
 
 
 var		url		= require('url')
+	,	fs		= require('fs')
 	,	http	= require('http')
 	,	https	= require('https')
-	,	assert	= require("assert")
+	,	assert	= require('assert')
+	, 	nodeuuid= require('node-uuid')
+	,	wrench	= require('wrench')
+
 	,	stacktrace	= require('./stacktrace')
 	;
 
@@ -64,12 +69,12 @@ handy.Base64toASCII =
 
 
 handy.is200OK =
-	function( fileUrl, result_f  /* ( true_or_false ) */ )
+	function( theURL, result_f  /* ( true_or_false ) */ )
 	{
-		assert(fileUrl != undefined, 'fileUrl is undefined');
+		assert(theURL != undefined, 'theURL is undefined');
 		handy.assert_f(result_f);
 
-		handy.HEAD(fileUrl
+		handy.HEAD(theURL
 			,	function success(ponse) {
 					// console.log('success:');
 					// console.log('ponse.statusCode: ' + ponse.statusCode);
@@ -86,13 +91,13 @@ handy.is200OK =
 
 
 handy.HEAD =
-	function(	fileUrl
+	function(	theURL
 			,	success_f	/*	(ponse)	*/
 			,	error_f		/*	(error)	*/
 			)
 	{
 		return _makeHTTPRequest(
-					fileUrl
+					theURL
 				,	'HEAD'
 				,	function(read_s, ponse)
 					{
@@ -114,7 +119,7 @@ handy.HEAD =
 
 
 handy.GET =
-	function(	fileUrl
+	function(	theURL
 			,	_200OK_f	/*	(read_s, ponse)	*/
 			,	other_f		/*	(ponse)		*/
 			,	error_f		/*	(error)		*/
@@ -122,7 +127,7 @@ handy.GET =
 			)
 	{
 		return _makeHTTPRequest(
-					fileUrl
+					theURL
 				,	'GET'
 				,	function(read_s, ponse)
 					{
@@ -151,52 +156,59 @@ handy.GET =
 	};
 
 
-function _makeHTTPRequest(	fileUrl
+handy.requestURL =
+	function(theURL, extraOpz, requestHandler /* (ponse) */)
+	{
+		var theURLElements = url.parse(theURL);
+
+		var questOptions = {
+					hostname:	theURLElements['hostname']
+				,		path:	theURLElements['path']
+ 				}
+
+ 		if (extraOpz.method)
+ 			questOptions.method = extraOpz.method;
+
+		if (theURLElements.port)
+			questOptions.port = theURLElements.port;
+
+		var methodAgent = theURLElements['protocol'] == 'https:' ? https : http;
+
+		var quest = methodAgent.request(questOptions, requestHandler);
+
+		return quest;
+	}
+ 
+
+function _makeHTTPRequest(	theURL
 						,	httpMethod
 						,	success_f	/*	(read_s, ponse)	*/
 						,	error_f		/*	(error)		*/
 						,	traverse
 						)
 	{
-		// console.log('GET ' + fileUrl);
+		var quest = handy.requestURL(
+				theURL
+			,	{
+					method: httpMethod
+				}
+			,	function(ponse) {
+					// console.log("statusCode: ", ponse.statusCode);
+					// console.log("headers: ", ponse.headers);
 
-		var fileUrlElements = url.parse(fileUrl);
+					var read_s = '';
 
-		var questOptions = {
-					  method:	httpMethod
-				,	hostname:	fileUrlElements['hostname']
-				,		path:	fileUrlElements['path']
- 				}
+					ponse.on('data',
+						function(chuck) {
+							read_s += chuck;
+						});
 
-		if (fileUrlElements['port'] != undefined)
-			questOptions['port'] = fileUrlElements['port'];
-
-		var methodAgent = fileUrlElements['protocol'] == 'https:' ? https : http;
-
-		// console.log('fileUrlElements:');
-		// console.log(fileUrlElements);
-
-		// console.log('questOptions:');
-		// console.log(questOptions);
-
-		var quest = methodAgent.request(questOptions,
-			function(ponse) {
-				// console.log("statusCode: ", ponse.statusCode);
-				// console.log("headers: ", ponse.headers);
-
-				var read_s = '';
-
-				ponse.on('data',
-					function(chuck) {
-						read_s += chuck;
-					});
-
-				ponse.on('end',
-					function(p) {
-						if (success_f)
-							success_f(read_s, ponse);
-					});
-			});
+					ponse.on('end',
+						function(p) {
+							if (success_f)
+								success_f(read_s, ponse);
+						});
+				} );
 
 		quest.on('error',
 			function(e) {
@@ -204,7 +216,7 @@ function _makeHTTPRequest(	fileUrl
 
 				if (error_f)
 					error_f(e);
-			});
+			} );
 
 		quest.end();
 	};
@@ -304,4 +316,53 @@ handy.elapsedTimeSince =
 		var now = new Date();
 
 		return now.getTime() - startTime.getTime();
+	};
+
+
+
+
+
+var _TMP_DIR = __dirname + '/../tmp';
+
+var _tmpDirectory_exist = false;
+
+handy.rmTmpDirectory = 
+	function()
+	{
+		if (fs.existsSync(_TMP_DIR)) {
+			console.log('TMP_DIR exist -> ' + _TMP_DIR);
+			wrench.rmdirSyncRecursive(_TMP_DIR);
+		}
 	}
+
+handy.tmpDirectory = 
+	function() 
+	{
+		var result = _TMP_DIR;
+
+		if (!_tmpDirectory_exist)
+		{
+			var r = fs.mkdirSync(result);
+
+			console.log('fs.mkdirSync(' + result + ') result: ' + r);
+
+			_tmpDirectory_exist = true;
+		}
+
+		return result + '/';
+	}
+
+
+handy.tmpFile =
+	function(extension) 
+	{
+		var result = handy.tmpDirectory();
+
+		result += nodeuuid.v1();
+
+		if (extension)
+			result += '.' + extension;
+
+		return result;
+	}
+

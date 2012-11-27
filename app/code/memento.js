@@ -17,6 +17,9 @@ Operations:
 			memento.removeId
 			memento.findId
 			memento.addFacebookObject
+			memento.addURL
+Utils:
+			memento.facebookIdForURL
 
 ================================================================
 
@@ -24,8 +27,11 @@ Operations:
 
 
 var		assert	= require('assert')	
-	,	url 	= require('url')
 	,	path 	= require('path')
+	,	http 	= require('http')
+	,	https 	= require('https')
+	,	url 	= require('url')
+	,	fs		= require('fs')
 	,	_		= require('underscore')
 
 	,	fb		= require('./fb')
@@ -52,7 +58,6 @@ memento.init =
 					error_f(e);
 			} );
 	};
-
 
 memento.user = {};
 
@@ -165,9 +170,151 @@ memento.findId =
 		mongo.memento.findId(userId, mongoId, success_f, error_f);
 	};
 
+var MAX_IMAGE_BYTE_SIZE = 2 * 1024 * 1024; // 3MB
+
+
+memento.addFromURL =
+	function(userId, theURL, quest, success_f /* (newEntry, meta) */, error_f)
+	{
+		var fbid = memento.facebookIdForURL(theURL);
+
+		if (fbid) // it is a Facebook object...
+		{
+			return memento.addFacebookObject(userId, fbid, quest, success_f, error_f);
+		}
+		else
+		{
+			_downloadImageURL( 
+					theURL 
+				,	function(aPath)
+					{
+						console.log('image downloaded: ' + aPath);
+					}
+				, 	function error(e) {
+						console.error('failed to download: ' + theURL);
+
+						if (error_f)
+							error_f(e);
+					} );
+		}
+	}
+
+// downloads image locally.
+
+function _downloadImageURL( theURL, success_f /* (local_path) */, error_f)
+{
+	var quest = handy.requestURL(theURL, {},
+		function(ponse) {
+
+			var contentLength = ponse.headers['content-length'];
+
+			if (contentLength != undefined && 
+				Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE )
+			{
+				return _abortTransfer('File is too big');
+			}
+
+			var fileExtension = _isImageResponse(ponse);
+
+			if ( fileExtension == undefined )
+			{
+				return _abortTransfer('File is not an image');
+			}
+
+			// Download file locally first...
+			var resultFilePath = handy.tmpFile(fileExtension);
+			var tmpFileStream = fs.createWriteStream(resultFilePath);
+
+			ponse.pipe(tmpFileStream);
+
+			tmpFileStream.on('error',
+				function (err) {
+					console.log(err);
+				} );
+
+			var totBytes = 0;
+
+			ponse.on('data',
+				function(chuck) {
+					totBytes += chuck.length;
+					console.log('totBytes# ' + totBytes);
+
+					if ( totBytes > MAX_IMAGE_BYTE_SIZE ) {
+						_abortTransfer('File is too big (on stream)');
+					}
+				});
+
+			ponse.on('end',
+				function(p) {
+					console.log('handy.requestURL [done]');
+
+					if (success_f)
+						success_f( resultFilePath );
+				});
+		
+			/* =============================== */
+
+			function _abortTransfer(msg)
+			{
+				if (error_f) {
+					error_f( new Error(msg) );
+					error_f = undefined; // makes sure this is the only invocation to error_f
+				}
+					
+				ponse.destroy();
+			}
+
+		} );
+
+	quest.on('error',
+		function(e) {
+			// console.error(e);
+
+			if (error_f)
+				error_f(e);
+		} );
+
+	quest.end();
+}
+
+
+function _isImageResponse(ponse) // returns file extension...
+{	
+	assert(ponse != undefined, 'ponse is undefined');
+
+	console.log("statusCode: " +	ponse.statusCode);
+	console.log("headers: ");
+	console.log(ponse.headers);
+
+	var contentLength = ponse.headers['content-length'];
+	
+	if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
+		return undefined;
+
+	var contentType = ponse.headers['content-type'];
+	
+	if ( contentType.startsWith('image/') )
+	{
+		var elements = contentType.split('/');
+
+		if (elements.length == 2);
+		{
+			var result = elements[1];
+
+			if (result.length <= 4)
+				return result;
+		}
+	}
+		
+	return undefined;
+};
+
+
 memento.addFacebookObject =
 	function(userId, graphId, quest, success_f /* (newEntry, meta) */, error_f)
 	{
+		var allMeta = {};
+
 		var startDate = new Date();
 
 		mongo.memento.findOneFacebookObject( 
@@ -208,8 +355,13 @@ memento.addFacebookObject =
 
 		function _makeCopy(fbObject)
 		{
-			_copyPhotoObject(quest, fbObject
+			var makeCopyStartDate = new Date();
+
+			_copyPhotoObjectToS3(quest, fbObject
 				,	function success(copyObject) {
+
+						allMeta._makeCopy_time = handy.elapsedTimeSince(makeCopyStartDate);
+
 						_insertInMongo(fbObject, copyObject);
 					} 
 				,	function error(e){
@@ -240,7 +392,7 @@ memento.addFacebookObject =
 
 		function _exitWithSuccess(r, meta)
 		{
-			var allMeta = { time: handy.elapsedTimeSince(startDate) };
+			allMeta.time = handy.elapsedTimeSince(startDate);
 
 			if (meta)
 				allMeta = _.extend(meta, allMeta);
@@ -262,7 +414,7 @@ memento.addFacebookObject =
  *	copy Facebook URLs to S3
  */
 
-function _copyPhotoObject(quest, photoObject, success_f, error_f)
+function _copyPhotoObjectToS3(quest, photoObject, success_f, error_f)
 {
 	// validate that this is a photo object
 	if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
@@ -283,6 +435,8 @@ function _copyPhotoObject(quest, photoObject, success_f, error_f)
 	var totCount 	 = 0;
 	var successCount = 0;
 	var errorCount	 = 0;
+
+	// console.log('Start copy to S3');			
 
 	for (var imageURL in imageDictionary)
 	{
@@ -453,4 +607,56 @@ function _generateFilePath(photoName, index, options, extension)
 
 	return '/' + directory + '/' + finalFileName + extension;
 }
+
+
+/* ====================================================== */
+/* ====================================================== */
+/* ====================[   Utils   ]===================== */
+/* ====================================================== */
+/* ====================================================== */
+
+
+/*
+ * Will extract the facebook ID from a URL if present
+ * returns undefined if none is found.
+ */
+memento.facebookIdForURL =
+	function( theURL )
+	{
+		if (theURL.startsWith('http'))
+		{
+			// https://www.facebook.com/photo.php?fbid=426454000747131&set=a.156277567764777.33296.100001476042600&type=1&ref=nf
+
+			if (theURL.indexOf('photo.php?') > 0 && theURL.indexOf('fbid=') > 0 )
+			{
+				var stringElements = url.parse(theURL, true);
+				var stringQuery = stringElements['query'];
+				var fbid = stringQuery['fbid'];
+
+				return fbid;
+			}
+
+			// https://sphotos-b.xx.fbcdn.net/hphotos-ash3/599016_10151324834642873_1967677028_n.jpg
+			
+			var last4chars = theURL.substring((theURL.length-4), theURL.length );
+
+			if ( last4chars == '.jpg')
+			{
+				var theURLSplitElements = theURL.split('/');
+
+				var lastPathComponent = theURLSplitElements[theURLSplitElements.length-1];
+
+				var numbers = lastPathComponent.split('_');
+
+				var isnum0 = /^\d+$/.test( numbers[0] );
+				var isnum1 = /^\d+$/.test( numbers[1] );
+				var isnum2 = /^\d+$/.test( numbers[2] );
+
+				if (isnum0 && isnum1 && isnum2)
+					return numbers[1];
+			}
+		}
+
+		return undefined;
+	}
 

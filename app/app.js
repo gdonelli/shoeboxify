@@ -11,6 +11,7 @@ var		express	= require('express')
 	,	utest	= require('./code/utest')
 	,	service	= require('./code/service')
 	,	view	= require('./code/view')
+	,	handy	= require('./code/handy')
 
 	/* libs */
 
@@ -55,14 +56,20 @@ app.configure('development',
 
 app.settings['x-powered-by'] = false;
 
-/****************/
-/*   Database   */
-/****************/
+/************/
+/*   init   */
+/************/
 
 memento.init(	function success() {}
 			,	function error(e) {
 					throw new Error(e);
 				} );
+
+identity.validateEnviroment();
+
+handy.rmTmpDirectory();
+handy.tmpDirectory();
+
 
 /*********************/
 /*   Public Routes   */
@@ -70,15 +77,8 @@ memento.init(	function success() {}
 
 app.get('/', code.index);
 
-// FB Module Routes
-
-app.get(fb.path.login,		fb.route.login);
-app.get(fb.path.response,	fb.route.response);
-app.get(fb.path.logout,		fb.route.logout);
-
-// Service Module Routes
-app.get( service.path.objectForURL,	service.route.objectForURL );
-app.get( service.path.copyObject, 	service.route.copyObject );
+_setupRoutesForModule( fb, 'fb' );
+_setupRoutesForModule( service, 'service' );
 
 app.get( view.route.viewObject, view.viewObject );
 
@@ -108,10 +108,6 @@ app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
 
 
-
-/* Self Test */
-identity.validateEnviroment();
-
 /*******************/
 /*   HTTP Server   */
 /*******************/
@@ -119,3 +115,27 @@ identity.validateEnviroment();
 http.createServer(app).listen(app.get('port'), function(){
 	console.log("Shoeboxify Server listening on port " + app.get('port'));
 });
+
+
+function _setupRoutesForModule(module, name)
+{
+	assert(module != undefined,			'module is undefined');
+	assert(module.path != undefined,	'module.path is undefined');
+	assert(module.route != undefined,	'module.route is undefined');
+
+	console.log(name);
+
+	for (var key in module.path)
+	{
+		var path_i  = module.path[key];
+		var route_i = module.route[key];
+
+		assert(path_i != undefined, 'path_i is undefined, key=' + key);
+		assert(route_i != undefined, 'route_i is undefined, path_i=' + path_i);
+
+		app.get(path_i, route_i);
+
+		console.log(' ✔ ' + path_i);
+	}
+
+}

@@ -64,10 +64,10 @@ function _dialogRedirectURL(req)
 
 
 /*	PAGE:	Start Facebook Login	
- * 	URL:	/facebook-login
+ * 	URL:	/login
  */ 
 
-fb.path.login = '/facebook-login';
+fb.path.login = '/login';
 
 fb.route.login = 
 	function(quest, ponse)
@@ -102,7 +102,7 @@ fb.route.login =
  * 	URL:	/facebook-response
  */
 
-fb.path.response = '/facebook-response';
+fb.path.response = '/fb/response';
 
 fb.route.response = 
 	function(quest, ponse)
