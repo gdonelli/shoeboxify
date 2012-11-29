@@ -109,4 +109,17 @@ describe('handy.js',
 
 			} );
 
+		describe('TmpDirectory',
+			function() {
+				it('handy.rmTmpDirectory',
+					function() {
+						handy.rmTmpDirectory();
+					} );
+
+				it('handy.tmpDirectory',
+					function() {
+						handy.tmpDirectory();
+					} );
+			} );
+
 	} );

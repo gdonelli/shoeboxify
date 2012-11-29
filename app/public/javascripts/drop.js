@@ -245,7 +245,9 @@ function ShoeboxifyButtonAction()
 	
 	ui.log('ShoeboxifyButtonAction');
 
-	serviceUI.shoeboxifyURL(window.droppedURL
+	serviceUI.shoeboxifyURL
+	//serviceUI.facebookObjectForURL
+	(window.droppedURL
 		,	function success(ponse) {
 				console.log('ponse:');
 				console.log(ponse);

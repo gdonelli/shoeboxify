@@ -67,10 +67,6 @@ memento.init(	function success() {}
 
 identity.validateEnviroment();
 
-handy.rmTmpDirectory();
-handy.tmpDirectory();
-
-
 /*********************/
 /*   Public Routes   */
 /*********************/

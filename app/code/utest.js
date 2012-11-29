@@ -13,6 +13,7 @@ var 	assert	= require('assert')
 	,	spawn	= require('child_process').spawn
 	,	fs		= require('fs')
 	,	path	= require('path')
+	,	url		= require('url')
 	,	_		= require('underscore')
 
 	,	fb		= require('./fb')
@@ -25,26 +26,52 @@ var utest = exports;
 utest.path = {};
 utest.route = {};
 
-utest.path.utest = '/utest';
-
 utest.accessTokenCacheFilePath = '/tmp/com.shoeboxify.accessTokenCache.json';
+
+
+/*
+ * 		Route:		/utest
+ */
+
+utest.path.utest = '/utest/:module?';
 
 utest.route.utest =
 	function(quest, ponse)
 	{	
-		ponse.writeHead(200, {'Content-Type': 'text/html'});
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
 
 		ponse.write('<html><body>');
-		ponse.write('<h1>Unit Testing</h1>');
+
+		if (quest.params.module)
+		{
+			ponse.write('<h1>Running unit test: ' + quest.params.module + '</h1>');
+		}
+		else
+		{
+			ponse.write('<h1>Running all unit tests</h1>');
+		}
 	
+		var urlElements = url.parse(quest.url, true);
+
+		console.log('urlElements:');
+		console.log(urlElements);
+
 		WriteAccessTokenCache(quest,
 			function() 
 			{
-				_getAllTestFiles( 
-					function(files)
-					{
-						RunTests(files);
-					} );
+				if (quest.params.module)
+				{
+					RunTests( [ __dirname + '/' + quest.params.module + '.test.js' ] );
+				}
+				else
+				{
+					_getAllTestFiles( 
+						function(files)
+						{
+							RunTests(files);
+						} );
+				}
+
 			} );
 
 		/* ============================================================ */

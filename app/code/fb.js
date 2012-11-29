@@ -3,9 +3,10 @@
 ==================[   Facebook   ]==================
 
 Routes:
-			fb.route.login		(fb.path.login)
-			fb.route.response	(fb.path.response)
-			fb.route.logout		(fb.path.logout)
+			fb.route.login			(fb.path.login)
+			fb.route.loginResponse	(fb.path.loginResponse)
+			fb.route.logout			(fb.path.logout)
+			fb.route.uninstall		(fb.path.uninstall)
 
 Middleware:
 			fb.requiresAuthentication
@@ -59,7 +60,7 @@ function _dialogRedirectURL(req)
 	var reqHeaders = req.headers;
 	var reqHost    = reqHeaders.host;
 	
-	return 'http://' + reqHost + fb.path.response;
+	return 'http://' + reqHost + fb.path.loginResponse;
 }
 
 
@@ -99,12 +100,12 @@ fb.route.login =
 	};
 
 /*	PAGE:	Facebook Authentication Callback Page
- * 	URL:	/facebook-response
+ * 	URL:	/login-response
  */
 
-fb.path.response = '/fb/response';
+fb.path.loginResponse = '/fb/login-response';
 
-fb.route.response = 
+fb.route.loginResponse = 
 	function(quest, ponse)
 	{
 		var urlElements   = url.parse( quest['url'], true );
@@ -415,8 +416,9 @@ function _dictionaryWithOnlyKeys(sourceDictionary, keyArray)
 }
 
 
-/*	PAGE:	Facebook App Logout
- * 	URL:	/logout
+/*
+ *	Route:	Facebook App Logout
+ *			Removes user session data
  */ 
 
 fb.path.logout = '/logout';
@@ -424,9 +426,23 @@ fb.path.logout = '/logout';
 fb.route.logout = 
 	function(quest, ponse)
 	{
-		if (!fb.isAuthenticated(quest)) {
-			return _returnResponseWithMessage(ponse, 'Already Logged-out');
-		}
+		quest.session.destroy();
+
+		_returnResponseWithMessage(ponse, 'logout');
+	}
+
+/*
+ *	Route:	Facebook App Uninstall
+ *			Uninstall facebook app and remove user session 		
+ */ 
+
+fb.path.uninstall = '/uninstall';
+
+fb.route.uninstall = 
+	function(quest, ponse)
+	{
+		if (!fb.isAuthenticated(quest))
+			return _returnResponseWithMessage(ponse, 'User is not logged-in. I cannot do anything.');
 
 		_graphCall(	'DELETE', '/me/permissions', quest
 			,	function success(fbObject)
@@ -435,9 +451,9 @@ fb.route.logout =
 					console.log(fbObject);
 
 					if (fbObject == true)
-						_returnResponseWithMessage(ponse, 'logout OK');
+						_returnResponseWithMessage(ponse, 'Uninstall OK');
 					else
-						_returnResponseWithMessage(ponse, 'logout failed: ' + JSON.stringify(fbObject) );
+						_returnResponseWithMessage(ponse, 'Uninstall failed: ' + JSON.stringify(fbObject) );
 
 				}
 			,	function error(e) 
@@ -445,35 +461,18 @@ fb.route.logout =
 					console.log('Delete error: ');
 					console.log(e);
 
-					_returnResponseWithMessage(ponse, 'logout Error');
+					_returnResponseWithMessage(ponse, 'Uninstall Error');
 				});
 
 		quest.session.destroy();
-
-
-		function _returnResponseWithMessage(ponse, message)
-		{
-			ponse.writeHead(200, {'Content-Type': 'text/html'});
-			ponse.write('<html><body>');
-			ponse.write('<html><body> ' + message + ' </body></html>');
-			ponse.end('</body></html>');
-		}
-
 	}
 
-
-function WriteObject(quest, ponse)
+function _returnResponseWithMessage(ponse, message)
 {
 	ponse.writeHead(200, {'Content-Type': 'text/html'});
-
 	ponse.write('<html><body>');
-
-	for(var aKey in quest)
-		if (quest.hasOwnProperty(aKey))
-  		{
-			ponse.write( aKey + ": " + quest[aKey] );
-			ponse.write('<br>');
-		}
+	
+	ponse.write('<p>' + message + '</p>');
 
 	ponse.end('</body></html>');
 }

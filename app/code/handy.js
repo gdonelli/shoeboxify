@@ -2,9 +2,12 @@
 
 ====================[   Handy   ]====================
 
-Data:	
+String:	
 			handy.ASCIItoBase64
 			handy.Base64toASCII
+			handy.isNumberString
+			String.startsWith
+			String.endsWith
 
 HTTP:
 			handy.is200OK
@@ -19,9 +22,9 @@ Debug:
 			handy.errorLogStacktrace
 
 Other:
-			String.startsWith
-			String.endsWith
 			handy.elapsedTimeSince
+			handy.tmpFile
+			handy.testDirectory
 
 ======================================================
 
@@ -29,12 +32,14 @@ Other:
 
 
 var		url		= require('url')
+	,	path	= require('path')
 	,	fs		= require('fs')
 	,	http	= require('http')
 	,	https	= require('https')
 	,	assert	= require('assert')
 	, 	nodeuuid= require('node-uuid')
 	,	wrench	= require('wrench')
+	,	_		= require('underscore')
 
 	,	stacktrace	= require('./stacktrace')
 	;
@@ -53,20 +58,41 @@ handy.ASCIItoBase64 =
 		return new Buffer(asciiString).toString('base64');
 	}
 
-
 handy.Base64toASCII =
 	function(string64)
 	{
 		return new Buffer(string64, 'base64').toString('ascii');
 	}
 
+// whether the string is made of numbers
+handy.isNumberString = 
+	function(str)
+	{
+		assert( _.isString(str), 'expected string type' );
+		return /^\d+$/.test( str );
+	}
+
+
+if (typeof String.prototype.startsWith != 'function') {
+	String.prototype.startsWith =
+		function (str){
+			return this.substring(0, str.length) === str;
+		};
+}
+
+
+if (typeof String.prototype.endsWith != 'function') {
+	String.prototype.endsWith =
+		function (str){
+			return this.substring(this.length-str.length, this.length) === str;
+		};
+}
 
 /* ======================================================== */
 /* ======================================================== */
 /* ========================= HTTP ========================= */
 /* ======================================================== */
 /* ======================================================== */
-
 
 handy.is200OK =
 	function( theURL, result_f  /* ( true_or_false ) */ )
@@ -292,21 +318,6 @@ handy.errorLogStacktrace =
 /* ========================================================= */
 
 
-if (typeof String.prototype.startsWith != 'function') {
-	String.prototype.startsWith =
-		function (str){
-			return this.substring(0, str.length) === str;
-		};
-}
-
-
-if (typeof String.prototype.endsWith != 'function') {
-	String.prototype.endsWith =
-		function (str){
-			return this.substring(this.length-str.length, this.length) === str;
-		};
-}
-
 
 handy.elapsedTimeSince =
 	function(startTime)
@@ -320,8 +331,6 @@ handy.elapsedTimeSince =
 
 
 
-
-
 var _TMP_DIR = __dirname + '/../tmp';
 
 var _tmpDirectory_exist = false;
@@ -330,10 +339,10 @@ handy.rmTmpDirectory =
 	function()
 	{
 		if (fs.existsSync(_TMP_DIR)) {
-			console.log('TMP_DIR exist -> ' + _TMP_DIR);
+			// console.log('TMP_DIR exist -> ' + _TMP_DIR);
 			wrench.rmdirSyncRecursive(_TMP_DIR);
 		}
-	}
+	};
 
 handy.tmpDirectory = 
 	function() 
@@ -342,15 +351,21 @@ handy.tmpDirectory =
 
 		if (!_tmpDirectory_exist)
 		{
-			var r = fs.mkdirSync(result);
-
-			console.log('fs.mkdirSync(' + result + ') result: ' + r);
+			try
+			{
+				var r = fs.mkdirSync(result);
+			}
+			catch(e)
+			{
+				if (e.code != 'EEXIST')
+					throw e;
+			}
 
 			_tmpDirectory_exist = true;
 		}
 
 		return result + '/';
-	}
+	};
 
 
 handy.tmpFile =
@@ -363,6 +378,17 @@ handy.tmpFile =
 		if (extension)
 			result += '.' + extension;
 
-		return result;
-	}
+		return path.normalize(result);
+	};
+
+handy.testDirectory =
+	function(file)
+	{
+		var result = __dirname + '/../test/';
+
+		if (file)
+			result += file;
+
+		return path.normalize(result); 
+	};
 

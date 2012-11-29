@@ -31,10 +31,16 @@ Email:
 			identity.SMTPHost
 Other:
 			identity.adminID
+Image Limits:
+			identity.maxImageAreaToProcess
+			identity.maxImageDimension
+
+
 
 ===========================================================
 
 */
+
 
 var 	assert	= require('assert')
 	,	_ 		= require('underscore');
@@ -158,6 +164,19 @@ identity.SMTPPassword =
 
 identity.SMTPHost =
 	function()	{	return _env('SMTP_HOST');	};
+
+
+/* ===================================================== */
+/* ===================================================== */
+/* ================    Image Limits    ================= */
+/* ===================================================== */
+/* ===================================================== */
+
+identity.maxImageAreaToProcess =
+	function()	{	return 3000 * 3000;	};
+
+identity.maxImageDimension =
+	function()	{	return 2048;	};
 
 
 /* ===================================================== */

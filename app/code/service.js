@@ -81,22 +81,26 @@ service.route.facebookObjectForURL =
 									,	source: input	} );
 
 						}
-					,	function error(e) {
-							exit({		status: 2
+					,	function error(e, statusCode) 
+						{
+							var status = statusCode ? statusCode : 2;
+
+							exit({		status: status
 									,	error : 'objectForURL failed: ' + e
 									,	source: input	} );
-
 						} );
 
 			});
 	}
+
+service.O_AUTH_ERROR_CODE = 190;
 
 service.facebookObjectForURL = 
 	function(	quest
 			,	inputURL
 			,	object_f		/* (fb_object) */
 			,	placeholder_f	/* (placeholder_object) */
-			,	error_f			/* (errString) */
+			,	error_f			/* (errString, statusCode) */
 			)
 	{
 		assert( quest 			!= undefined,	'quest is undefined');
@@ -116,22 +120,34 @@ service.facebookObjectForURL =
 
 		function _facebook_lookup(fbID)
 		{
-			if (fbID)
-			{
-				fb.graph( fbID, quest,
-					function success(fbObject)
+			assert(fbID != undefined, 'fbID is undefined');
+
+			fb.graph( fbID, quest
+				,	function success(fbObject)
 					{
+						// console.log('fbObject:');
+						// console.log(fbObject);
+
 						if (fbObject.error)
 						{
+							var errorType = fbObject.error.type;
+
+							if (errorType == "OAuthException")
+								return error_f('OAuthException', service.O_AUTH_ERROR_CODE);
+
 							// Let's be defensive. Assume we have a valid & legit 
 							// facebook ID but we don't have permission to access it
 
-							if (fbObject.error.type == "GraphMethodException" && fbObject.error.code == 100) {
-								// Permission denied to look up the element (most likely)							
+							if (errorType == "GraphMethodException" && fbObject.error.code == 100) {
+								// Permission denied to look up the element (most likely)
+
+								// console.error('Permission denied to look up the element');
 							}
 
 							var placeholder = {}; 
 							placeholder.id = fbID;
+
+							placeholder.error = fbObject.error;
 
 							var extension = path.extname(inputURL);
 							if (extension == '.jpg' || 
@@ -146,14 +162,12 @@ service.facebookObjectForURL =
 						else
 						{
 							object_f(fbObject);
-						} 
-
-					},
-					function error(e)
+						}
+					}
+				,	function error(e)
 					{
 						error_f('Failed to lookup: ' + fbID + ' error:' + error);
 					} );
-			}
 		}
 	}
 

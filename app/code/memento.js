@@ -25,7 +25,6 @@ Utils:
 
 */
 
-
 var		assert	= require('assert')	
 	,	path 	= require('path')
 	,	http 	= require('http')
@@ -33,13 +32,14 @@ var		assert	= require('assert')
 	,	url 	= require('url')
 	,	fs		= require('fs')
 	,	_		= require('underscore')
+	
 
-	,	fb		= require('./fb')
-	,	s3		= require('./s3')
-	,	mongo	= require('./mongo')
-	,	handy	= require('./handy')
+	,	fb			= require('./fb')
+	,	s3			= require('./s3')
+	,	mongo		= require('./mongo')
+	,	handy		= require('./handy')
+	,	imageshop	= require('./imageshop')
 	;
-
 
 var memento = exports;
 
@@ -170,8 +170,10 @@ memento.findId =
 		mongo.memento.findId(userId, mongoId, success_f, error_f);
 	};
 
-var MAX_IMAGE_BYTE_SIZE = 2 * 1024 * 1024; // 3MB
 
+
+
+var MAX_IMAGE_BYTE_SIZE = 2 * 1024 * 1024; // 3MB
 
 memento.addFromURL =
 	function(userId, theURL, quest, success_f /* (newEntry, meta) */, error_f)
@@ -189,6 +191,19 @@ memento.addFromURL =
 				,	function(aPath)
 					{
 						console.log('image downloaded: ' + aPath);
+
+						_postProcessImage(aPath
+							,	function success(features)
+								{
+									if (success_f)
+										success_f( features, {} );
+								}
+							,	function error(e)
+								{
+									if (error_f)
+										error_f(e);
+								} ) ;
+
 					}
 				, 	function error(e) {
 						console.error('failed to download: ' + theURL);
@@ -198,6 +213,20 @@ memento.addFromURL =
 					} );
 		}
 	}
+
+function _postProcessImage(aPath, success_f, error_f)
+{
+	handy.assert_f(success_f);
+	handy.assert_f(error_f);
+
+	imageshop.size(aPath
+		,	function success(size) {
+				success_f(size);
+			}
+		,	function error(e) {	
+				error_f(e);
+			} );
+}
 
 // downloads image locally.
 
@@ -587,13 +616,13 @@ function _generateFilePath(photoName, index, options, extension)
 
 	if (options && options.width && options.height)
 	{
-		var imageDimesion = Math.max(options.width, options.height);		
+		var imageDimension = Math.max(options.width, options.height);		
 			
 		for (var i in DEFAULT_IMAGE_SIZES)
 		{
 			var size_i = DEFAULT_IMAGE_SIZES[i];
 
-			if ( imageDimesion >= size_i ) {
+			if ( imageDimension >= size_i ) {
 				directory = size_i.toString();
 				break;
 			}
@@ -648,9 +677,9 @@ memento.facebookIdForURL =
 
 				var numbers = lastPathComponent.split('_');
 
-				var isnum0 = /^\d+$/.test( numbers[0] );
-				var isnum1 = /^\d+$/.test( numbers[1] );
-				var isnum2 = /^\d+$/.test( numbers[2] );
+				var isnum0 = handy.isNumberString( numbers[0] );
+				var isnum1 = handy.isNumberString( numbers[1] );
+				var isnum2 = handy.isNumberString( numbers[2] );
 
 				if (isnum0 && isnum1 && isnum2)
 					return numbers[1];
