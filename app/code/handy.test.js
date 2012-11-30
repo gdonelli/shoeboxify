@@ -77,14 +77,14 @@ describe('handy.js',
 
 					} );
 				
-/*
-				it( 'fail test',
-					function() 
-					{
-						 assert(false, 'this will fail');
-						//throw new Error('this will fail');
-					} );
-*/
+
+				// it( 'fail test',
+				// 	function() 
+				// 	{
+				// 		 assert(false, 'this will fail');
+				// 		//throw new Error('this will fail');
+				// 	} );
+
 				
 				/* ===================================================== */
 

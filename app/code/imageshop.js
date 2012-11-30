@@ -24,6 +24,8 @@ var		assert		= require('assert')
 	,	_			= require('underscore')
 
 	,	handy		= require('./handy')
+
+	,	OperationQueue	= require('./operation').queue
 	;
 
 var imageshop = exports;
@@ -116,6 +118,9 @@ imageshop.k = {};
 imageshop.k.maxDimensionKey		= 'maxDimension';
 imageshop.k.maxSafeInputAreaKey	= 'maxSafeInputArea';
 
+imageshop.k.defaultResampleOptions = {};
+imageshop.k.defaultResampleOptions[imageshop.k.maxDimensionKey]		= 2048;
+imageshop.k.defaultResampleOptions[imageshop.k.maxSafeInputAreaKey]	= 3000 * 3000;
 
 
 imageshop.resample = 
@@ -162,7 +167,43 @@ imageshop.resample =
 		 		} );
 	};
 
+var MAX_CONCURRENT_OPS	= 1;
+var MAX_NUM_WAITING_OPS	= 10;
 
+var _resampleOperationQueue = new OperationQueue( [], undefined, MAX_CONCURRENT_OPS );
+
+imageshop.safeResample = 
+	function(filePath, options, success_f /* (outpath, size) */, error_f)
+	{
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		if ( _resampleOperationQueue.waitCount() > MAX_NUM_WAITING_OPS )
+		{
+			var tooBusy = new Error('_resampleOperationQueue is full');
+			tooBusy.code = 'TOOBUSY';
+			return error_f(tooBusy);
+		}
+
+		_resampleOperationQueue.add(
+			function(done) {
+
+				imageshop.resample(filePath, options
+					,	function success(outpath, size)
+						{
+							success_f(outpath, size);
+							done();
+						}
+					,	function error(e)
+						{
+							error_f(e);
+							done();
+						} );
+
+			} );
+
+		// console.log('resample is running: ' + running);
+	}
 
 function _resize(filePath, dimension, success_f /* (outPath, size) */, error_f)
 {

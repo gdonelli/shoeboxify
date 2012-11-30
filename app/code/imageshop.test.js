@@ -101,7 +101,7 @@ describe('imageshop.js',
 							 			done();	
 							 		}
 								,	function error(e){
-										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
+										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG, its:' + e.code);
 										done();
 									} );
 			} );
@@ -111,16 +111,46 @@ describe('imageshop.js',
 			{
 				var options = {};
 				options[imageshop.k.maxSafeInputAreaKey] = identity.maxImageAreaToProcess();
+				var count=0;
 
-				imageshop.resample(	bigImagePath
+				imageshop.safeResample(	bigImagePath
 								,	options
 							 	,	function success(path, size) {
 							 			throw new Error('it should fail because the image is too big');	
 							 		}
 								,	function error(e){
 										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
-										done();
+										isDone();
 									} );
+
+				imageshop.safeResample(	bigImagePath
+								,	options
+							 	,	function success(path, size) {
+							 			throw new Error('it should fail because the image is too big');	
+							 		}
+								,	function error(e){
+										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
+										isDone();
+									} );
+
+				imageshop.safeResample(	bigImagePath
+								,	options
+							 	,	function success(path, size) {
+							 			throw new Error('it should fail because the image is too big');	
+							 		}
+								,	function error(e){
+										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
+										isDone();
+									} );
+
+				function isDone()
+				{
+					count++;
+					
+					if (count>=3)
+						done();
+				}
+
 			} );
 
 		it( 'imageshop.resample - iPhone4S',
@@ -130,7 +160,7 @@ describe('imageshop.js',
 				var options = {};
 				options[imageshop.k.maxDimensionKey] = maxSize;
 
-				imageshop.resample(	iphoneImagePath
+				imageshop.safeResample(	iphoneImagePath
 								,	options
 							 	,	function success(path, size) {
 							 			assert(	size.width == maxSize || 

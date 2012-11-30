@@ -73,12 +73,17 @@ identity.validateEnviroment();
 
 app.get('/', code.index);
 
-_setupRoutesForModule( fb, 'fb' );
-_setupRoutesForModule( service, 'service' );
+_setupRoutesForModule( fb,		{},	'fb' );
+_setupRoutesForModule( service,	{},	'service' );
 
-app.get( view.route.viewObject, view.viewObject );
 
-app.get( utest.path.utest, fb.requiresAuthentication, fb.requiresAdmin, utest.route.utest);
+// Admin Routes
+
+app.get( utest.path.utest,		fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.utest	);
+app.get( utest.path.intense,	fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.intense	);
+
+// app.get( utest.path.cmd,	fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.cmd);
+
 
 /**************************/
 /*   Development Routes   */
@@ -92,7 +97,6 @@ app.get('/dev/test-email',		fb.requiresAuthentication, dev.testEmail);
 app.get('/dev/whoami',		fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',	fb.requiresAuthentication, dev.myphotos);
 
-
 app.get('/dev/drop',		fb.requiresAuthentication, dev.drop);
 app.get('/dev/permissions',	fb.requiresAuthentication, dev.permissions);
 
@@ -104,6 +108,7 @@ app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
 
 
+
 /*******************/
 /*   HTTP Server   */
 /*******************/
@@ -113,7 +118,7 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 
-function _setupRoutesForModule(module, name)
+function _setupRoutesForModule(module, options, name)
 {
 	assert(module != undefined,			'module is undefined');
 	assert(module.path != undefined,	'module.path is undefined');
@@ -129,9 +134,14 @@ function _setupRoutesForModule(module, name)
 		assert(path_i != undefined, 'path_i is undefined, key=' + key);
 		assert(route_i != undefined, 'route_i is undefined, path_i=' + path_i);
 
-		app.get(path_i, route_i);
+		if (options && options.requiresAdmin == true)
+			app.get(path_i, fb.requiresAuthentication,	fb.requiresAdmin, route_i);
+		if (options && options.requiresAuthentication == true)
+			app.get(path_i, fb.requiresAuthentication, route_i);
+		else
+			app.get(path_i, route_i);
 
-		console.log(' ✔ ' + path_i);
+		console.log(' |=> ' + path_i);
 	}
 
 }

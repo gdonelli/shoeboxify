@@ -8,6 +8,7 @@ String:
 			handy.isNumberString
 			String.startsWith
 			String.endsWith
+			String.contains
 
 HTTP:
 			handy.is200OK
@@ -85,6 +86,13 @@ if (typeof String.prototype.endsWith != 'function') {
 	String.prototype.endsWith =
 		function (str){
 			return this.substring(this.length-str.length, this.length) === str;
+		};
+}
+
+if (typeof String.prototype.contains != 'function') {
+	String.prototype.contains =
+		function (str){
+			return this.indexOf(str) >= 0;
 		};
 }
 

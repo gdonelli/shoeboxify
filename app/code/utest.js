@@ -16,8 +16,9 @@ var 	assert	= require('assert')
 	,	url		= require('url')
 	,	_		= require('underscore')
 
-	,	fb		= require('./fb')
-	,	handy	= require('./handy')
+	,	fb			= require('./fb')
+	,	handy		= require('./handy')
+	,	imageshop	= require('./imageshop')
 	;
 
 
@@ -102,10 +103,14 @@ utest.route.utest =
 
 			var mochaProcess = spawn('node', args);
 
+			setTimeout( _kill, 60 * 1000 ); // one minute max to complete
+
 			mochaProcess.stdout.on('data',
 				function (data) {
-
 					var dataString = data.toString();
+										
+					var heristicEnd = (	dataString.contains('tests complete') );
+
 					dataString = dataString.replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;');
 					dataString = dataString.replace(' ', '&nbsp;');
 					dataString = dataString.replace('✔', '<span style="color: green;">[OK]</span>');
@@ -125,13 +130,29 @@ utest.route.utest =
 					// console.log(dataString);
 
 					ponse.write('</code>');
+
+					if (heristicEnd) {
+						ponse.write('will send KILL in 3 seconds');		
+						setTimeout( _kill, 3000 );
+					}
+				
 				});
 
 			mochaProcess.stderr.on('data',
 				function (data) {
+					var dataString = data.toString();
+
 					ponse.write('<p style="color:red;">');
-					ponse.write( data.toString().replace('\n', '<br>') );
+					ponse.write( dataString.replace('\n', '<br>') );
 					ponse.write('</p>');
+
+
+					if ( dataString.contains('tests failed') )
+					{
+						ponse.write('will send KILL in 3 seconds');		
+						setTimeout( _kill, 3000 );
+					}
+
 				});
 
 			mochaProcess.on('exit',
@@ -139,6 +160,11 @@ utest.route.utest =
 					ponse.write('<p>exit with code: ' + code + '</p>');
 					ponse.end('</body></html>');
 				});
+
+			function _kill() 
+			{
+				mochaProcess.kill();
+			}
 		}
 
 	};
@@ -207,4 +233,51 @@ function _getAllTestFiles( done_f /* arrayOfFiles */ )
 		} );
 
 }
+
+
+utest.path.intense = '/test/intense-image-resample';
+
+utest.route.intense =
+	function(quest, ponse)
+	{
+		var iphoneImagePath	= handy.testDirectory('iPhone4S.JPG');
+
+		console.log('-> ' + utest.path.intense);
+
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+		ponse.write('<h1>intense-image-resample</h1>');
+
+		var count = 0;
+		var maxCount = 20;
+
+		for ( var i=0; i<maxCount; i++ )
+		{
+			imageshop.safeResample(	iphoneImagePath
+								,	imageshop.k.defaultResampleOptions
+							 	,	function success(path, size)
+							 		{
+							 			assert(size.width == 2048, 'image width expected to be 2048');									
+										ponse.write(path + '<br>');
+							 			fs.unlink(path);
+							 			isDone();
+							 		}
+								,	function error(e)
+									{ 
+										ponse.write( e.message + ' code: '+ e.code + '<br>' );
+										isDone();
+								 	} );			
+		}	
+
+		function isDone()
+		{
+			count++;
+
+			if (count >= maxCount)
+			{
+				ponse.end('</body></html>');
+			}
+		}
+	}
 
