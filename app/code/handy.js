@@ -22,6 +22,9 @@ Debug:
 			handy.writeHTMLstacktrace
 			handy.errorLogStacktrace
 
+Route:
+			handy.routeDebugPage
+
 Other:
 			handy.elapsedTimeSince
 			handy.tmpFile
@@ -130,6 +133,10 @@ handy.HEAD =
 			,	error_f		/*	(error)	*/
 			)
 	{
+		handy.assert_http_url(theURL);
+		handy.assert_f(success_f,	true);
+		handy.assert_f(error_f,		true);
+
 		return _makeHTTPRequest(
 					theURL
 				,	'HEAD'
@@ -317,6 +324,38 @@ handy.errorLogStacktrace =
 
 		return trace;
 	};
+
+/* ========================================================= */
+/* ========================================================= */
+/* ========================= Route ========================= */
+/* ========================================================= */
+/* ========================================================= */
+
+handy.routeDebugPage =
+	function( ponse, module, moduleName )
+	{
+		assert(module != undefined,			'module is undefined');
+		assert(module.path != undefined,	'module.path is undefined');
+		assert(module.route != undefined,	'module.route is undefined');
+
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+		ponse.write('<h1>' + moduleName + '</h1>');
+
+		for (var key in module.path)
+		{
+			var path_i  = module.path[key];
+			var route_i = module.route[key];
+
+			ponse.write('<p>');
+			ponse.write('&nbsp;&nbsp;&nbsp;&nbsp;');
+			ponse.write('<a href="' + path_i + '">' + key + '</a>');
+			ponse.write('</p>');
+		}
+		
+		ponse.end('</body></html>');
+	}
 
 
 /* ========================================================= */

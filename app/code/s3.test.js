@@ -3,9 +3,11 @@ var		assert	= require("assert")
 	,	https	= require("https")
 	,	http	= require("http")
 	,	url		= require("url")
+	,	fs		= require("fs")
 
 	,	s3 			= require("./s3")
 	,	handy		= require("./handy")
+	,	OperationQueue	= require("./operation").queue;
 	;
 
 
@@ -55,7 +57,7 @@ describe('s3.js',
 				var shoeboxPath = '/test/shoebox.png';
 				it( 's3.copyURL shoebox.png',
 					function(done) {
-						_simpleCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath, done, _copyFailed );
+						_s3URLCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath, done, _copyFailed );
 					} );
 
 				it ( 's3.delete ' + shoeboxPath + ' from s3.test',
@@ -68,7 +70,7 @@ describe('s3.js',
 				var faviconPath = '/test/favicon.ico';
 				it( 's3.copyURL favicon.ico',
 					function(done) {
-						_simpleCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath, done, _copyFailed );
+						_s3URLCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath, done, _copyFailed );
 					} );
 
 				it( 's3.delete ' + faviconPath,	function(done) {
@@ -80,7 +82,7 @@ describe('s3.js',
 
 				it( 's3.copyURL fbpict.jpg',
 					function(done) {
-						_simpleCopy(s3.test, 
+						_s3URLCopy(s3.test, 
 							'https://sphotos-a.xx.fbcdn.net/hphotos-ash3/s320x320/524874_10152170979900707_270531713_n.jpg', 
 							fbpict, done, _copyFailed );
 					} );
@@ -92,7 +94,7 @@ describe('s3.js',
 
 				it( 's3.copyURL - fail',
 					function(done) {
-						_simpleCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
+						_s3URLCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
 							,	function sucess(bytes){
 									throw new Error("Copy should not succeeed bytes written:" + bytes);
 								}
@@ -178,6 +180,78 @@ describe('s3.js',
 
 					} );
 
+				var localFile = handy.testDirectory('nasa.jpg');
+
+				it( 's3.copyFile',
+					function(done) 
+					{ 				
+						var clientS3 = s3.test.clientRW();
+						var destinationPath = '/test/nasa.jpg';
+
+						var stat = fs.statSync(localFile)
+						var fileSize = stat.size;
+
+						var q = new Operationq(1);
+
+						q.add( 
+							function copyOperation(doneOp) {
+								s3.copyFile(clientS3, localFile, destinationPath
+									,	function success()	{	doneOp();		}
+									,	function error(e)	{	throw e;	}
+									,	_copy_progess);
+							} );
+
+						q.add(	
+							function verifyOperation(doneOp) {
+								_verify(doneOp, true);
+							} );
+
+						q.add( 
+							function cleanUpOperation(doneOp) {
+								s3.delete(clientS3, destinationPath
+									,	function success()	{	doneOp();	}
+									,	function error(e)	{	throw e;	} );
+							});
+
+						q.add(
+							function verifyOperation(doneOp) {
+								_verify(doneOp, false);
+							} );
+
+						q.add( function() { done(); } );
+
+						/* ============================================================= */
+
+						function _verify(doneOp, shouldExits)
+						{
+							handy.HEAD( clientS3.URLForPath(destinationPath)
+									,	function success(ponse)
+										{
+											if (shouldExits) {
+												assert(ponse.statusCode == 200, 'File is expected to exist');
+
+												var ponseHeaders = ponse.headers;
+												var ponseType = ponseHeaders['content-type'];
+												var ponseSize = ponseHeaders['content-length'];
+
+												assert( ponseType == 'image/jpeg', 'MIME doesnt match is: ' + ponseType );
+												assert( ponseSize == fileSize, 'ponseSize doesnt match is: ' + fileSize );
+												
+												doneOp();
+											}
+											else
+											{
+												assert(ponse.statusCode != 200, 'File is not expected to exist');
+
+												doneOp();
+											}
+										}
+									,	function error(e) {	
+											throw e; 
+										} );
+						}
+
+					} );
 
 				/* ========================================================== */
 
@@ -221,29 +295,30 @@ describe('s3.js',
 
 /* ============================================================================= */
 
-function _simpleCopy(destination, url, path, doneF, errorF)
+function _s3URLCopy(destination, url, path, done_f, error_f)
 {
 	var clientS3 = destination.clientRW();
 
 	s3.copyURL(clientS3, url, path, 
-			function sucess(nbytes){
-				if (doneF)
-					doneF();
+			function success(nbytes){
+				if (done_f)
+					done_f();
 			}
 			
 		,	function error(e){
-				if (errorF)
-					errorF(e)
+				if (error_f)
+					error_f(e)
 			}
+		,	_copy_progess );
+}
 
-		,	function progess(p) {
-				assert(p != undefined, 'expected progress object');
-				assert(p.total != undefined, 'expected progress.total');
-				assert(p.written!= undefined, 'expected progress.written');
-				assert(p.percent != undefined, 'expected progress.percent');
-				// console.log( p.percent + '%' + ' : ' + path);
-			} );
 
+function _copy_progess(p)
+{
+	assert(p != undefined, 'expected progress object');
+	assert(p.total != undefined, 'expected progress.total');
+	assert(p.written!= undefined, 'expected progress.written');
+	assert(p.percent != undefined, 'expected progress.percent');
 }
 
 
@@ -266,6 +341,8 @@ function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
 	var stringWritten = s3.writeJSON( clientS3, object, thePath,
 		function success(ponse) {
 			assert.equal(ponse.statusCode, 200);
+
+			// console.log('ponse.statusCode == 200: ' + thePath);
 
 			assert(clientS3.URLForPath != undefined, 'clientS3.URLForPath is undefined');
 

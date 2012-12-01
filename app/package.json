@@ -1,6 +1,6 @@
 {
   "name": "shoeboxify",
-  "version": "0.0.1-116",
+  "version": "0.0.1-117",
   "private": true,
   "scripts": {
     "start": "app.js"
@@ -19,7 +19,8 @@
     "mocha": "1.7.0",
     "node-uuid": "1.4.x",
     "wrench": "1.4.x",
-    "imagemagick": "0.1.x"
+    "imagemagick": "0.1.x",
+    "mime": "1.2.x"
   },
   "subdomain": "shoeboxify",
   "author": "Giovanni Donelli <giovanni@shoeboxify.com>",

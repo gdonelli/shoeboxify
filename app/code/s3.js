@@ -9,7 +9,9 @@ S3 Client:
 Operations:
 			s3.writeJSON	write JSON file to s3
 			s3.delete		delete files from s3
+			
 			s3.copyURL		copy content from any URL to s3
+			s3.copyFile		copy local file to S3
 
 Meta:
 			s3.getInfoForURL	{ bucket, path } from s3 URL
@@ -19,16 +21,19 @@ Meta:
 */
 
 
-var		assert= require('assert')
-	,	knox = require('knox')
-	,	path = require('path')
-	,	url  = require('url')
-	,	http = require("http")
-	,	https = require("https")
-	,	_ = require("underscore")
+var		assert	= require('assert')
+	,	knox	= require('knox')
+	,	path	= require('path')
+	,	url		= require('url')
+	,	http	= require("http")
+	,	https	= require("https")
+	,	_		= require("underscore")
+	,	fs		= require("fs")
+	,	mime	= require("mime")
 
-	,	handy 		= require('./handy')
-	,	identity	= require('./identity')
+	,	handy	= require('./handy')
+	,	identity= require('./identity')
+
 	;
 
 
@@ -390,8 +395,62 @@ s3.delete /* _using_deleteMultiple */ =
 	};
 
 
-/**
- *
+function _copyStreamToS3(	client 
+						,	srcStream,	srcStreamLength,	srcMIMEType
+						,	pathOnS3
+						,	success_f,	error_f,	progress_f )
+{
+	var written = 0;
+	var total = 0;
+
+	var headers = {};
+
+	headers['x-amz-acl'] = 'public-read';
+
+	if (srcStreamLength)
+		headers['Content-Length'] = srcStreamLength;
+
+	if (srcMIMEType)
+		headers['Content-Type'] = srcMIMEType;
+
+	var putStream = client.putStream(srcStream, pathOnS3, headers, 
+		function(err, streamPonse){
+	
+			streamPonse.on('end',
+				function() {
+					// console.log('streamPonse.on[end] written:' + written + ' total:' + total );
+
+					if  ( written == total && total != 0 ) 
+					{
+						success_f( Math.round(total) );
+					}
+					else
+					{
+						error_f( new Error(1, 'Couldnt complete file (' + fileURL + ') streaming to S3:'+filePath) );
+						srcStream.destroy();
+						streamPonse.destroy();
+					}
+				});
+
+		});
+
+	putStream.on('progress',
+		function(progressObj) {
+			written	= progressObj.written;
+			total	= progressObj.total;
+			// console.log('stream->progressObj.percent: ' + progressObj.percent );
+
+			if (progress_f)
+				progress_f(progressObj);
+		});
+
+	putStream.on('error', 
+		function(error) {
+			console.log('stream->error: ' + error);
+		});
+}
+
+/*
  *	success_f(total_byte_written)
  *	error_f( Error_obj )
  *	progress_f( p ), p: {written, total, percent}
@@ -399,101 +458,60 @@ s3.delete /* _using_deleteMultiple */ =
  */
 
 s3.copyURL =
-	function( client, fileURL, filePath, success_f, error_f, progress_f )
+	function( client, remoteURL, pathOnS3, success_f, error_f, progress_f )
 	{
 		_s3_assert_client(client);
-		_s3_assert_path(filePath);
-		handy.assert_http_url(fileURL);
+		_s3_assert_path(pathOnS3);
+		handy.assert_http_url(remoteURL);
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		var urlElements = url.parse(fileURL);
+		var quest = handy.requestURL(remoteURL, {},
+			function handleResponseStream(ponse) {
 
-		// console.log(urlElements);
-
-		var options = {
-				hostname	:	urlElements.hostname
-			,	path		:	urlElements.path
-		};
-
-		var methodObject = (urlElements['protocol'] == 'https' ? https : http );
-
-		var quest = methodObject.request(options, 
-			function(getPonse){
-
-				// console.log('getPonse.statusCode: ' + getPonse.statusCode);
-
-				if (getPonse.statusCode != 200)
+				if (ponse.statusCode != 200)
 				{
-					var errMessage = 'GET ' + fileURL + ' failed, statusCode:' + getPonse.statusCode;
+					var errMessage = 'GET ' + remoteURL + ' failed, statusCode:' + ponse.statusCode;
 					
-					return ExitWithError(getPonse.statusCode, errMessage);
+					return error_f( new Error(ponse.statusCode, errMessage) );
 				}
 
-				var headers = {
-						'Content-Length': getPonse.headers['content-length']
-					,	'Content-Type': getPonse.headers['content-type']
-					,	'x-amz-acl': 'public-read'
-				};
+				var ponseLength	= ponse.headers['content-length'];
+				var ponseType	= ponse.headers['content-type'];
 
-				var written = 0;
-				var total = 0;
-
-				var putStream = client.putStream(getPonse, filePath, headers, 
-					function(err, streamPonse){
-				
-						streamPonse.on('end',
-							function() {
-								// console.log('streamPonse.on[end] written:' + written + ' total:' + total );
-
-								if  ( written == total && total != 0 ) 
-								{
-									ExitWithSuccess();
-								}
-								else
-								{
-									ExitWithError(1, 'Couldnt complete file (' + fileURL + ') streaming to S3:'+filePath);
-									getPonse.destroy();
-									streamPonse.destroy();
-								}
-							});
-
-					});
-
-				putStream.on('progress',
-					function(progressObj) {
-						written	= progressObj.written;
-						total	= progressObj.total;
-						// console.log('stream->progressObj.percent: ' + progressObj.percent );
-
-						if (progress_f)
-							progress_f(progressObj);
-					});
-
-				putStream.on('error', 
-					function(error) {
-						console.log('stream->error: ' + error);
-					});
-				
-				function ExitWithError(code, message)
-				{
-					var err = new Error(message);
-					err.code = code;
-
-					error_f( err );
-				}
-
-				function ExitWithSuccess()
-				{
-					success_f( Math.round(total) );					
-				}
-
+				_copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, success_f, error_f, progress_f);
 			});
 
 		quest.end();
 	};
 
 
+s3.copyFile =
+	function( client, localPath, pathOnS3, success_f, error_f, progress_f )
+	{
+		_s3_assert_client(client);
+		_s3_assert_path(pathOnS3);
+		_s3_assert_path(localPath);
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
+
+		fs.stat(localPath, 
+			function(err, stats) {
+
+				if (err)
+					return error_f(err);
+
+				var fileSize = stats.size;
+				var fileType = mime.lookup(localPath);
+
+				var fileStream = fs.createReadStream(localPath);
+
+				_copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, success_f, error_f, progress_f);
+			} );
+
+
+
+	}
 /* ============================================== */
 /* ============================================== */
 /* =================[  Utils  ]================== */

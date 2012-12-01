@@ -39,6 +39,7 @@ var		assert	= require('assert')
 	,	mongo		= require('./mongo')
 	,	handy		= require('./handy')
 	,	imageshop	= require('./imageshop')
+	,	OperationQueue	= require("./operation").queue
 	;
 
 var memento = exports;
@@ -171,8 +172,6 @@ memento.findId =
 	};
 
 
-
-
 var MAX_IMAGE_BYTE_SIZE = 2 * 1024 * 1024; // 3MB
 
 memento.addFromURL =
@@ -186,31 +185,56 @@ memento.addFromURL =
 		}
 		else
 		{
-			_downloadImageURL( 
-					theURL 
-				,	function(aPath)
-					{
-						console.log('image downloaded: ' + aPath);
+			var q = new OperationQueue(1);
 
-						_postProcessImage(aPath
-							,	function success(features)
-								{
-									if (success_f)
-										success_f( features, {} );
-								}
-							,	function error(e)
-								{
-									if (error_f)
-										error_f(e);
-								} ) ;
+			q.on('abort',
+				function(e) { 
+					if (error_f)
+						error_f(e); 
+				});
 
-					}
-				, 	function error(e) {
-						console.error('failed to download: ' + theURL);
+			q.context = {};
 
-						if (error_f)
-							error_f(e);
-					} );
+			q.add(
+				function downloadOperation(doneOp) {
+					console.log(arguments.callee.name);
+
+					_downloadImageURL( theURL
+						,	function success(localPath) { 
+								q.context.source = localPath;
+								console.log('image downloaded: ' + localPath);
+								doneOp();
+							}
+						,	function error(e){	q.abort(e);	}
+						);
+				});
+
+			q.add(
+				function processImageOperation(doneOp)
+				{							
+					console.log(arguments.callee.name);
+
+					_postProcessImage(q.context.source
+						,	function success(features)
+							{
+								q.context.imageFeatures = features;
+								doneOp();
+							}
+						,	function error(e){	q.abort(e); } 
+						);
+				});
+
+
+			q.add(
+				function finish()
+				{
+					console.log(arguments.callee.name);
+
+					if (success_f)
+						success_f(q.context.imageFeatures, undefined);
+				});
+
+
 		}
 	}
 
@@ -219,7 +243,7 @@ function _postProcessImage(aPath, success_f, error_f)
 	handy.assert_f(success_f);
 	handy.assert_f(error_f);
 
-	imageshop.size(aPath
+	imageshop.getSize(aPath
 		,	function success(size) {
 				success_f(size);
 			}
@@ -228,7 +252,7 @@ function _postProcessImage(aPath, success_f, error_f)
 			} );
 }
 
-// downloads image locally.
+// it downloads image locally...
 
 function _downloadImageURL( theURL, success_f /* (local_path) */, error_f)
 {

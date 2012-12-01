@@ -8,7 +8,7 @@ var		express	= require('express')
 	,	code	= require('./code')
 	,	fb		= require('./code/fb')
 	,	dev		= require('./code/dev')
-	,	utest	= require('./code/utest')
+	,	test	= require('./code/test')
 	,	service	= require('./code/service')
 	,	view	= require('./code/view')
 	,	handy	= require('./code/handy')
@@ -73,16 +73,9 @@ identity.validateEnviroment();
 
 app.get('/', code.index);
 
-_setupRoutesForModule( fb,		{},	'fb' );
-_setupRoutesForModule( service,	{},	'service' );
-
-
-// Admin Routes
-
-app.get( utest.path.utest,		fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.utest	);
-app.get( utest.path.intense,	fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.intense	);
-
-// app.get( utest.path.cmd,	fb.requiresAuthentication,	fb.requiresAdmin,	utest.route.cmd);
+_setupRoutesForModule( fb,		{ name: 'fb' } );
+_setupRoutesForModule( service,	{ name: 'service' } );
+_setupRoutesForModule( test,	{ name: 'test',			admin: true} );
 
 
 /**************************/
@@ -118,13 +111,13 @@ http.createServer(app).listen(app.get('port'), function(){
 });
 
 
-function _setupRoutesForModule(module, options, name)
+function _setupRoutesForModule(module, options)
 {
 	assert(module != undefined,			'module is undefined');
 	assert(module.path != undefined,	'module.path is undefined');
 	assert(module.route != undefined,	'module.route is undefined');
 
-	console.log(name);
+	console.log(options.name);
 
 	for (var key in module.path)
 	{

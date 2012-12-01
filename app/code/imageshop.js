@@ -9,10 +9,13 @@ Info:
 Operations:
 			imageshop.resample
 
+Debug:
+			imageshop.resampleQueue			
+
 Konstants:
 			imageshop.k.maxDimensionKey
 			imageshop.k.maxSafeInputAreaKey
-
+			imageshop.k.defaultResampleOptions
 
 ======================================================
 
@@ -203,7 +206,13 @@ imageshop.safeResample =
 			} );
 
 		// console.log('resample is running: ' + running);
-	}
+	};
+
+imageshop.resampleQueue =
+	function()
+	{
+		return _resampleOperationQueue;
+	};
 
 function _resize(filePath, dimension, success_f /* (outPath, size) */, error_f)
 {

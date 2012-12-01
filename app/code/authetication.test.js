@@ -4,7 +4,7 @@ var		assert	= require("assert")
 	,	spawn	= require('child_process').spawn
 
 	,	fb		= require("./fb")	
-	,	utest	= require("./utest")
+	,	test	= require("./test")
 	;
 
 
@@ -103,11 +103,11 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
 authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 	{
-		fs.readFile(utest.accessTokenCacheFilePath,
+		fs.readFile(test.k.AccessTokenCacheFilePath,
 			function (err, data) {
   				if (err) 
   				{
-  					console.log('no cache file in ' + utest.accessTokenCacheFilePath);
+  					console.log('no cache file in ' + test.k.AccessTokenCacheFilePath);
   					_miss();
   				}
   				else
@@ -123,7 +123,7 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 
 	  					var cacheAge = now.getTime() - then.getTime();
 	  					console.log( 'Using cached AccessToken');
-	  					console.log( 'CacheFile: ' + utest.accessTokenCacheFilePath);
+	  					console.log( 'CacheFile: ' + test.k.AccessTokenCacheFilePath);
 	  					console.log( 'CacheAge:  ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes');	
 
 	  					cacheValid = (cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE);
@@ -131,7 +131,7 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
   					else
   					{
 						console.log( 'Using cached AccessToken');
-	  					console.log( 'CacheFile: ' + utest.accessTokenCacheFilePath);
+	  					console.log( 'CacheFile: ' + test.k.AccessTokenCacheFilePath);
 						console.log('no cache.date -> assume cache is valid');
   					}
   						
@@ -159,7 +159,7 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 						cache.date = new Date();
 						cache.payload = jsonData;
 
-						fs.writeFile(utest.accessTokenCacheFilePath, JSON.stringify(cache) );
+						fs.writeFile(test.k.AccessTokenCacheFilePath, JSON.stringify(cache) );
 					}
 				,	error_f );
 		}

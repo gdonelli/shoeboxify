@@ -3,7 +3,7 @@
 ===========[   Server side unit testing   ]===========
 
 Routes:
-			utest.route.utest	(utest.path.utest)
+			test.route.test	(test.path.test)
 		
 ======================================================
 
@@ -21,22 +21,37 @@ var 	assert	= require('assert')
 	,	imageshop	= require('./imageshop')
 	;
 
+var test = exports;
 
-var utest = exports;
+test.k 		= {}
+test.path	= {};
+test.route	= {};
 
-utest.path = {};
-utest.route = {};
+// Konstant
 
-utest.accessTokenCacheFilePath = '/tmp/com.shoeboxify.accessTokenCache.json';
+test.k.AccessTokenCacheFilePath = '/tmp/com.shoeboxify.accessTokenCache.json';
 
 
 /*
- * 		Route:		/utest
+ * 		Route:		/test
  */
 
-utest.path.utest = '/utest/:module?';
+test.path.test = '/test';
 
-utest.route.utest =
+test.route.test =
+	function(quest, ponse)
+	{
+		handy.routeDebugPage( ponse, test, 'test' );
+	}
+
+
+/*
+ * 		Route:		/test/unit
+ */
+
+test.path.unitTest = '/unit-test/:module?';
+
+test.route.unitTest =
 	function(quest, ponse)
 	{	
 		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
@@ -54,23 +69,20 @@ utest.route.utest =
 	
 		var urlElements = url.parse(quest.url, true);
 
-		console.log('urlElements:');
-		console.log(urlElements);
+		// console.log('urlElements:');
+		// console.log(urlElements);
 
 		WriteAccessTokenCache(quest,
 			function() 
 			{
-				if (quest.params.module)
+				if ( quest.params.module && 
+					!quest.params.module.startsWith(':'))
 				{
 					RunTests( [ __dirname + '/' + quest.params.module + '.test.js' ] );
 				}
 				else
 				{
-					_getAllTestFiles( 
-						function(files)
-						{
-							RunTests(files);
-						} );
+					_getAllTestFiles( function(files){	RunTests(files);	});
 				}
 
 			} );
@@ -100,7 +112,6 @@ utest.route.utest =
 
 			ponse.write('<h2>Run:</h2>');
 
-
 			var mochaProcess = spawn('node', args);
 
 			setTimeout( _kill, 60 * 1000 ); // one minute max to complete
@@ -111,11 +122,10 @@ utest.route.utest =
 										
 					var heristicEnd = (	dataString.contains('tests complete') );
 
-					dataString = dataString.replace('\t', '&nbsp;&nbsp;&nbsp;&nbsp;');
-					dataString = dataString.replace(' ', '&nbsp;');
+					dataString = _consoleStringToHTML(dataString);
+
 					dataString = dataString.replace('✔', '<span style="color: green;">[OK]</span>');
 					dataString = dataString.replace('◦', '[--]');
-
 
 					dataString = dataString.replace('[2K', '');
 					dataString = dataString.replace('[0G', '');
@@ -125,9 +135,6 @@ utest.route.utest =
 
 					if (data.length > 8)
 						ponse.write( '<br>' );
-
-					// console.log('buf.length '+ data.length + ':');
-					// console.log(dataString);
 
 					ponse.write('</code>');
 
@@ -146,7 +153,6 @@ utest.route.utest =
 					ponse.write( dataString.replace('\n', '<br>') );
 					ponse.write('</p>');
 
-
 					if ( dataString.contains('tests failed') )
 					{
 						ponse.write('will send KILL in 3 seconds');		
@@ -163,7 +169,10 @@ utest.route.utest =
 
 			function _kill() 
 			{
-				mochaProcess.kill();
+				mochaProcess.kill('SIGKILL');
+				mochaProcess.kill('SIGKILL');
+				mochaProcess.kill('SIGKILL');
+				mochaProcess.kill('SIGKILL');
 			}
 		}
 
@@ -199,7 +208,7 @@ function WriteAccessTokenCache(quest, done_f)
 
 	var fs = require('fs');
 
-	fs.writeFile(utest.accessTokenCacheFilePath, cacheContent,
+	fs.writeFile(test.k.AccessTokenCacheFilePath, cacheContent,
 		function(err) 
 		{
 		    if(err) 
@@ -234,15 +243,19 @@ function _getAllTestFiles( done_f /* arrayOfFiles */ )
 
 }
 
+/*
+ *		Route: intense-image-resample
+ */
 
-utest.path.intense = '/test/intense-image-resample';
 
-utest.route.intense =
+test.path.intense = '/test/intense-image-resample';
+
+test.route.intense =
 	function(quest, ponse)
 	{
 		var iphoneImagePath	= handy.testDirectory('iPhone4S.JPG');
 
-		console.log('-> ' + utest.path.intense);
+		console.log('-> ' + test.path.intense);
 
 		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
 
@@ -280,4 +293,108 @@ utest.route.intense =
 			}
 		}
 	}
+
+/*
+ *		Route: cmd
+ */
+
+test.path.resampleQueueCount = '/test/resample-queue-count';
+
+test.route.resampleQueueCount =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+		ponse.write('<h1> imageshop.resampleQueue().waitCount() = ' + imageshop.resampleQueue().waitCount() + '</h1>');
+		ponse.end('</body></html>');
+	};
+
+
+/*
+ *		Route: shell
+ */
+
+test.path.shell = '/test/shell/:command?';
+
+test.route.shell =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+
+		if (	quest.params.command == undefined || 
+				quest.params.command.startsWith(':') )
+		{
+			ponse.write('<h1>Expected shell command</h1>');
+			return ponse.end('</body></html>');
+		}
+
+
+		ponse.write('<h1>' + quest.params.command + '</h1>');
+
+		var elements = quest.params.command.split(' ');
+
+		var cmd = elements[0];
+		
+		var args = [];
+
+		if (elements.length > 2)
+			args = _.range( 1, elements.length );
+
+		var cmdProcess = spawn( cmd, args );
+
+		setTimeout( _kill, 60 * 1000 ); // one minute max to complete
+
+		cmdProcess.stdout.on('data',
+			function (data) {
+				ponse.write('<code>');
+				
+				var inputString = data.toString();
+				ponse.write( _consoleStringToHTML(inputString) );			
+				
+				console.log(inputString);
+				
+				ponse.write('</code>');
+			});
+
+		cmdProcess.stderr.on('data',
+			function (data) {
+				ponse.write('<code style="color:red;">');
+
+				var inputString = data.toString();
+				ponse.write( _consoleStringToHTML(inputString) );			
+
+				ponse.write('</code>');
+			});
+
+		cmdProcess.on('exit',
+			function (code) {
+				ponse.write('<p>exit with code: ' + code + '</p>');
+				ponse.end('</body></html>');
+			});
+
+		function _kill() 
+		{
+			cmdProcess.kill();
+		}
+	}	
+
+function _consoleStringToHTML(str)
+{
+	var result = '';
+
+	for (var i=0; i<str.length; i++)
+	{
+		switch ( str.charCodeAt(i) )
+		{
+			case 10:	result += '<br>';	break;			
+			case 32:	result += '&nbsp;';	break;
+			default:	result += str.charAt(i);
+		}
+	}
+
+	return result;
+}
 
