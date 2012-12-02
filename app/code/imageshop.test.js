@@ -120,36 +120,8 @@ describe('imageshop.js',
 							 		}
 								,	function error(e){
 										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
-										isDone();
+										done();
 									} );
-
-				imageshop.safeResample(	bigImagePath
-								,	options
-							 	,	function success(path, size) {
-							 			throw new Error('it should fail because the image is too big');	
-							 		}
-								,	function error(e){
-										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
-										isDone();
-									} );
-
-				imageshop.safeResample(	bigImagePath
-								,	options
-							 	,	function success(path, size) {
-							 			throw new Error('it should fail because the image is too big');	
-							 		}
-								,	function error(e){
-										assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
-										isDone();
-									} );
-
-				function isDone()
-				{
-					count++;
-					
-					if (count>=3)
-						done();
-				}
 
 			} );
 
@@ -171,6 +143,40 @@ describe('imageshop.js',
 							 		}
 								,	function error(e){ throw e; } );
 			} );
-	
+		
+
+		it( 'imageshop.resample - TOOBUSY',
+			function(done)
+			{
+				var maxSize = identity.maxImageDimension();
+				var options = {};
+				options[imageshop.k.maxDimensionKey] = maxSize;
+
+				var tooBusyCount = 0;
+
+				for (var i=0; i<100; i++)
+				{
+					imageshop.safeResample(	iphoneImagePath
+									,	options
+								 	,	function success(path, size) {}
+									,	function error(e){ 
+											tooBusyCount++;
+											// console.log(e.code);
+									 		assert(e.code == 'TOOBUSY', 'expected TOOBUSY');
+									 	} );
+				}
+
+				setTimeout(
+						function(){
+							console.log( tooBusyCount );
+							imageshop.resampleQueue().abort();
+					 		if (tooBusyCount > 70)
+						 		done();
+						},
+						250);
+			} );
+		
+
+
 	});
 

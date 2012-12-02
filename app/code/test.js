@@ -19,6 +19,8 @@ var 	assert	= require('assert')
 	,	fb			= require('./fb')
 	,	handy		= require('./handy')
 	,	imageshop	= require('./imageshop')
+	,	debug		= require('./debug-lib')
+
 	;
 
 var test = exports;
@@ -49,7 +51,7 @@ test.route.test =
  * 		Route:		/test/unit
  */
 
-test.path.unitTest = '/unit-test/:module?';
+test.path.unitTest = '/test/unit/:module?';
 
 test.route.unitTest =
 	function(quest, ponse)
@@ -87,7 +89,7 @@ test.route.unitTest =
 
 			} );
 
-		/* ============================================================ */
+		/* === aux =================================================== */
 	
 		function RunTests(files)
 		{
@@ -114,7 +116,7 @@ test.route.unitTest =
 
 			var mochaProcess = spawn('node', args);
 
-			setTimeout( _kill, 60 * 1000 ); // one minute max to complete
+			setTimeout( _kill, 5 * 60 * 1000 ); // 5 minutes max to complete
 
 			mochaProcess.stdout.on('data',
 				function (data) {
@@ -169,79 +171,80 @@ test.route.unitTest =
 
 			function _kill() 
 			{
-				mochaProcess.kill('SIGKILL');
-				mochaProcess.kill('SIGKILL');
-				mochaProcess.kill('SIGKILL');
+				ponse.write('<p>Sending SIGKILL</p>');
+
 				mochaProcess.kill('SIGKILL');
 			}
 		}
 
+
+		function AccessTokenCache(quest)
+		{
+			var accessToken = fb.getAccessToken(quest);
+			var expiresToken = fb.getExpiresToken(quest);
+
+			assert(accessToken	!= undefined, 'accessToken is undefined');
+			assert(expiresToken	!= undefined, 'expiresToken is undefined');
+
+			var object = {	'accessToken'	: accessToken,
+							'expires'		: expiresToken	};
+
+			var result = {};
+			
+			result.payload = object;
+
+			return result;
+		}
+
+
+		function WriteAccessTokenCache(quest, done_f)
+		{
+			var cache = AccessTokenCache(quest);
+
+			var cacheContent = JSON.stringify(cache)
+
+			console.log('cacheContent: ' + cacheContent);
+
+			var fs = require('fs');
+
+			fs.writeFile(test.k.AccessTokenCacheFilePath, cacheContent,
+				function(err) 
+				{
+				    if(err) 
+				    {
+				        console.log(err);
+				    } else
+				    {
+				        console.log("The file was saved!");
+				        done_f();
+				    }
+				} ); 
+		}
+
+
+		function _getAllTestFiles( done_f /* arrayOfFiles */ )
+		{
+			fs.readdir(__dirname,
+				function(err, files) {
+
+					var allTestFiles = [];
+
+					for (var i = 0; i < files.length; i++ )
+					{
+						var file_i = files[i];
+						
+						if (file_i.endsWith('.test.js'))
+							allTestFiles.push( __dirname + '/' + file_i);
+					}
+
+					done_f( allTestFiles.sort() );
+				} );
+		}
+
+
 	};
 
 
-function AccessTokenCache(quest)
-{
-	var accessToken = fb.getAccessToken(quest);
-	var expiresToken = fb.getExpiresToken(quest);
-
-	assert(accessToken	!= undefined, 'accessToken is undefined');
-	assert(expiresToken	!= undefined, 'expiresToken is undefined');
-
-	var object = {	'accessToken'	: accessToken,
-					'expires'		: expiresToken	};
-
-	var result = {};
-	
-	result.payload = object;
-
-	return result;
-}
-
-
-function WriteAccessTokenCache(quest, done_f)
-{
-	var cache = AccessTokenCache(quest);
-
-	var cacheContent = JSON.stringify(cache)
-
-	console.log('cacheContent: ' + cacheContent);
-
-	var fs = require('fs');
-
-	fs.writeFile(test.k.AccessTokenCacheFilePath, cacheContent,
-		function(err) 
-		{
-		    if(err) 
-		    {
-		        console.log(err);
-		    } else
-		    {
-		        console.log("The file was saved!");
-		        done_f();
-		    }
-		} ); 
-}
-
-
-function _getAllTestFiles( done_f /* arrayOfFiles */ )
-{
-	fs.readdir(__dirname,
-		function(err, files) {
-
-			var allTestFiles = [];
-
-			for (var i = 0; i < files.length; i++ )
-			{
-				var file_i = files[i];
-				
-				if (file_i.endsWith('.test.js'))
-					allTestFiles.push( __dirname + '/' + file_i);
-			}
-
-			done_f( allTestFiles.sort() );
-		} );
-
-}
 
 /*
  *		Route: intense-image-resample
@@ -295,7 +298,46 @@ test.route.intense =
 	}
 
 /*
- *		Route: cmd
+ *		Route: resample-queue-count
+ */
+
+test.path.versions = '/test/versions';
+
+test.route.versions =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+		ponse.write( debug.ObjectToHTML(process.versions, 'process.versions') );
+		console.log(process.versions);
+
+		ponse.end('</body></html>');
+	};
+
+
+/*
+ *		Route: resample-queue-count
+ */
+
+test.path.exit = '/test/exit';
+
+test.route.exit =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+		ponse.write( 'Exiting in 1 second' );
+
+		setTimeout( function() { process.exit(1); } , 1000 );
+
+		ponse.end('</body></html>');
+	};
+
+
+/*
+ *		Route: resample-queue-count
  */
 
 test.path.resampleQueueCount = '/test/resample-queue-count';
@@ -315,9 +357,9 @@ test.route.resampleQueueCount =
  *		Route: shell
  */
 
-test.path.shell = '/test/shell/:command?';
+test.path.cmd = '/test/cmd/:command?';
 
-test.route.shell =
+test.route.cmd =
 	function(quest, ponse)
 	{
 		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );

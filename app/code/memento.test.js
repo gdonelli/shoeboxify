@@ -11,12 +11,13 @@ var		assert	= require("assert")
 describe('memento.js',
 	function() {
 
-		/* Authetication setup */
+	var testUserId = 'T1';
 
-		describe( 'memento',
+	/* Authetication setup */
+
+	describe( 'init',
 			function() 
 			{
-
 				it( 'memento.init',
 					function(done)
 					{
@@ -33,7 +34,42 @@ describe('memento.js',
 							);
 					} );
 
-				var testUserId = 'T1';
+			});
+		
+		describe( 'memento.addFromURL',
+			function() 
+			{
+				// Facebook object with no permission:
+				// var url = 'https://sphotos-a.xx.fbcdn.net/hphotos-snc6/308558_10150305083479286_1064774048_n.jpg';
+
+				it( 'with no permission',
+					function(done)
+					{
+						var url = 'http://shoeboxify.com/images/shoebox.png';
+
+						memento.addFromURL(
+								testUserId
+							,	url
+							,	authTest.request()
+							,	function success(newEntry, meta) {
+									console.log('newEntry:');
+									console.log(newEntry);
+									console.log('meta:');
+									console.log(meta);
+									done();
+								}
+							,	function error(e) {
+									console.log('error:');
+									console.log(e);
+									throw e;
+								} );
+					} );
+
+			});
+
+		describe( 'basics',
+			function() 
+			{
 				var sjPhotoId = '10151242148911730';
 
 				var addedEntryId;
@@ -114,7 +150,6 @@ describe('memento.js',
 
 			} );
 
-	
 
 		describe( 'memento.facebookIdForURL',
 			function() 
@@ -160,5 +195,6 @@ describe('memento.js',
 					} );
 
 			} );
+
 
 	} );

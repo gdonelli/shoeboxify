@@ -238,7 +238,7 @@ fb.route.loginResponse =
 
 		function StartSession(accessToken, expiresInSeconds, nextFunction, error_f)
 		{
-			 _setAccessToken(quest, accessToken, expiresInSeconds ); 
+			_setAccessToken(quest, accessToken, expiresInSeconds ); 
 			quest.session.cookie.maxAge = Math.floor(expiresInSeconds) * 1000; 
 
 			// Store me information in the Session

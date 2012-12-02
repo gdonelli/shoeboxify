@@ -21,12 +21,12 @@ Debug:
 			handy.assert_http_url
 			handy.writeHTMLstacktrace
 			handy.errorLogStacktrace
-
-Route:
+			handy.elapsedTimeSince
 			handy.routeDebugPage
 
+Route:
+
 Other:
-			handy.elapsedTimeSince
 			handy.tmpFile
 			handy.testDirectory
 
@@ -325,11 +325,17 @@ handy.errorLogStacktrace =
 		return trace;
 	};
 
-/* ========================================================= */
-/* ========================================================= */
-/* ========================= Route ========================= */
-/* ========================================================= */
-/* ========================================================= */
+
+handy.elapsedTimeSince =
+	function(startTime)
+	{
+		assert(startTime != undefined, 'startTime is undefined');
+
+		var now = new Date();
+
+		return now.getTime() - startTime.getTime();
+	};
+
 
 handy.routeDebugPage =
 	function( ponse, module, moduleName )
@@ -364,17 +370,6 @@ handy.routeDebugPage =
 /* ========================================================= */
 /* ========================================================= */
 
-
-
-handy.elapsedTimeSince =
-	function(startTime)
-	{
-		assert(startTime != undefined, 'startTime is undefined');
-
-		var now = new Date();
-
-		return now.getTime() - startTime.getTime();
-	};
 
 
 
@@ -438,4 +433,121 @@ handy.testDirectory =
 
 		return path.normalize(result); 
 	};
+
+
+var MAX_IMAGE_BYTE_SIZE = 1 * 1024 * 1024; // 1MB
+
+handy.downloadImageURL = 
+	function( theURL, success_f /* (local_path) */, error_f)
+	{
+		var quest = handy.requestURL(theURL, {},
+			function(ponse) {
+
+				var contentLength = ponse.headers['content-length'];
+
+				if (contentLength != undefined && 
+					Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE )
+				{
+					return _abortTransfer('File is too big');
+				}
+
+				var fileExtension = _isImageResponse(ponse);
+
+				if ( fileExtension == undefined )
+				{
+					return _abortTransfer('File is not an image');
+				}
+
+				// Download file locally first...
+				var resultFilePath = handy.tmpFile(fileExtension);
+				var tmpFileStream = fs.createWriteStream(resultFilePath);
+
+				ponse.pipe(tmpFileStream);
+
+				tmpFileStream.on('error',
+					function (err) {
+						console.log(err);
+					} );
+
+				var totBytes = 0;
+
+				ponse.on('data',
+					function(chuck) {
+						totBytes += chuck.length;
+						// console.log('totBytes# ' + totBytes);
+
+						if ( totBytes > MAX_IMAGE_BYTE_SIZE ) {
+							_abortTransfer('File is too big (on stream)');
+						}
+					});
+
+				ponse.on('end',
+					function(p) {
+						// console.log('handy.requestURL -> done');
+
+						if (success_f)
+							success_f( resultFilePath );
+					});
+			
+				/* aux =============================== */
+
+				function _abortTransfer(msg)
+				{
+					if (error_f) {
+						error_f( new Error(msg) );
+						error_f = undefined; // makes sure this is the only invocation to error_f
+					}
+						
+					ponse.destroy();
+				}
+
+			} );
+
+		quest.on('error',
+			function(e) {
+				// console.error(e);
+
+				if (error_f)
+					error_f(e);
+			} );
+
+		quest.end();
+
+		/* aux ======================= */
+
+		function _isImageResponse(ponse) // returns file extension...
+		{	
+			assert(ponse != undefined, 'ponse is undefined');
+
+			// console.log("statusCode: " +	ponse.statusCode);
+			// console.log("headers: ");
+			// console.log(ponse.headers);
+
+			var contentLength = ponse.headers['content-length'];
+			
+			if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
+				return undefined;
+
+			var contentType = ponse.headers['content-type'];
+			
+			if ( contentType.startsWith('image/') )
+			{
+				var elements = contentType.split('/');
+
+				if (elements.length == 2);
+				{
+					var result = elements[1];
+
+					if (result.length <= 4)
+						return result;
+				}
+			}
+				
+			return undefined;
+		};
+
+	}
+
+
+
 

@@ -173,7 +173,7 @@ imageshop.resample =
 var MAX_CONCURRENT_OPS	= 1;
 var MAX_NUM_WAITING_OPS	= 10;
 
-var _resampleOperationQueue = new OperationQueue( [], undefined, MAX_CONCURRENT_OPS );
+var _resampleOperationQueue = new OperationQueue( MAX_CONCURRENT_OPS );
 
 imageshop.safeResample = 
 	function(filePath, options, success_f /* (outpath, size) */, error_f)
@@ -184,8 +184,8 @@ imageshop.safeResample =
 		if ( _resampleOperationQueue.waitCount() > MAX_NUM_WAITING_OPS )
 		{
 			var tooBusy = new Error('_resampleOperationQueue is full');
-			tooBusy.code = 'TOOBUSY';
-			return error_f(tooBusy);
+			tooBusy.code = 'TOOBUSY';		
+			process.nextTick( function(){ error_f(tooBusy); } );
 		}
 
 		_resampleOperationQueue.add(

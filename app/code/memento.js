@@ -165,14 +165,13 @@ memento.removeId =
 
 	};
 
+
 memento.findId =
 	function(userId, mongoId, success_f /* (entry) */, error_f /* (error) */)
 	{
 		mongo.memento.findId(userId, mongoId, success_f, error_f);
 	};
 
-
-var MAX_IMAGE_BYTE_SIZE = 2 * 1024 * 1024; // 3MB
 
 memento.addFromURL =
 	function(userId, theURL, quest, success_f /* (newEntry, meta) */, error_f)
@@ -185,58 +184,70 @@ memento.addFromURL =
 		}
 		else
 		{
-			var q = new OperationQueue(1);
-
-			q.on('abort',
-				function(e) { 
-					if (error_f)
-						error_f(e); 
-				});
-
-			q.context = {};
-
-			q.add(
-				function downloadOperation(doneOp) {
-					console.log(arguments.callee.name);
-
-					_downloadImageURL( theURL
-						,	function success(localPath) { 
-								q.context.source = localPath;
-								console.log('image downloaded: ' + localPath);
-								doneOp();
-							}
-						,	function error(e){	q.abort(e);	}
-						);
-				});
-
-			q.add(
-				function processImageOperation(doneOp)
-				{							
-					console.log(arguments.callee.name);
-
-					_postProcessImage(q.context.source
-						,	function success(features)
-							{
-								q.context.imageFeatures = features;
-								doneOp();
-							}
-						,	function error(e){	q.abort(e); } 
-						);
-				});
-
-
-			q.add(
-				function finish()
-				{
-					console.log(arguments.callee.name);
-
-					if (success_f)
-						success_f(q.context.imageFeatures, undefined);
-				});
-
-
+			return _copyGenericURLToS3(userId, theURL, quest, success_f, error_f);
 		}
 	}
+
+
+function _copyGenericURLToS3(userId, theURL, quest, success_f /* (newEntry, meta) */, error_f)
+{
+	var q = new OperationQueue(1);
+
+	q.context = {};
+
+	q.on('abort',
+		function(e) { 
+			if (error_f)
+				error_f(e); 
+		});
+	
+	// Download image locally
+	q.add(
+		function downloadOperation(doneOp) {
+			console.log(arguments.callee.name);
+
+			handy.downloadImageURL( 
+					theURL
+				,	function success(localPath) { 
+						q.context.downloadedPath = localPath;
+						console.log('image downloaded: ' + localPath);
+						doneOp();
+					}
+				,	function error(e){	q.abort(e);	}
+				);
+		});
+
+	// Resample
+	q.add(
+		function resampleOperation(doneOp) {
+			console.log(arguments.callee.name);
+
+			imageshop.resample(
+					q.context.downloadedPath
+				,	imageshop.k.defaultResampleOptions
+				,	function success(outPath, outSize) {
+						q.context.resampledPath = outPath;
+						q.context.resampledSize = outSize;
+						console.log('resampled: ' + outPath);
+						doneOp();
+					}	
+				,	function error(e){ q.abort(e); }
+				);
+		});
+
+
+
+	// Done!
+	q.add(
+		function successOperation()
+		{
+			console.log(arguments.callee.name);
+
+			if (success_f)
+				success_f(q.context, undefined);
+		}	);
+}
+
 
 function _postProcessImage(aPath, success_f, error_f)
 {
@@ -253,114 +264,6 @@ function _postProcessImage(aPath, success_f, error_f)
 }
 
 // it downloads image locally...
-
-function _downloadImageURL( theURL, success_f /* (local_path) */, error_f)
-{
-	var quest = handy.requestURL(theURL, {},
-		function(ponse) {
-
-			var contentLength = ponse.headers['content-length'];
-
-			if (contentLength != undefined && 
-				Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE )
-			{
-				return _abortTransfer('File is too big');
-			}
-
-			var fileExtension = _isImageResponse(ponse);
-
-			if ( fileExtension == undefined )
-			{
-				return _abortTransfer('File is not an image');
-			}
-
-			// Download file locally first...
-			var resultFilePath = handy.tmpFile(fileExtension);
-			var tmpFileStream = fs.createWriteStream(resultFilePath);
-
-			ponse.pipe(tmpFileStream);
-
-			tmpFileStream.on('error',
-				function (err) {
-					console.log(err);
-				} );
-
-			var totBytes = 0;
-
-			ponse.on('data',
-				function(chuck) {
-					totBytes += chuck.length;
-					console.log('totBytes# ' + totBytes);
-
-					if ( totBytes > MAX_IMAGE_BYTE_SIZE ) {
-						_abortTransfer('File is too big (on stream)');
-					}
-				});
-
-			ponse.on('end',
-				function(p) {
-					console.log('handy.requestURL [done]');
-
-					if (success_f)
-						success_f( resultFilePath );
-				});
-		
-			/* =============================== */
-
-			function _abortTransfer(msg)
-			{
-				if (error_f) {
-					error_f( new Error(msg) );
-					error_f = undefined; // makes sure this is the only invocation to error_f
-				}
-					
-				ponse.destroy();
-			}
-
-		} );
-
-	quest.on('error',
-		function(e) {
-			// console.error(e);
-
-			if (error_f)
-				error_f(e);
-		} );
-
-	quest.end();
-}
-
-
-function _isImageResponse(ponse) // returns file extension...
-{	
-	assert(ponse != undefined, 'ponse is undefined');
-
-	console.log("statusCode: " +	ponse.statusCode);
-	console.log("headers: ");
-	console.log(ponse.headers);
-
-	var contentLength = ponse.headers['content-length'];
-	
-	if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
-		return undefined;
-
-	var contentType = ponse.headers['content-type'];
-	
-	if ( contentType.startsWith('image/') )
-	{
-		var elements = contentType.split('/');
-
-		if (elements.length == 2);
-		{
-			var result = elements[1];
-
-			if (result.length <= 4)
-				return result;
-		}
-	}
-		
-	return undefined;
-};
 
 
 memento.addFacebookObject =
@@ -454,11 +357,17 @@ memento.addFacebookObject =
 				success_f( r, allMeta );
 		}
 
-		function _exitWithError(errstring)
+		function _exitWithError(err)
 		{
 			if (error_f)
-				error_f(new Error(errstring));
+			{
+				if (_.isString(err))
+					error_f(new Error(err));
+				else
+					error_f(err);
+			}				
 		}
+
 	};
 
 
@@ -472,7 +381,7 @@ function _copyPhotoObjectToS3(quest, photoObject, success_f, error_f)
 	// validate that this is a photo object
 	if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
 		if (error_f)
-			error_f( new Error('photoObject failed validation') );
+			error_f( new Error('photoObject failed validation (' + arguments.callee.name + ')') );
 
 		return;
 	};

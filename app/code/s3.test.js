@@ -191,7 +191,7 @@ describe('s3.js',
 						var stat = fs.statSync(localFile)
 						var fileSize = stat.size;
 
-						var q = new Operationq(1);
+						var q = new OperationQueue(1);
 
 						q.add( 
 							function copyOperation(doneOp) {

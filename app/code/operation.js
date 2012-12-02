@@ -6,13 +6,14 @@ OperationQueue mocking NSOperationQueue in iOS and OS X
 From original logic of:
 	https://github.com/AvocadoCorp/avocado-node-utils
 
-Import:
+Class:
 			OperationQueue = require("./operation").queue
 OperationQueue:
 			- abort
 			- add
-			- waitCount
 			- wait
+			- waitCount
+			
 
 ================================================================
 
@@ -20,14 +21,18 @@ OperationQueue:
 
 var		assert	= require('assert')
 	,	util	= require("util")
-	,	events	= require("events");
+	,	events	= require("events")
+	,	_		= require("underscore");
 
 var operation = exports;
 
 operation.queue = OperationQueue;
 
 
-function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context) {
+function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context)
+{
+	assert( opt_maxConcurrent && _.isNumber(opt_maxConcurrent), 'expected number as 1st argument' );
+
 	this._concurrent = 0;
 	this._maxConcurrent = opt_maxConcurrent || null;
 	this._backlog = [];

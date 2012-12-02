@@ -2,6 +2,7 @@ var		express	= require('express')
 	,	assert	= require('assert')
 	,	http	= require('http')
 	, 	path	= require('path')
+	, 	_		= require('underscore')
 
 	/* routes */
 
@@ -119,12 +120,31 @@ function _setupRoutesForModule(module, options)
 
 	console.log(options.name);
 
-	for (var key in module.path)
-	{
-		var path_i  = module.path[key];
-		var route_i = module.route[key];
+	var routePathDiff = _.difference(Object.keys(module.path), Object.keys(module.route) );
 
-		assert(path_i != undefined, 'path_i is undefined, key=' + key);
+	if (routePathDiff.length > 0) {
+		console.log('miss-match between module.path and module.route');
+
+		console.log('Check the following routes:');
+		console.log( routePathDiff );		
+		
+		throw new Error('setup route miss-match');
+	}
+
+	var moduleKeys = Object.keys(module.path);
+
+	moduleKeys.sort(
+		function byPathLength(a, b) {
+			return module.path[a].length - module.path[b].length;
+		});
+
+	for (var i in moduleKeys)
+	{
+		var key_i = moduleKeys[i];
+		var path_i  = module.path[key_i];
+		var route_i = module.route[key_i];
+
+		assert(path_i != undefined, 'path_i is undefined, key=' + key_i);
 		assert(route_i != undefined, 'route_i is undefined, path_i=' + path_i);
 
 		if (options && options.requiresAdmin == true)

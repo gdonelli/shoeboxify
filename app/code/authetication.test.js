@@ -1,3 +1,16 @@
+/*
+
+==================[   Athentication test   ]===================
+
+Import:
+			authTest	= require("./authetication.test")
+Pseudo-Request:
+			authTest.request
+			authTest.getRequest
+
+================================================================
+
+*/
 
 var		assert	= require("assert")
 	,	fs		= require("fs")
@@ -24,7 +37,7 @@ describe('authetication.test.js',
 		it( 'getPseudoRequest', 
 			function(done) 
 			{
-				authTest.getPseudoRequest(
+				_getPseudoRequest(
 						function success(quest){
 							assert(authTest.pseudoRequest != undefined, 'authTest.pseudoRequest is undefined');
 							done();
@@ -37,7 +50,7 @@ describe('authetication.test.js',
 
 		it( 'getPseudoSession',
 			function(done) {
-				authTest.getPseudoSession(
+				_getPseudoSession(
 						function success(ponse) {
 							assert( ponse.session.me != undefined,		'ponse.session.me undefined');
 							assert( ponse.session.me.id != undefined,	'ponse.session.me.id undefined');
@@ -166,47 +179,58 @@ authTest.getAccessToken = function( success_f /* jsonData */, error_f )
 	}
 
 
-authTest.getPseudoSession = function(success_f /* request */, error_f)
-	{
-		assert( authTest.auth != undefined,				'authTest.auth undefined');
-		assert( authTest.auth.accessToken != undefined,	'authTest.auth.accessToken undefined');
-		assert( authTest.auth.expires != undefined,		'authTest.auth.expires undefined');
+function _getPseudoSession(success_f /* request */, error_f)
+{
+	assert( authTest.auth != undefined,				'authTest.auth undefined');
+	assert( authTest.auth.accessToken != undefined,	'authTest.auth.accessToken undefined');
+	assert( authTest.auth.expires != undefined,		'authTest.auth.expires undefined');
 
-		authTest.pseudoRequest = {};
-		authTest.pseudoRequest.session = {};
-		authTest.pseudoRequest.session.accessToken	= authTest.auth.accessToken;
-		authTest.pseudoRequest.session.expiresToken	= authTest.auth.expiresToken;
+	authTest.pseudoRequest = {};
+	authTest.pseudoRequest.session = {};
+	authTest.pseudoRequest.session.accessToken	= authTest.auth.accessToken;
+	authTest.pseudoRequest.session.expiresToken	= authTest.auth.expiresToken;
 
-		fb.graph('me', authTest.pseudoRequest,
-			function(fbObject)
-			{
-				authTest.pseudoRequest.session.me = fbObject;
+	fb.graph('me', authTest.pseudoRequest,
+		function(fbObject)
+		{
+			authTest.pseudoRequest.session.me = fbObject;
 
-				if (success_f)
-					success_f(authTest.pseudoRequest);
-			},
-			function(e)
-			{
-				if (error_f)
-					error_f(e);
+			if (success_f)
+				success_f(authTest.pseudoRequest);
+		},
+		function(e)
+		{
+			if (error_f)
+				error_f(e);
+		} );
+}
+
+
+function _getPseudoRequest(success_f, error_f)
+{
+	authTest.getAccessToken(
+			function success(jsonData){
+				_getPseudoSession(success_f, error_f);
+			}
+		,	function error(e){
+				throw new Error(e);
 			} );
+}
 
-	}
 
-
-authTest.getPseudoRequest = function(success_f, error_f)
+authTest.getRequest =
+	function( request_f /* quest */ )
 	{
-		authTest.getAccessToken(
-				function success(jsonData){
-					authTest.getPseudoSession(success_f, error_f);
-				}
-			,	function error(e){
-					throw new Error(e);
-				} );
-	}
+		_getPseudoRequest(
+			request_f, 
+			function error(e)
+			{
+				throw e;
+			} );
+	};
 
-
-authTest.request = function()
+authTest.request =
+	function()
 	{
 		if (authTest.pseudoRequest)
 		{
@@ -214,5 +238,5 @@ authTest.request = function()
 		}
 		else
 			throw new Error('pseudoRequest is undefined');
-	}
+	};
 
