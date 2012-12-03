@@ -196,7 +196,7 @@ function _copyGenericURLToS3(userId, theURL, quest, success_f /* (newEntry, meta
 	q.context = {};
 
 	q.on('abort',
-		function(e) { 
+		function(e) {
 			if (error_f)
 				error_f(e); 
 		});

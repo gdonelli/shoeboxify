@@ -191,5 +191,11 @@ var _common = (function ()
     return common;
 })();
 
-var common =  new _common();
+common = new _common();
+
+if (exports)
+{
+	exports.objectToHTML = common.objectToHTML;
+}
+
 

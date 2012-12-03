@@ -11,20 +11,31 @@ describe('imageshop.js',
 	function() 
 	{	
 		var googleImagePath	= handy.testDirectory('google.png');
-		var nasaImagePath	= handy.testDirectory('nasa.jpg');
+		var googleImageSize = imageshop.makeSize(275, 95);
+
+		var nasaImagePath = handy.testDirectory('nasa.jpg');
+		var nasaImageSize = imageshop.makeSize(185, 369);
+
+		var bigImagePath = handy.testDirectory('big.jpg');
+		var bigImageSize = imageshop.makeSize(5616, 3744);
+
 		var faceImagePath	= handy.testDirectory('face.jpg');
-		var bigImagePath	= handy.testDirectory('big.jpg');
+		var faceImageSize = imageshop.makeSize(1536, 1536);
+		
+
 		var iphoneImagePath	= handy.testDirectory('iPhone4S.JPG');
 
 		it( 'imageshop.getSize - google.png',
 			function(done)
 			{
-				// console.log(googleImagePath);
+				console.log(googleImagePath);
+				console.log(googleImageSize);
 
 				imageshop.getSize(	googleImagePath
 						 	,	function success(size) {
-						 			assert(size.width == 275, 'width expected to be 275 is:' + size.width);
-						 			assert(size.height == 95, 'height expected to be 95 is: ' + size.height);
+						 			assert(size != undefined, 'size is undefined');
+						 			assert(size.width == googleImageSize.width, 'width expected to be '+googleImageSize.width+' is:' + size.width);
+						 			assert(size.height== googleImageSize.height, 'height expected to be '+googleImageSize.height+' is: ' + size.height);
 
 						 			done();	
 						 		}
@@ -38,8 +49,8 @@ describe('imageshop.js',
 
 				imageshop.getSize(	nasaImagePath
 						 	,	function success(size) {
-						 			assert(size.width == 185, 'width expected to be 360 is:' + size.width);
-						 			assert(size.height == 369, 'height expected to be 369 is: ' + size.height);
+						 			assert(size.width  == nasaImageSize.width,	'width expected to be '+nasaImageSize.width+' is:' + size.width);
+						 			assert(size.height == nasaImageSize.height,	'height expected to be '+nasaImageSize.height+' is: ' + size.height);
 
 						 			done();	
 						 		}
@@ -53,8 +64,8 @@ describe('imageshop.js',
 
 				imageshop.getSize(	bigImagePath
 							 	,	function success(size) {
-							 			assert(size.width == 5616, 'width expected to be 360 is:' + size.width);
-							 			assert(size.height == 3744, 'height expected to be 369 is: ' + size.height);
+							 			assert(size.width == bigImageSize.width,	'width expected to be '	+ bigImageSize.width	+ ' is:'	+ size.width);
+							 			assert(size.height == bigImageSize.height,	'height expected to be '+ bigImageSize.height	+ ' is: '	+ size.height);
 
 							 			done();	
 							 		}
@@ -68,8 +79,8 @@ describe('imageshop.js',
 				imageshop.resample(	faceImagePath
 								,	{}
 							 	,	function success(path, size) {
-							 			assert(size.width == 1536, 'face width expected to be 1536');
-							 			assert(size.height == 1536, 'face width expected to be 1536');
+							 			assert(size.width == faceImageSize.width, 'face width expected to be '		+ faceImageSize.width+' is:'	+ size.width);
+							 			assert(size.height == faceImageSize.height, 'face height expected to be '	+ faceImageSize.height+' is:'	+ size.height);
 							 			done();	
 							 		}
 								,	function error(e){ throw e; } );
@@ -81,8 +92,8 @@ describe('imageshop.js',
 				imageshop.resample(	googleImagePath
 								,	{}
 							 	,	function success(path, size) {
-							 			assert(size.width == 275, 'google width expected to be 275');
-							 			assert(size.height == 95, 'google height expected to be 95');
+							 			assert(size.width == googleImageSize.width,		'google width expected to be '	+ googleImageSize.height);
+							 			assert(size.height == googleImageSize.height,	'google height expected to be '	+ googleImageSize.height);
 							 			done();	
 							 		}
 								,	function error(e){ throw e; } );
@@ -96,8 +107,8 @@ describe('imageshop.js',
 				imageshop.resample(	bigImagePath
 								,	options
 							 	,	function success(path, size) {
-							 			assert(size.width  == 5616,	'google width expected to be 5616');
-							 			assert(size.height == 3744,	'google height expected to be 3744');
+							 			assert(size.width  == bigImageSize.width,	'google width expected to be '	+ bigImageSize.width);
+							 			assert(size.height == bigImageSize.height,	'google height expected to be '	+ bigImageSize.height);
 							 			done();	
 							 		}
 								,	function error(e){
@@ -168,7 +179,7 @@ describe('imageshop.js',
 
 				setTimeout(
 						function(){
-							console.log( tooBusyCount );
+							// console.log( tooBusyCount );
 							imageshop.resampleQueue().abort();
 					 		if (tooBusyCount > 70)
 						 		done();
@@ -177,6 +188,20 @@ describe('imageshop.js',
 			} );
 		
 
+		it.only( 'imageshop.createThumbnails',
+			function(done)
+			{
+				imageshop.createThumbnails(
+						faceImagePath
+					,	faceImageSize
+					,	function success(array) {
+							console.log(array);
+							done();
+						}
+					,	function error(e) {
+							console.log(e);
+						} );
+			} );
 
 	});
 

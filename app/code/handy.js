@@ -24,8 +24,7 @@ Debug:
 			handy.elapsedTimeSince
 			handy.routeDebugPage
 
-Route:
-
+			handy.makeSize
 Other:
 			handy.tmpFile
 			handy.testDirectory
@@ -406,16 +405,19 @@ handy.tmpDirectory =
 			_tmpDirectory_exist = true;
 		}
 
-		return result + '/';
+		return path.normalize( result + '/' );
 	};
 
+var _tmpFileIndex = 0;
 
 handy.tmpFile =
 	function(extension) 
 	{
 		var result = handy.tmpDirectory();
 
-		result += nodeuuid.v1();
+		_tmpFileIndex++;
+		
+		result += _tmpFileIndex + '_' + nodeuuid.v1();
 
 		if (extension)
 			result += '.' + extension;
@@ -547,7 +549,5 @@ handy.downloadImageURL =
 		};
 
 	}
-
-
 
 

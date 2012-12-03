@@ -1,6 +1,6 @@
 /* 
 
-===========[   Server side unit testing   ]===========
+===========[   Debug Routes   ]===========
 
 Routes:
 			test.route.test	(test.path.test)
@@ -15,11 +15,14 @@ var 	assert	= require('assert')
 	,	path	= require('path')
 	,	url		= require('url')
 	,	_		= require('underscore')
+	,	util	= require('util')
+	,	mime	= require('mime')
 
 	,	fb			= require('./fb')
 	,	handy		= require('./handy')
 	,	imageshop	= require('./imageshop')
 	,	debug		= require('./debug-lib')
+
 
 	;
 
@@ -141,7 +144,7 @@ test.route.unitTest =
 					ponse.write('</code>');
 
 					if (heristicEnd) {
-						ponse.write('will send KILL in 3 seconds');		
+						ponse.write('will send KILL in 3 seconds, just in case...');		
 						setTimeout( _kill, 3000 );
 					}
 				
@@ -301,16 +304,29 @@ test.route.intense =
  *		Route: resample-queue-count
  */
 
-test.path.versions = '/test/versions';
+test.path.info = '/test/info';
 
-test.route.versions =
+test.route.info =
 	function(quest, ponse)
 	{
 		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
 
 		ponse.write('<html><body>');
+
 		ponse.write( debug.ObjectToHTML(process.versions, 'process.versions') );
-		console.log(process.versions);
+
+		ponse.write( debug.ObjectToHTML( process.memoryUsage(), 'process.memoryUsage()') );
+
+		ponse.write( debug.ObjectToHTML( process.uptime(), 'process.uptime() - seconds') );
+
+		ponse.write( debug.ObjectToHTML( process.platform, 'process.platform') );
+		
+		ponse.write( debug.ObjectToHTML( process.arch, 'process.arch') );
+
+		ponse.write( debug.ObjectToHTML( process.title, 'process.title') );
+
+		ponse.write( debug.ObjectToHTML( process.config, 'process.config') );
+
 
 		ponse.end('</body></html>');
 	};
@@ -320,15 +336,15 @@ test.route.versions =
  *		Route: resample-queue-count
  */
 
-test.path.exit = '/test/exit';
+test.path.restart = '/test/restart';
 
-test.route.exit =
+test.route.restart =
 	function(quest, ponse)
 	{
 		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
 
 		ponse.write('<html><body>');
-		ponse.write( 'Exiting in 1 second' );
+		ponse.write('Restarting in 1 second');
 
 		setTimeout( function() { process.exit(1); } , 1000 );
 
@@ -421,7 +437,7 @@ test.route.cmd =
 		{
 			cmdProcess.kill();
 		}
-	}	
+	};
 
 function _consoleStringToHTML(str)
 {
@@ -439,4 +455,72 @@ function _consoleStringToHTML(str)
 
 	return result;
 }
+
+
+test.path.tmp = '/test/tmp';
+
+test.route.tmp =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+
+		var tmpDirectory = handy.tmpDirectory();
+
+		ponse.write('<h1>' + tmpDirectory + '</h1>');
+
+		fs.readdir( tmpDirectory,
+			function(err, files) {
+
+				for (var i = 0; i < files.length; i++ )
+				{
+					var file_i = files[i];
+
+					ponse.write('<a href="' + test.path.tmp + '/' + file_i + '">' + file_i + '</a> <br>');
+					
+
+				}
+
+				ponse.end('</body></html>');
+			} );
+
+	};
+
+test.path.tmpFile = '/test/tmp/:filename?';
+
+test.route.tmpFile =
+	function(quest, ponse)
+	{
+		var tmpDirectory = handy.tmpDirectory();
+		var filePath = path.normalize( tmpDirectory + '/' + quest.params.filename );
+
+		var fileReadStream = fs.createReadStream(filePath);
+
+		var common = require('../public/javascripts/common');
+
+		fileReadStream.on('error', function(e) {
+				ponse.writeHead( 404, { 'Content-Type': 'text/html' } );
+				ponse.write('<html><body>');
+				ponse.write( common.objectToHTML(e, filePath) );
+				ponse.end('</body></html>');
+			} );
+
+		console.log('fileReadStream:');
+		console.log(fileReadStream);
+
+		var mimeType = mime.lookup(filePath);
+
+
+		fs.stat(filePath,
+			function(err, stat) {
+				ponse.writeHead( 200, {	'Content-Type': mimeType,
+										'Content-Length': stat.size } );
+
+				fileReadStream.pipe(ponse);
+
+			});
+
+
+	}
 
