@@ -12,7 +12,7 @@ describe('fb.js',
 		 it( 'Graph: /me',
 			function(done) {
 
-				fb.graph( '/me', authTest.pseudoRequest
+				fb.graph( '/me', authTest.request()
 					,	function success(meObject) {
 							assert(meObject != undefined , 'fbObject is undefined');
 							assert(meObject.id != undefined , 'meObject.id is undefined');

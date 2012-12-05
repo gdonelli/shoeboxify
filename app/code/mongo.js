@@ -47,8 +47,9 @@ Utils:
 */
 
 var			assert		= require('assert')
-		,	mongodb		= require('mongodb')
 		,	_			= require('underscore')
+		,	mongodb		= require('mongodb')
+		,	ObjectID	= require('mongodb').ObjectID
 
 		,	handy		= require('./handy')
 		,	identity	= require('./identity')
@@ -57,7 +58,7 @@ var			assert		= require('assert')
 
 var mongo = exports;
 
-mongo.const = {};
+mongo.k = {};
 
 /* ====================================================== */
 /* ====================================================== */
@@ -318,13 +319,13 @@ mongo.memento.init =
 				userId
 			,	function success(c) {
 					var propertyIndex= {};
-					propertyIndex[mongo.const.facebookIdKey] = 1;
+					propertyIndex[mongo.k.FacebookIdKey] = 1;
 
 					c.ensureIndex( propertyIndex, { unique: true },
 						function(err, indexName) 
 						{
 							if (err) {
-								console.error('collection.ensureIndex for mongo.const.facebookIdKey failed err:' + err);
+								console.error('collection.ensureIndex for mongo.k.FacebookIdKey failed err:' + err);
 								error_f(err);
 							}
 							else 
@@ -393,7 +394,14 @@ mongo.memento.findId =
 		handy.assert_f(success_f);
 		handy.assert_f(error_f);
 
-		mongo.memento.findOne(userId, mongo.memento.entity.newWithId(mongoId), success_f, error_f);
+		var id;
+
+		if ( _.isString(mongoId) )
+			id = new ObjectID(mongoId);
+		else
+			id = mongoId;
+
+		mongo.memento.findOne(userId, mongo.memento.entity.newWithId(id), success_f, error_f);
 	}
 
 mongo.memento.removeId =
@@ -419,16 +427,17 @@ mongo.memento.removeId =
 /* ================================================================== */
 /* ================================================================== */
 
-// Keys
-mongo.const.facebookIdKey		= 'fb_id';
-mongo.const.facebookUserIdKey	= 'fb_userid';
-mongo.const.sourceObjectKey		= 'source';
-mongo.const.copyObjectKey		= 'copy';
-mongo.const.createDateKey		= 'created';
+// Konstants
 
-mongo.const.mementoTypeKey		= 'type';
+mongo.k.FacebookIdKey		= 'fb_id';
+mongo.k.FacebookUserIdKey	= 'fb_userid';
+mongo.k.SourceObjectKey		= 'source';
+mongo.k.CopyObjectKey		= 'copy';
+mongo.k.CreateDateKey		= 'created';
 
-mongo.const.mementoPhotoType	= 1;
+mongo.k.MementoTypeKey		= 'type';
+
+mongo.k.MementoPhotoType	= 1;
 
 
 mongo.memento.addFacebookObject =
@@ -446,18 +455,18 @@ mongo.memento.addFacebookObject =
 		if (sourceObject.picture != undefined &&
 			sourceObject.source != undefined &&
 			sourceObject.images != undefined)
-			type = mongo.const.mementoPhotoType;
+			type = mongo.k.MementoPhotoType;
 
-		assert(type == mongo.const.mementoPhotoType, 'Unsupported facebook object type');
+		assert(type == mongo.k.MementoPhotoType, 'Unsupported facebook object type');
 
 		var entity = {};
 		
-		entity[mongo.const.mementoTypeKey]		= type;
-		entity[mongo.const.facebookIdKey]		= mongo.LongFromString(graphId);
-		entity[mongo.const.facebookUserIdKey]	= mongo.LongFromString(userId);
-		entity[mongo.const.sourceObjectKey]		= sourceObject;
-		entity[mongo.const.copyObjectKey]		= copyObject;
-		entity[mongo.const.createDateKey]		= new Date();
+		entity[mongo.k.MementoTypeKey]		= type;
+		entity[mongo.k.FacebookIdKey]		= mongo.LongFromString(graphId);
+		entity[mongo.k.FacebookUserIdKey]	= mongo.LongFromString(userId);
+		entity[mongo.k.SourceObjectKey]		= sourceObject;
+		entity[mongo.k.CopyObjectKey]		= copyObject;
+		entity[mongo.k.CreateDateKey]		= new Date();
 
 		mongo.memento.add(userId, entity, success_f, error_f);
 	};
@@ -506,7 +515,13 @@ mongo.memento.removeFacebookObject =
 /* ========================================================== */
 /* ========================================================== */
 
-mongo.const.entityId = '_id'; // default mongo id
+mongo.newObjectId =
+	function()
+	{
+		return new ObjectID();
+	}
+
+mongo.k.entityId = '_id'; // default mongo id
 
 mongo.entity = {};
 
@@ -515,7 +530,7 @@ mongo.entity.getId =
 	{
 		assert(entity != undefined,	'entity is undefined');
 
-		return entity[mongo.const.entityId];
+		return entity[mongo.k.entityId];
 	}
 
 mongo.memento.entity = {};
@@ -524,7 +539,7 @@ mongo.memento.entity.newWithFacebookId =
 	function (graphId)
 	{
 		var result = {};
-		result[mongo.const.facebookIdKey] = mongo.LongFromString(graphId);
+		result[mongo.k.FacebookIdKey] = mongo.LongFromString(graphId);
 		return result;		
 	}
 
@@ -532,38 +547,38 @@ mongo.memento.entity.newWithId =
 	function(theId)
 	{
 		var result = {};
-		result[mongo.const.entityId] = theId;
+		result[mongo.k.entityId] = theId;
 		return result;		
 	}
 
 mongo.memento.entity.getType =
 	function(entry)
 	{
-		return _getEntryProperty(entry, mongo.const.mementoTypeKey);
+		return _getEntryProperty(entry, mongo.k.MementoTypeKey);
 	}
 
 mongo.memento.entity.getFacebookId =
 	function(entry)
 	{
-		return _getLongProperty(entry, mongo.const.facebookIdKey);
+		return _getLongProperty(entry, mongo.k.FacebookIdKey);
 	}
 
 mongo.memento.entity.getFacebookUserId =
 	function(entry)
 	{
-		return _getLongProperty(entry, mongo.const.facebookUserIdKey);
+		return _getLongProperty(entry, mongo.k.FacebookUserIdKey);
 	}
 
 mongo.memento.entity.getSourceObject =
 	function(entry)
 	{
-		return _getEntryProperty(entry, mongo.const.sourceObjectKey);
+		return _getEntryProperty(entry, mongo.k.SourceObjectKey);
 	}
 
 mongo.memento.entity.getCopyObject =
 	function(entry)
 	{
-		return _getEntryProperty(entry, mongo.const.copyObjectKey);
+		return _getEntryProperty(entry, mongo.k.CopyObjectKey);
 	}
 
 function _getEntryProperty(entry, property)

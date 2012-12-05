@@ -281,6 +281,14 @@ handy.assert_f =
 		assert( (typeof candidate_f == 'function'), 'expected function, given: ' + candidate_f );	
 	};
 
+handy.assert_session =
+	function( quest )
+	{
+		assert(quest != undefined,			'quest is undefined');
+		assert(quest.session != undefined,	'quest.session is undefined');
+		assert(quest.session.me != undefined,	'quest.session.me is undefined');
+		assert(quest.session.me.id != undefined,'quest.session.me.id is undefined');
+	}
 
 handy.assert_http_url = 
 	function(url)
@@ -288,6 +296,34 @@ handy.assert_http_url =
 		assert( url != undefined, 'url is undefined');
 		assert( url.startsWith('http') != undefined, 'url doesnt start with http');
 	};
+
+handy.assert_fbId =
+	function(value)
+	{
+		assert( value != undefined, 'fbId is undefined' );
+		assert( handy.isNumberString(value), 'Not a valid Facebook Id' );
+	}
+
+handy.assert_def =
+	function(value)
+	{
+		assert( value != undefined, 'value is undefined' );
+	}
+
+handy.assert_obj =
+	function(value)
+	{
+		assert( value != undefined, 'object is undefined' );
+		assert( _.isObject(value), 'object expected' );
+	}
+
+handy.assert_uid = 
+	function(value)
+	{
+		assert( value != undefined, 'uid is undefined' );
+	}
+
+/* ========================================================= */
 
 
 handy.writeHTMLstacktrace =
@@ -323,6 +359,9 @@ handy.errorLogStacktrace =
 
 		return trace;
 	};
+
+
+/* ========================================================= */
 
 
 handy.elapsedTimeSince =

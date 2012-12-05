@@ -35,7 +35,9 @@ var		assert	= require('assert')
 	
 
 	,	fb			= require('./fb')
-	,	s3			= require('./s3')
+	,	s3			= require('./s3') // FIXME: need to get rid of S3 dependency, use only storage
+	,	storage		= require('./storage')
+
 	,	mongo		= require('./mongo')
 	,	handy		= require('./handy')
 	,	imageshop	= require('./imageshop')
@@ -144,7 +146,7 @@ memento.removeId =
 		{
 			// we only know how to deal with photo objects
 			var entryType = mongo.memento.entity.getType(entry);
-			assert(entryType == mongo.const.mementoPhotoType, 'found entry is not mementoPhotoType is ' + entryType);
+			assert(entryType == mongo.k.MementoPhotoType, 'found entry is not mongo.k.MementoPhotoType is ' + entryType);
 
 			var photoURLs = _getCopyURLsForPhotoEntry(entry);
 			assert(photoURLs.length > 0 , 'photoURLs.length expected to be > 0');
@@ -202,8 +204,9 @@ function _copyGenericURLToS3(userId, theURL, quest, success_f /* (newEntry, meta
 		});
 	
 	// Download image locally
+	//		-> q.context.downloadedPath
 	q.add(
-		function downloadOperation(doneOp) {
+		function DownloadOperation(doneOp) {
 			console.log(arguments.callee.name);
 
 			handy.downloadImageURL( 
@@ -216,30 +219,119 @@ function _copyGenericURLToS3(userId, theURL, quest, success_f /* (newEntry, meta
 				,	function error(e){	q.abort(e);	}
 				);
 		});
+	
+	// Resample original image
+	//		->	q.context.original = {path, size}
 
-	// Resample
 	q.add(
-		function resampleOperation(doneOp) {
+		function ResampleOperation(doneOp) {
 			console.log(arguments.callee.name);
 
 			imageshop.resample(
 					q.context.downloadedPath
-				,	imageshop.k.defaultResampleOptions
+				,	imageshop.k.DefaultResampleOptions
 				,	function success(outPath, outSize) {
-						q.context.resampledPath = outPath;
-						q.context.resampledSize = outSize;
-						console.log('resampled: ' + outPath);
+						
+						q.context.original = {};
+						q.context.original.path = outPath;
+						q.context.original.size = outSize;
+
+						console.log('original: ' + outPath);
 						doneOp();
 					}	
 				,	function error(e){ q.abort(e); }
 				);
 		});
 
+	// Make thumbnails
+	//		->	q.context.thumbnails = [ {path, size}, ... ]
+	q.add( 
+		function MakeThumbnails(doneOp) {
+			console.log(arguments.callee.name);
+
+			imageshop.createThumbnails(
+					q.context.original.path
+				,	q.context.original.size
+				,	function success(array){
+						q.context.thumbnails = array;
+						// console.log('thumb array: ');
+						// console.log(array);
+						doneOp();
+					}
+				,	function error(e){ q.abort(e); }
+				);
+		});
+
+	// Upload images to S3
+	//		-> q.context.uploaded = [ { path, size, s3path, URL }, ... ]
+
+	q.add( 
+		function UploadToS3(doneOp) {
+			console.log(arguments.callee.name);
+			q.context.uploaded = _.union( [ q.context.original ], q.context.thumbnails);
+
+			var s3client = s3.test.clientRW();
+
+			for ( var i in q.context.uploaded )
+			{
+				var fileInfo = q.context.uploaded[i];
+				assert(fileInfo != undefined, 'fileInfo is undefined');
+				assert(fileInfo.path != undefined, 'fileInfo.path is undefined');
+				assert(fileInfo.size != undefined, 'fileInfo.size is undefined');
+
+				var extension = path.extname(fileInfo.path);
+				var s3path = _generateFilePath( path.basename(fileInfo.path, extension), i, fileInfo.size, extension );
+
+				_copyFileInfo(fileInfo, s3path);
+			}
+
+			/* aux ==== */
+
+			var successCount = 0;
+			var errorCount = 0;
+
+			function _copyFileInfo(theFileInfo, s3path)
+			{
+				s3.copyFile( s3client, theFileInfo.path, s3path
+					,	function success(byteLen)
+						{
+							theFileInfo.s3path = s3path;
+							theFileInfo.URL = s3client.URLForPath(s3path);
+							successCount++;
+							_checkDone();
+						}
+					,	function error(e)
+						{
+							theFileInfo.error = e;	
+							errorCount++;
+							_checkDone();
+						} );
+			}
+
+			function _checkDone()
+			{
+				if (successCount + errorCount >= q.context.uploaded.length)
+				{
+					if (errorCount == 0)
+						doneOp();
+					else
+						q.abort(e);
+				}
+			}
+
+			
+		});
+
+
+	// Make entry
+
+	
+	// Clean up
 
 
 	// Done!
 	q.add(
-		function successOperation()
+		function SuccessOperation()
 		{
 			console.log(arguments.callee.name);
 
@@ -263,285 +355,169 @@ function _postProcessImage(aPath, success_f, error_f)
 			} );
 }
 
-// it downloads image locally...
 
+/* ========================================================== */
+/* ========================================================== */
+/* ========================[  Add  ]========================= */
+/* ========================================================== */
+/* ========================================================== */
+
+function _addFacebookObject(userId, fbId, quest, success_f /* (newEntry, meta) */, error_f)
+{
+	var q = new OperationQueue(1);
+
+	q.context = {};
+	// q.debug = true;
+
+	var newObjectId = mongo.newObjectId();
+
+	q.on('abort', 
+		function(e) {
+			error_f(e);
+		});
+
+	//
+	// Fetch Facebook Object
+	//		-> q.context.facebookObject
+	
+	q.add(
+		function FetchFacebookObjectOperation(doneOp)
+		{
+			// console.log(arguments.callee.name);
+
+			fb.graph(fbId, quest
+			,	function success(fbObject) {
+					if ( !fbObject.picture || !fbObject.images)	// validate that is a photo
+						_abort('fbObject:' + fbId + ' is not an photo');	
+					else 
+					{
+						q.context.facebookObject = fbObject;					
+						doneOp();
+					}
+
+				}
+			,	function error(e) {
+					_abort('fb.graph failed for ' + fbId, e);
+				} );
+		});
+
+	//
+	// Make Copy in S3
+	//		-> q.context.copyObject
+	
+	q.add(
+		function MakeCopyInStorage(doneOp)
+		{
+			handy.assert_def(q.context.facebookObject);
+
+			assert(	q.context.facebookObject.id == fbId,	
+				   'q.context.facebookObject.id:' + q.context.facebookObject.id + ' != fbId:' + fbId );
+
+			storage.copyFacebookPhoto(	userId,	newObjectId, q.context.facebookObject
+									,	function success(theCopy) {
+											q.context.copyObject = theCopy;
+											doneOp();
+										} 
+									,	function error(e){
+											_abort('storage.copyFacebookPhoto failed for ' + fbId, e);
+										} );
+		});
+
+	//
+	// Insert new entry in our Mongo DB
+	//		-> q.context.newEntry
+
+	q.add(
+		function AddNewEntryToMongo(doneOp)
+		{
+			// console.log(arguments.callee.name);
+
+			handy.assert_def(q.context.copyObject);
+			
+			mongo.memento.addFacebookObject(
+					userId
+				,	fbId
+				,	q.context.facebookObject
+				,	q.context.copyObject 
+				,	function success(r)
+					{
+						q.context.newEntry = r;
+						doneOp();
+					}
+				,	function error(e)
+					{
+						_abort('mongo.memento.addFacebookObject for ' + fbId, e);
+					}
+				);
+		});
+
+	q.add(
+		function Finish(doneOp)
+		{
+			// console.log(arguments.callee.name);
+
+			handy.assert_def(q.context.newEntry);
+
+			// console.log(q.context.newEntry);
+
+			success_f( q.context.newEntry, {} );
+			doneOp();
+		});
+
+	/* aux ==================== */
+
+	function _abort(message, srcError)
+	{
+		console.log(arguments.callee.name);
+
+		var error = new Error(message);
+		error.source = srcError;
+
+		q.abort(error);
+	}
+
+}
 
 memento.addFacebookObject =
-	function(userId, graphId, quest, success_f /* (newEntry, meta) */, error_f)
+	function(userId, fbId, quest, success_f /* (newEntry, meta) */, error_f)
 	{
-		var allMeta = {};
-
-		var startDate = new Date();
+		handy.assert_def(userId);
+		handy.assert_fbId(fbId);
+		handy.assert_session(quest);
+		handy.assert_f(success_f);
+		handy.assert_f(error_f);
 
 		mongo.memento.findOneFacebookObject( 
 				userId 
-		 	,	graphId
+		 	,	fbId
 			,	function success(r) {
 					if (r == null)
 					{
 						// The object is not present in the DB. Let's add a new entry...
-						_addNew();
+						_addFacebookObject(userId, fbId, quest, success_f, error_f);
 					}
 					else 
 					{
 						// Object already in the mongo database!
-
-						_exitWithSuccess( r, { already: true } );
+						success_f( r, { already: true } );
 					}
 				}
-			,	function error(e) {
-					console.error('mongo.object.find(' + graphId + ', ' + userId + ') failed');
-					console.error(e);
-
-					_exitWithError(e);
-				} );		
-
-		/* ========================================================================== */
-
-		function _addNew()
-		{
-			fb.graph(graphId, quest
-				,	function success(fbObject) {
-						_makeCopy(fbObject);
-					}
-				,	function error(e) {
-						_exitWithError('Failed to lookup: ' + fbID + ' error:' + e);
-					} );
-		}
-
-		function _makeCopy(fbObject)
-		{
-			var makeCopyStartDate = new Date();
-
-			_copyPhotoObjectToS3(quest, fbObject
-				,	function success(copyObject) {
-
-						allMeta._makeCopy_time = handy.elapsedTimeSince(makeCopyStartDate);
-
-						_insertInMongo(fbObject, copyObject);
-					} 
-				,	function error(e){
-						_exitWithError(e);
-					} );
-		}
-
-		function _insertInMongo(source, copy)
-		{
-			assert(source.id == graphId, 'source.id(' + source.id+ ') != graphId(' + graphId + ')');
-			
-			mongo.memento.addFacebookObject(
-					userId
-				,	graphId
-				,	source
-				,	copy
-				,	function success(r)
-					{
-						assert( r != undefined, 'added a new entry but that is undefined');
-						_exitWithSuccess(r, {} );
-					}
-				,	function error(e)
-					{
-						_exitWithError('Failed to insert Object in mongo');
-					}
-				)
-		}
-
-		function _exitWithSuccess(r, meta)
-		{
-			allMeta.time = handy.elapsedTimeSince(startDate);
-
-			if (meta)
-				allMeta = _.extend(meta, allMeta);
-
-			if (success_f)
-				success_f( r, allMeta );
-		}
-
-		function _exitWithError(err)
-		{
-			if (error_f)
-			{
-				if (_.isString(err))
-					error_f(new Error(err));
-				else
-					error_f(err);
-			}				
-		}
-
+			,	function error(e) 
+				{
+					var error = new Error('mongo.memento.findOneFacebookObject failed');
+					error.source = e;
+					error_f(error);
+				} );
 	};
 
 
-
-/*
- *	copy Facebook URLs to S3
- */
-
-function _copyPhotoObjectToS3(quest, photoObject, success_f, error_f)
-{
-	// validate that this is a photo object
-	if (! (photoObject.id && photoObject.from.id && photoObject.images && photoObject.picture) ) {
-		if (error_f)
-			error_f( new Error('photoObject failed validation (' + arguments.callee.name + ')') );
-
-		return;
-	};
-
-	var newName = _generatePhotoName( fb.me(quest, 'id'), photoObject.id, 'A', 'F' );
-
-	var imageDictionary = _collectAllImages(photoObject);
-
-	var s3client = s3.production.clientRW();
-
-	var imageIndex = 0;
-
-	var totCount 	 = 0;
-	var successCount = 0;
-	var errorCount	 = 0;
-
-	// console.log('Start copy to S3');			
-
-	for (var imageURL in imageDictionary)
-	{
-		// console.log(imageIndex);
-		
-		var meta = imageDictionary[imageURL];
-		var newFilePath = _generateFilePath(newName, imageIndex++, meta, path.extname(imageURL));
-		
-		// console.log('original: ' + imageURL);
-		// console.log('copy:     ' + s3.production.URL(newFilePath) );
-		
-		_performOneCopyOperationToS3( s3client, imageURL, newFilePath);
-		
-		totCount++;
-	}
-
-	// console.log(imageDictionary);
-
-	/* ============================================ */
-	var totalBytesWrittenToS3 = 0;
-
-	function _performOneCopyOperationToS3( client, srcURL, path)
-	{
-		s3.copyURL( client, srcURL, path
-			,	function success(total) {
-					var s3copyURL = client.URLForPath(path);
-					imageDictionary[srcURL].s3copyURL = s3copyURL
-
-					// console.log('S3 -> ' +  s3copyURL + ' ('  + total/1024 + ' KB)' );			
-
-					totalBytesWrittenToS3 += total;
-
-					successCount++;
-					_shouldEnd();
-				}
-			,	function error(e) {
-					console.log('Failed -> ' +  imageURL);
-					errorCount++;
-					_shouldEnd();
-				} 
-			);			
-	}
-
-	function _assembleCopyObject()
-	{
-		var newObject = {};
-
-		newObject.picture = imageDictionary[photoObject.picture].s3copyURL;
-		newObject.source = imageDictionary[photoObject.source].s3copyURL;
-		newObject.images = [];
-
-		for (var index in photoObject.images)
-		{
-			var imageInfo = photoObject.images[index];
-
-			newObject.images[index] = {};
-			newObject.images[index].source = imageDictionary[imageInfo.source].s3copyURL;
-		}
-
-		return newObject;
-	}
-
-	function _shouldEnd()
-	{
-		if (totCount == (successCount + errorCount))
-		{
-			// console.log('Total bytes written to S3: ' + totalBytesWrittenToS3/1024 + ' KB' );
-
-			if (errorCount == 0)
-			{
-				// console.log( imageDictionary );
-				
-				var copyObject = _assembleCopyObject();
-
-				if (success_f)
-					success_f(copyObject);
-			}
-			else
-				if (error_f)
-					error_f('error copying object');
-		}
-	}
-
-	function _collectAllImages(photoObject)
-	{
-		var result = {};
-
-		var pictureURL = photoObject.picture;
-
-		result[pictureURL] = {};
-
-		__addSource(photoObject);
-
-		for (var i in photoObject.images) {
-			var image_i = photoObject.images[i];
-			__addSource(image_i);
-		}
-
-		return result;
-
-		/* ===== */
-
-		function __addSource(imageInfo)
-		{
-			var sourceURL = imageInfo.source;
-			var sourceWidth	= imageInfo.width;
-			var sourceHeight= imageInfo.height;
-		
-			if (result[sourceURL]) // Does it exist already?
-			{
-				var hitWidth  = result[sourceURL].width;
-				var hitHeight = result[sourceURL].height;
-
-				if ( hitWidth == imageInfo.width && 
-					 hitHeight == imageInfo.height )
-				{
-					// all good, nothing to do
-					return;
-				}
-				if (hitWidth == undefined && hitHeight == undefined)
-				{
-					// we have more information about a picture we saw already, we will add it
-				}
-				else
-				{
-					console.error(	'Duplicate image with size not matching: ' + 
-										hitWidth + 'x' + hitHeight + ' vs ' +
-										sourceWidth + 'x' + sourceHeight);
-				}
-			}
-
-			result[sourceURL] = { width:sourceWidth, height:sourceHeight };
-		}
-	}
-
-}
 
 function _generatePhotoName(ownerID, photoID, version, type)
 {
 	return ownerID + '_' + version + '_' + type + '_' + photoID;
 }
 
-function _generateFilePath(photoName, index, options, extension)
+function _generateFilePath(photoName, index, options, extension /* withLeadingDot */)
 {
 	var directory = 'picture'; // default directory
 

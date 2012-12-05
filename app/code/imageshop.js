@@ -8,14 +8,10 @@ Info:
 			imageshop.getSize
 Operations:
 			imageshop.resample
-
+			imageshop.safeResample
+			imageshop.createThumbnails
 Debug:
 			imageshop.resampleQueue			
-
-Konstants:
-			imageshop.k.maxDimensionKey
-			imageshop.k.maxSafeInputAreaKey
-			imageshop.k.defaultResampleOptions
 
 ======================================================
 
@@ -33,6 +29,25 @@ var		assert		= require('assert')
 
 var imageshop = exports;
 
+// Konstants
+
+imageshop.k = {};
+
+imageshop.k.MaxDimensionKey		= 'MaxDimension';
+imageshop.k.MaxSafeInputAreaKey	= 'MaxSafeInputArea';
+
+// Default Resample Options
+imageshop.k.DefaultResampleOptions = {};
+imageshop.k.DefaultResampleOptions[imageshop.k.MaxDimensionKey]		= 2048;
+imageshop.k.DefaultResampleOptions[imageshop.k.MaxSafeInputAreaKey]	= 3000 * 3000;
+
+// Safe resample queue
+imageshop.k.MaxConcurrentOperations		= 1;
+imageshop.k.MaxNumOfWaitingOperations	= 16;
+
+// Thumbnails
+imageshop.k.ThumbnailDimensions = [ 130, 320, 720 ];
+
 
 imageshop.makeSize =
 	function(width, height)
@@ -41,14 +56,23 @@ imageshop.makeSize =
 					height:	height	};
 	};
 
+// Globals
+
+var _resampleOperationQueue = new OperationQueue( imageshop.k.MaxConcurrentOperations );
+
+_resampleOperationQueue.on('abort', 
+	function(e){ 
+		console.error('A resampleOperation in the shared queue failed:');
+		console.error(e);
+		handy.errorLogStacktrace(e);
+	});	
+
 
 /* ======================================================== */
 /* ======================================================== */
 /* ========================= Info ========================= */
 /* ======================================================== */
 /* ======================================================== */
-
-
 
 imageshop.getSize =
 	function(filePath, success_f /* size{ width:XXX, height:XXX } */, error_f)
@@ -117,22 +141,12 @@ imageshop.getSize =
 /* ======================================================== */
 
 /*
-
-	Options{
-			maxDimension: ...
-		,	maxSafeInputArea: ...
-	}
-
+	Options
+		{
+					imageshop.k.MaxDimensionKey: [...]
+			,	imageshop.k.MaxSafeInputAreaKey: [...]
+		}
 */
-
-imageshop.k = {};
-
-imageshop.k.maxDimensionKey		= 'maxDimension';
-imageshop.k.maxSafeInputAreaKey	= 'maxSafeInputArea';
-
-imageshop.k.defaultResampleOptions = {};
-imageshop.k.defaultResampleOptions[imageshop.k.maxDimensionKey]		= 2048;
-imageshop.k.defaultResampleOptions[imageshop.k.maxSafeInputAreaKey]	= 3000 * 3000;
 
 imageshop.resample = 
 	function(filePath, options, success_f /* (outpath, size) */, error_f)
@@ -146,8 +160,8 @@ imageshop.resample =
 					_assertSize(size);
 
 					if	(	options			
-						&&	options[imageshop.k.maxSafeInputAreaKey]
-						&&	(size.width * size.height) > options[imageshop.k.maxSafeInputAreaKey] )
+						&&	options[imageshop.k.MaxSafeInputAreaKey]
+						&&	(size.width * size.height) > options[imageshop.k.MaxSafeInputAreaKey] )
 					{
 						var tooBigError = new Error('Source image is too large');
 						tooBigError.code = 'TOOBIG';
@@ -155,11 +169,11 @@ imageshop.resample =
 						error_f(tooBigError);
 					}
 					else if (	options
-							&&	options[imageshop.k.maxDimensionKey]
-							&&	Math.max(size.width, size.height) > options[imageshop.k.maxDimensionKey] )
+							&&	options[imageshop.k.MaxDimensionKey]
+							&&	Math.max(size.width, size.height) > options[imageshop.k.MaxDimensionKey] )
 					{
 						// will need to resize the image...
-						_resize(filePath, options[imageshop.k.maxDimensionKey], success_f, error_f);
+						_resize(filePath, options[imageshop.k.MaxDimensionKey], success_f, error_f);
 					}
 					else
 					{
@@ -178,22 +192,10 @@ imageshop.resample =
 		 		} );
 	};
 
-var MAX_CONCURRENT_OPS	= 1;
-var MAX_NUM_WAITING_OPS	= 10;
-
-var _resampleOperationQueue = new OperationQueue( MAX_CONCURRENT_OPS );
-
-_resampleOperationQueue.on('abort', 
-	function(e){ 
-		console.error('A resampleOperation in the shared queue failed:');
-		console.error(e);
-		handy.errorLogStacktrace(e);
-
-	});	
 
 function _hasResampleOperationQueueCapacityFor(numOfOps, error_f)
 {
-	if ( _resampleOperationQueue.waitCount() + numOfOps > MAX_NUM_WAITING_OPS )
+	if ( _resampleOperationQueue.waitCount() + numOfOps > imageshop.k.MaxNumOfWaitingOperations )
 	{
 		var tooBusy = new Error('_resampleOperationQueue is full');
 		tooBusy.code = 'TOOBUSY';		
@@ -204,7 +206,6 @@ function _hasResampleOperationQueueCapacityFor(numOfOps, error_f)
 
 	return true;
 }
-
 
 imageshop.safeResample = 
 	function(filePath, options, success_f /* (outpath, size) */, error_f)
@@ -241,12 +242,14 @@ imageshop.createThumbnails =
 		handy.assert_f(error_f);
 		_assertSize(sourceSize);
 			
-		var defaultThumbDimension = [ 130, 320, 720 ];
 		var sourceMaxDimension = Math.max(sourceSize.width, sourceSize.height);
 
-		var thumbToMake = _.filter( defaultThumbDimension, 
+		console.log('sourceMaxDimension: ' + sourceMaxDimension);
+
+		var thumbToMake = _.filter( imageshop.k.ThumbnailDimensions, 
 			function(num) {
-				return num < sourceMaxDimension 
+				console.log('num:' + num + ' sourceMaxDimension:' + sourceMaxDimension );
+				return num < sourceMaxDimension ;
 			} );
 
 		if ( !_hasResampleOperationQueueCapacityFor(thumbToMake.length + 1, error_f) ) {
@@ -265,26 +268,23 @@ imageshop.createThumbnails =
 
 			_performResize(thumbSize_i);
 
-
 			function _performResize(dimension)
 			{
 				_resampleOperationQueue.add(
 					function makeThumbOperation(doneOp)
 					{
-						console.log(arguments.callee.name + '_resize ' + dimension);
+						// console.log(arguments.callee.name + '_resize ' + dimension);
 				
 						_resize(sourcePath
 							,	dimension
 							,	function success(outPath, size) {
-									console.log('_resize success_f');
-
-
+									// console.log('_resize success_f');
+									
 									thumbResult.push( { path:outPath, size:size } );
 									doneOp();
 								}
 							,	function error(e) {
-
-									console.log('_resize error');
+									// console.log('_resize error');
 
 									if (!error)
 										error = e;
@@ -296,12 +296,12 @@ imageshop.createThumbnails =
 
 		}
 
-		console.log(arguments.callee.name + 'add finish');
+		// console.log(arguments.callee.name + 'add finish');
 
 		_resampleOperationQueue.add(
 			function finish(doneOp)
 			{
-				console.log('finish');
+				// console.log('finish');
 
 				if (error)
 					error_f(error);
@@ -330,8 +330,6 @@ function _assertSize(size)
 
 function _resize(filePath, dimension, success_f /* (outPath, size) */, error_f)
 {
-	console.log(arguments.callee.name);
-
 	handy.assert_f(success_f);
 	handy.assert_f(error_f);
 	assert( _.isNumber(dimension), 'dimension is expected to be a number');

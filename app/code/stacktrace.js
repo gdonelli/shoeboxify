@@ -15,6 +15,12 @@ API:
 var stacktrace = exports;
 
 
+stacktrace.trace = 
+    function(error)
+    {
+        return printStackTrace( { e: error} );
+    }
+
 stacktrace.process = 
 	function(o) // option with  { e : error... }
 	{

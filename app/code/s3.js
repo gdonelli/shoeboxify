@@ -1,25 +1,22 @@
 /*
 
 ====================[   Amazon S3 Facade   ]====================
+Minimal API to access S3
 
 S3 Client:	
 			s3.getClient()
 			s3.object.clientRW()	defult client with RW permissions
-
 Operations:
 			s3.writeJSON	write JSON file to s3
 			s3.delete		delete files from s3
-			
 			s3.copyURL		copy content from any URL to s3
-			s3.copyFile		copy local file to S3
-
+			s3.copyFile		copy local file to S3	
 Meta:
 			s3.getInfoForURL	{ bucket, path } from s3 URL
 
 ================================================================
 
 */
-
 
 var		assert	= require('assert')
 	,	knox	= require('knox')
@@ -485,7 +482,6 @@ s3.copyURL =
 		quest.end();
 	};
 
-
 s3.copyFile =
 	function( client, localPath, pathOnS3, success_f, error_f, progress_f )
 	{
@@ -508,15 +504,15 @@ s3.copyFile =
 
 				_copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, success_f, error_f, progress_f);
 			} );
-
-
-
 	}
+
+
 /* ============================================== */
 /* ============================================== */
 /* =================[  Utils  ]================== */
 /* ============================================== */
 /* ============================================== */
+
 
  
 function _s3_assert_client(client)

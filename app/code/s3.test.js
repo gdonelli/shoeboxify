@@ -6,6 +6,7 @@ var		assert	= require("assert")
 	,	fs		= require("fs")
 
 	,	s3 			= require("./s3")
+	,	mongo		= require("./mongo")
 	,	handy		= require("./handy")
 	,	OperationQueue	= require("./operation").queue;
 	;

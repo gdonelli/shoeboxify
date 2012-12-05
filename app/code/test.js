@@ -37,9 +37,7 @@ test.route	= {};
 test.k.AccessTokenCacheFilePath = '/tmp/com.shoeboxify.accessTokenCache.json';
 
 
-/*
- * 		Route:		/test
- */
+/* Route ===== */
 
 test.path.test = '/test';
 
@@ -50,9 +48,7 @@ test.route.test =
 	}
 
 
-/*
- * 		Route:		/test/unit
- */
+/* Route ===== */
 
 test.path.unitTest = '/test/unit/:module?';
 
@@ -248,11 +244,7 @@ test.route.unitTest =
 	};
 
 
-
-/*
- *		Route: intense-image-resample
- */
-
+/* Route ===== */
 
 test.path.intense = '/test/intense-image-resample';
 
@@ -300,9 +292,8 @@ test.route.intense =
 		}
 	}
 
-/*
- *		Route: resample-queue-count
- */
+
+/* Route ===== */
 
 test.path.info = '/test/info';
 
@@ -332,9 +323,7 @@ test.route.info =
 	};
 
 
-/*
- *		Route: resample-queue-count
- */
+/* Route ===== */
 
 test.path.restart = '/test/restart';
 
@@ -352,9 +341,7 @@ test.route.restart =
 	};
 
 
-/*
- *		Route: resample-queue-count
- */
+/* Route ===== */
 
 test.path.resampleQueueCount = '/test/resample-queue-count';
 
@@ -369,9 +356,7 @@ test.route.resampleQueueCount =
 	};
 
 
-/*
- *		Route: shell
- */
+/* Route ===== */
 
 test.path.cmd = '/test/cmd/:command?';
 
@@ -456,6 +441,7 @@ function _consoleStringToHTML(str)
 	return result;
 }
 
+/* Route ===== */
 
 test.path.tmp = '/test/tmp';
 
@@ -487,6 +473,8 @@ test.route.tmp =
 
 	};
 
+/* Route ===== */
+
 test.path.tmpFile = '/test/tmp/:filename?';
 
 test.route.tmpFile =
@@ -511,16 +499,28 @@ test.route.tmpFile =
 
 		var mimeType = mime.lookup(filePath);
 
-
 		fs.stat(filePath,
 			function(err, stat) {
 				ponse.writeHead( 200, {	'Content-Type': mimeType,
 										'Content-Length': stat.size } );
-
 				fileReadStream.pipe(ponse);
-
 			});
-
-
 	}
 
+/* Route ===== */
+
+test.path.rmtmp = '/test/rmtmp';
+
+test.route.rmtmp =
+	function(quest, ponse)
+	{
+		ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+		ponse.write('<html><body>');
+
+		ponse.write('<h1>handy.rmTmpDirectory()</h1>');
+
+		handy.rmTmpDirectory();
+
+		ponse.end('</body></html>');
+	}

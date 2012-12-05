@@ -13,6 +13,13 @@ describe('memento.js',
 
 	var testUserId = 'T1';
 
+	function std_error_handler(e)
+	{
+		console.error('error:');
+		console.error(e);
+		throw e;
+	}
+
 	/* Authetication setup */
 
 	describe( 'init',
@@ -22,7 +29,8 @@ describe('memento.js',
 					function(done)
 					{
 						memento.init( 	function success(){	done();	}
-									,	function error(e){	throw e;}	);
+									,	std_error_handler	
+									);
 					} );
 
 				it( 'memento.initUser',
@@ -30,13 +38,13 @@ describe('memento.js',
 					{
 						memento.initUser( testUserId
 								,	function success(){	done();	}
-								,	function error(e){	throw e;}	
-							);
+								,	std_error_handler	
+								);
 					} );
 
 			});
 		
-		describe( 'memento.addFromURL',
+		describe.skip( 'memento.addFromURL',
 			function() 
 			{
 				// Facebook object with no permission:
@@ -58,11 +66,8 @@ describe('memento.js',
 									console.log(meta);
 									done();
 								}
-							,	function error(e) {
-									console.log('error:');
-									console.log(e);
-									throw e;
-								} );
+							,	std_error_handler
+							);
 					} );
 
 			});
@@ -92,25 +97,41 @@ describe('memento.js',
 
 								done();
 							}
-						,	function error(e) 
-							{ 
-								throw e;
-							} );
+						,	std_error_handler
+						);
 				}
 
-				it( 'memento.add',
+				it( 'memento.addFacebookObject',
 					function(done)
 					{
 						_addSJPhoto(done);
 					} );
 
-				it( 'memento.add again',
+				it( 'memento.addFacebookObject again',
 					function(done)
 					{
 						_addSJPhoto(done, 
 							function(optz) {
 								assert( optz.already == true, 'photo should be there already' );
 							});
+					} );
+				
+				it( 'memento.addFacebookObject - not a photo`',
+					function(done)
+					{
+						memento.addFacebookObject( testUserId
+							,	"554390706"
+							,	authTest.pseudoRequest
+							,	function success(r, options)
+								{	
+									throw new Error('not supposed to succeed');
+								}
+							,	function error(e)
+								{
+									// console.log(e);
+									done();
+								}
+							);
 					} );
 
 				it( 'memento.findId',
@@ -124,7 +145,8 @@ describe('memento.js',
 										
 										done();
 									}
-								,	function error(e) { throw e; } );
+								,	std_error_handler
+								);
 
 					} );
 
@@ -144,7 +166,8 @@ describe('memento.js',
 											}
 										,	function error(e) { throw e; } );
 								}
-							,	function error(e) { throw e; } );
+							,	std_error_handler
+							);
 					} );
 
 

@@ -22,7 +22,9 @@ OperationQueue:
 var		assert	= require('assert')
 	,	util	= require("util")
 	,	events	= require("events")
-	,	_		= require("underscore");
+	,	_		= require("underscore")
+
+	,	stacktrace	= require("./stacktrace");
 
 var operation = exports;
 
@@ -59,11 +61,20 @@ OperationQueue.prototype._addAll =
 		callbacks.forEach(this.add, this);
 	};
 
+OperationQueue.prototype.purge = 
+	function(e)
+	{
+		this._backlog = [];
+
+		// this.emit("purge", e);
+	}
 
 OperationQueue.prototype.abort = 
 	function(e)
 	{
 		this._backlog = [];
+
+		e.stacktrace = stacktrace.trace(e);
 
 		this.emit("abort", e);
 	}
@@ -104,11 +115,20 @@ OperationQueue.prototype._start =
 			{ 
 				try 
 				{
+					if (that.debug == true)
+						console.log('[ ' + callback.name + ' ] - Running');
+
 					callback.call(context, boundFinish);
 				}
 				catch(e) 
 				{
-					that.abort(e)
+					if (that.debug  == true || 
+						that.assert == true){
+						console.log('OperationQueue will abort, error:');
+						console.log( e.stack );
+					}
+
+					that.abort(e);
 				}
 			});
 	};

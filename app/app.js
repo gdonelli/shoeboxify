@@ -74,9 +74,10 @@ identity.validateEnviroment();
 
 app.get('/', code.index);
 
-_setupRoutesForModule( fb,		{ name: 'fb' } );
-_setupRoutesForModule( service,	{ name: 'service' } );
-_setupRoutesForModule( test,	{ name: 'test',			admin: true} );
+_setupRoutesForModule( fb,		{ name: 'fb' 		} );
+_setupRoutesForModule( view,	{ name: 'view',		user: true	} );
+_setupRoutesForModule( service,	{ name: 'service'	} );
+_setupRoutesForModule( test,	{ name: 'test',		admin: true } );
 
 
 /**************************/
@@ -102,7 +103,6 @@ app.get('/dev/session',		dev.session);
 app.get('/dev/rmsession',	dev.rmsession);
 
 
-
 /*******************/
 /*   HTTP Server   */
 /*******************/
@@ -111,6 +111,8 @@ http.createServer(app).listen(app.get('port'), function(){
 	console.log("Shoeboxify Server listening on port " + app.get('port'));
 });
 
+
+/* aux ==== */
 
 function _setupRoutesForModule(module, options)
 {
@@ -147,14 +149,23 @@ function _setupRoutesForModule(module, options)
 		assert(path_i != undefined, 'path_i is undefined, key=' + key_i);
 		assert(route_i != undefined, 'route_i is undefined, path_i=' + path_i);
 
-		if (options && options.requiresAdmin == true)
+		var opt = '\t';
+		if (options && options.admin == true)
+		{
 			app.get(path_i, fb.requiresAuthentication,	fb.requiresAdmin, route_i);
-		if (options && options.requiresAuthentication == true)
+			opt += '(admin)';
+		}
+		else if (options && options.user == true)
+		{
 			app.get(path_i, fb.requiresAuthentication, route_i);
+			opt += '(user)';
+		}
 		else
+		{
 			app.get(path_i, route_i);
+		}
 
-		console.log(' |=> ' + path_i);
+		console.log('   |=> ' + path_i + opt);
 	}
 
 }

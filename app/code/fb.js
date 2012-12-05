@@ -41,6 +41,7 @@ var 	https		= require('https')
 	,	mongo		= require('./mongo')
 	,	identity	= require('./identity')
 	,	stacktrace	= require('./stacktrace')
+	,	_			= require('underscore')
 	;
 
 fb = exports;
@@ -270,10 +271,7 @@ fb.route.loginResponse =
 
 		function UserSessionStartedSuccesfully()
 		{
-			assert(quest != undefined,			'quest is undefined');
-			assert(quest.session != undefined,	'quest.session is undefined');
-			assert(quest.session.me != undefined,	'quest.session.me is undefined');
-			assert(quest.session.me.id != undefined,'quest.session.me.id is undefined');
+			handy.assert_session(quest);
 
 			// init user mongo db
 			mongo.memento.init(
@@ -574,7 +572,8 @@ fb.sanitizeObject =
 
 fb.me = function(quest, field)
 	{
-		assert(quest != undefined,				arguments.callee.name + ' quest is undefined');
+		assert(quest != undefined,	arguments.callee.name + ' quest is undefined');
+		assert(_.isObject(quest),	arguments.callee.name + ' quest is not an object');
 		assert(quest.session != undefined,		arguments.callee.name + ' quest.session is undefined');
 		assert(quest.session.me != undefined,	arguments.callee.name + ' quest.session.me is undefined');
 

@@ -135,6 +135,10 @@ var _common = (function ()
 			{
 				result = '<span class="boolean">'+ obj + '</span>';
 			}
+			else if ( obj === null )
+			{
+				result = '<span class="null">null</span>';
+			}
 			else
 			{
 				result = '<span class="string">' + objectType + ' [+] ' + obj.toString() + '</span>';	

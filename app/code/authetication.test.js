@@ -16,8 +16,9 @@ var		assert	= require("assert")
 	,	fs		= require("fs")
 	,	spawn	= require('child_process').spawn
 
-	,	fb		= require("./fb")	
+	,	handy	= require("./handy")
 	,	test	= require("./test")
+	,	fb		= require("./fb")	
 	;
 
 
@@ -52,11 +53,7 @@ describe('authetication.test.js',
 			function(done) {
 				_getPseudoSession(
 						function success(ponse) {
-							assert( ponse.session.me != undefined,		'ponse.session.me undefined');
-							assert( ponse.session.me.id != undefined,	'ponse.session.me.id undefined');
-							assert( ponse.session.me.name != undefined,	'ponse.session.me.name undefined');
-							assert( ponse.session.me.email != undefined,'ponse.session.me.email undefined');
-
+							handy.assert_session(ponse);
 							done();	
 						}
 					,	function error(e) {

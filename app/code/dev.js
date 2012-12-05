@@ -367,7 +367,7 @@ exports.myphotos =
 		ponse.writeHead(200, {'Content-Type': 'text/html'});
 		ponse.write('<html><body>');
 
-		LoadPhotos( 'me/photos', 10 );
+		LoadPhotos( 'me/photos', 100 );
 
 
 		function LoadPhotos( path, maxDepth)

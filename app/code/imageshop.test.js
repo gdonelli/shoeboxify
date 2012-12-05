@@ -121,7 +121,7 @@ describe('imageshop.js',
 			function(done)
 			{
 				var options = {};
-				options[imageshop.k.maxSafeInputAreaKey] = identity.maxImageAreaToProcess();
+				options[imageshop.k.MaxSafeInputAreaKey] = identity.maxImageAreaToProcess();
 				var count=0;
 
 				imageshop.safeResample(	bigImagePath
@@ -141,7 +141,7 @@ describe('imageshop.js',
 			{
 				var maxSize = identity.maxImageDimension();
 				var options = {};
-				options[imageshop.k.maxDimensionKey] = maxSize;
+				options[imageshop.k.MaxDimensionKey] = maxSize;
 
 				imageshop.safeResample(	iphoneImagePath
 								,	options
@@ -180,7 +180,7 @@ describe('imageshop.js',
 				setTimeout(
 						function(){
 							// console.log( tooBusyCount );
-							imageshop.resampleQueue().abort();
+							imageshop.resampleQueue().purge();
 					 		if (tooBusyCount > 70)
 						 		done();
 						},
@@ -188,7 +188,7 @@ describe('imageshop.js',
 			} );
 		
 
-		it.only( 'imageshop.createThumbnails',
+		it( 'imageshop.createThumbnails - face',
 			function(done)
 			{
 				imageshop.createThumbnails(
@@ -196,12 +196,30 @@ describe('imageshop.js',
 					,	faceImageSize
 					,	function success(array) {
 							console.log(array);
+							assert( array.length == imageshop.k.ThumbnailDimensions.length, 'thumbnail count doesnt match');
 							done();
 						}
 					,	function error(e) {
 							console.log(e);
 						} );
 			} );
+
+		it( 'imageshop.createThumbnails - google',
+			function(done)
+			{
+				imageshop.createThumbnails(
+						googleImagePath
+					,	googleImageSize
+					,	function success(array) {
+							console.log(array);
+							assert( array.length == 1, 'thumbnail count doesnt match');
+							done();
+						}
+					,	function error(e) {
+							console.log(e);
+						} );
+			} );
+
 
 	});
 
