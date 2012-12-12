@@ -31,7 +31,6 @@ var     https       = require('https')
     ,   url         = require('url')
     ,   assert      = require('assert')
     ,   _           = require('underscore')
-   
 
     ,   a           = use('a')
     ,   fb          = use('fb')
@@ -41,10 +40,9 @@ var     https       = require('https')
     ,   OperationQueue  = use('OperationQueue')
     ,   FacebookAccess  = use('FacebookAccess')
     ,   User            = use('User')
-    
     ;
 
-authentication = exports;
+var authentication = exports;
 
 authentication.route  = {};
 authentication.path   = {};
@@ -163,8 +161,11 @@ authentication.route.loginResponse =
                             }
                         ,   function otherResponse(ponse)
                             {
-                                var abortError = new Error('GetAccessTokenOperation: GET oAuth is not 200OK');
+                                var abortError = new Error('GetAccessTokenOperation: OAuth failed: ' + ponse.readBuffer);
                                 abortError.response = ponse;
+
+                                // console.log(  );
+                                
                                 q.abort(abortError);
                             }
                         ,   function error(error)
@@ -456,7 +457,11 @@ authentication.validateUserSession =
 authentication.validateAdminSession = 
     function(quest, ponse, next)
     {
-        if ( quest.session.user.facebookId() == identity.adminId() )
+        var user = User.fromRequest(quest);
+
+        // console.log(user);
+
+        if ( user.facebookId() == identity.adminId() )
         {
             next();
         }

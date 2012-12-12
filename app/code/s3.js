@@ -3,35 +3,35 @@
 ====================[   Amazon S3 Facade   ]====================
 Minimal API to access S3
 
-S3 Client:	
-			s3.getClient()
-			s3.object.clientRW()	defult client with RW permissions
+S3 Client:  
+            s3.getClient()
+            s3.object.clientRW()    defult client with RW permissions
 Operations:
-			s3.writeJSON	write JSON file to s3
-			s3.delete		delete files from s3
-			s3.copyURL		copy content from any URL to s3
-			s3.copyFile		copy local file to S3	
+            s3.writeJSON    write JSON file to s3
+            s3.delete       delete files from s3
+            s3.copyURL      copy content from any URL to s3
+            s3.copyFile     copy local file to S3   
 Meta:
-			s3.getInfoForURL	{ bucket, path } from s3 URL
+            s3.getInfoForURL    { bucket, path } from s3 URL
 
 ================================================================
 
 */
 
-var		assert	= require('assert')
-	,	knox	= require('knox')
-	,	path	= require('path')
-	,	url		= require('url')
-	,	http	= require("http")
-	,	https	= require("https")
-	,	_		= require("underscore")
-	,	fs		= require("fs")
-	,	mime	= require("mime")
+var     assert  = require('assert')
+    ,   knox    = require('knox')
+    ,   path    = require('path')
+    ,   url     = require('url')
+    ,   http    = require("http")
+    ,   https   = require("https")
+    ,   fs      = require("fs")
+    ,   mime    = require("mime")
+    ,   _       = require("underscore")
 
-	,	handy	= require('./handy')
-	,	identity= require('./identity')
-
-	;
+    ,   a   = use('a')
+    ,   handy   = use('handy')
+    ,   identity= use('identity')
+    ;
 
 
 var s3 = exports;
@@ -43,161 +43,161 @@ var s3 = exports;
 /* ====================================================== */
 
 s3.production = {};
-s3.production.bucket	= identity.s3.bucket.production();
-s3.production.clientR	= function(){ return s3.getClient(s3.production.bucket, 'R' ); };
-s3.production.clientRW	= function(){ return s3.getClient(s3.production.bucket, 'RW'); };
+s3.production.bucket    = identity.s3.bucket.production();
+s3.production.clientR   = function(){ return s3.getClient(s3.production.bucket, 'R' ); };
+s3.production.clientRW  = function(){ return s3.getClient(s3.production.bucket, 'RW'); };
 
 s3.test = {};
-s3.test.bucket		= identity.s3.bucket.test();
-s3.test.clientR		= function(){ return s3.getClient(s3.test.bucket, 'R' ); };
-s3.test.clientRW	= function(){ return s3.getClient(s3.test.bucket, 'RW'); };
+s3.test.bucket      = identity.s3.bucket.test();
+s3.test.clientR     = function(){ return s3.getClient(s3.test.bucket, 'R' ); };
+s3.test.clientRW    = function(){ return s3.getClient(s3.test.bucket, 'RW'); };
 
 
 s3.getClient = 
-	function(bucket, permission)
-	{
-		_s3_assert_bucket(bucket);
+    function(bucket, permission)
+    {
+        _s3_assert_bucket(bucket);
 
-		return _getCachedClient(bucket, permission);
-	};
+        return _getCachedClient(bucket, permission);
+    };
 
 
 var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
 
 
 var _clientCache = {
-			test: {
-					R:  null
-				,	RW: null
-			}
-		,	object: {
-					R:  null
-				,	RW: null
-			}
-	};
+            test: {
+                    R:  null
+                ,   RW: null
+            }
+        ,   object: {
+                    R:  null
+                ,   RW: null
+            }
+    };
 
 
 function _getCachedClient(bucket, permission)
 {
-	var bucketEndName = bucket.split('.')[1];
+    var bucketEndName = bucket.split('.')[1];
 
-	assert(bucketEndName == 'test' || bucketEndName == 'object', 'bucketEndName is not valid: ' + bucketEndName);
+    assert(bucketEndName == 'test' || bucketEndName == 'object', 'bucketEndName is not valid: ' + bucketEndName);
 
-	if (_clientCache[bucketEndName][permission] == null) {
+    if (_clientCache[bucketEndName][permission] == null) {
 
-		// console.log('_getCachedClient ' + bucketEndName + ' ' + permission );
+        // console.log('_getCachedClient ' + bucketEndName + ' ' + permission );
 
-		_clientCache[bucketEndName][permission] = _s3client(bucket, permission);
-		_clearCache(bucketEndName, permission);
-	}
+        _clientCache[bucketEndName][permission] = _s3client(bucket, permission);
+        _clearCache(bucketEndName, permission);
+    }
 
-	return _clientCache[bucketEndName][permission];
+    return _clientCache[bucketEndName][permission];
 
-	/* ========================================================== */
-	
-	function _clearCache(n, p)
-	{
-		setTimeout( function() {
-			console.log('Clearning S3 Client ' + n + ' ' + p );
-			_clientCache[n][p] = null;
-		}, CLIENT_CACHE_DURATION);
+    /* ========================================================== */
+    
+    function _clearCache(n, p)
+    {
+        setTimeout( function() {
+            console.log('Clearning S3 Client ' + n + ' ' + p );
+            _clientCache[n][p] = null;
+        }, CLIENT_CACHE_DURATION);
 
-	}
+    }
 }
 
  // do not use directly. Use _getCachedClient instead
 
 function _s3client( bucket, permission )
 {
-	var key		= identity.s3.user[permission].key();
-	var secret	= identity.s3.user[permission].secret();
+    var key     = identity.s3.user[permission].key();
+    var secret  = identity.s3.user[permission].secret();
 
-	assert( (key != undefined),		's3 key is undefined');
-	assert( (secret != undefined),	's3 secret is undefined');
-	assert( (bucket != undefined),	's3 bucket is undefined');
+    assert( (key != undefined),     's3 key is undefined');
+    assert( (secret != undefined),  's3 secret is undefined');
+    assert( (bucket != undefined),  's3 bucket is undefined');
 
-	var result = knox.createClient({
-				   key: key
-			,	secret: secret
-			,	bucket: bucket
-			,	region: 'us-west-2'
-			});
+    var result = knox.createClient({
+                   key: key
+            ,   secret: secret
+            ,   bucket: bucket
+            ,   region: 'us-west-2'
+            });
 
-	result.URLForPath = 
-		function(filePath) {
-			return 'https://' + identity.s3.host() + '/' + path.normalize(bucket + '/' + filePath);			
-		};
+    result.URLForPath = 
+        function(filePath) {
+            return 'https://' + identity.s3.host() + '/' + path.normalize(bucket + '/' + filePath);         
+        };
 
-	return result;
+    return result;
 }
 
 
 /**
-*	Given a URL of a S3 object it returns an object:
-*		{	bucket: ... , 
-*		,	  path: ... } 
+*   Given a URL of a S3 object it returns an object:
+*       {   bucket: ... , 
+*       ,     path: ... } 
 *
-*	@method s3.getInfoForURL
-*	@param {String} an s3 URL
-*	@return {Object} Returns object with 'bucket' and 'path' property
+*   @method s3.getInfoForURL
+*   @param {String} an s3 URL
+*   @return {Object} Returns object with 'bucket' and 'path' property
 **/
 
 s3.getInfoForURL =
-	function(theURL)
-	{
-		var result = {};
+    function(theURL)
+    {
+        var result = {};
 
-		var urlElements = url.parse(theURL);
-		assert( urlElements.host == identity.s3.host(), 
-				'url host (' + urlElements.host + ') doesnt match expected s3 host:' + identity.s3.host());
+        var urlElements = url.parse(theURL);
+        assert( urlElements.host == identity.s3.host(), 
+                'url host (' + urlElements.host + ') doesnt match expected s3 host:' + identity.s3.host());
 
-		var urlPath = urlElements.path;
-		var urlPathElements = urlPath.split('/');
+        var urlPath = urlElements.path;
+        var urlPathElements = urlPath.split('/');
 
-		var s3Bucket = urlPathElements[1];
-		var s3Path = '';
-		
-		for (var i=2; i<urlPathElements.length; i++) {
-			s3Path += '/' + urlPathElements[i];
-		}
+        var s3Bucket = urlPathElements[1];
+        var s3Path = '';
+        
+        for (var i=2; i<urlPathElements.length; i++) {
+            s3Path += '/' + urlPathElements[i];
+        }
 
-		result.path	 = s3Path;
-		result.bucket= s3Bucket;
+        result.path  = s3Path;
+        result.bucket= s3Bucket;
 
-		return result;	
-	};
+        return result;  
+    };
 
 
 /*
- *	Given a URL returns {	bucket: ... , 
- *							 paths: [...] } 
+ *  Given a URL returns {   bucket: ... , 
+ *                           paths: [...] } 
  *
  *  if the URLs are on a different bucket it will throw an exception
  */
 
 s3.getInfoForURLs =
-	function(arrayOfURLs)
-	{
-		var result = {};
+    function(arrayOfURLs)
+    {
+        var result = {};
 
-		result.bucket = null;
-		result.paths = [];
+        result.bucket = null;
+        result.paths = [];
 
-		for (var i in arrayOfURLs)
-		{
-			var URL_i = arrayOfURLs[i];
-			var info_i = s3.getInfoForURL(URL_i);
+        for (var i in arrayOfURLs)
+        {
+            var URL_i = arrayOfURLs[i];
+            var info_i = s3.getInfoForURL(URL_i);
 
-			if (!result.bucket)
-				result.bucket = info_i.bucket;
-			else
-				assert(result.bucket == info_i.bucket, ' URLs are in different buckets');
+            if (!result.bucket)
+                result.bucket = info_i.bucket;
+            else
+                assert(result.bucket == info_i.bucket, ' URLs are in different buckets');
 
-			result.paths.push(info_i.path);
-		}
+            result.paths.push(info_i.path);
+        }
 
-		return result;
-	};
+        return result;
+    };
 
 
 /* =================================================== */
@@ -214,68 +214,68 @@ s3.getInfoForURLs =
  */
 
 s3.writeJSON =
-	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
-	{
-		_s3_assert_client(client);
-		assert(object != undefined, " object is undefined");
-		_s3_assert_path(filePath);
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
+    function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
+    {
+        _s3_assert_client(client);
+        assert(object != undefined, " object is undefined");
+        _s3_assert_path(filePath);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		var string = JSON.stringify(object);
-		var questToS3 = client.put(filePath,	{
-					'Content-Length': string.length
-			  	,	'Content-Type': 'application/json'
-				,	'x-amz-acl': 'public-read'
-			/*	, 	'x-amz-storage-class' : 'REDUCED_REDUNDANCY'	*/
-			});
-		
-		questToS3.on('response', 
-			function(ponse) {
-				if (ponse.statusCode == 200)
-				{
-					success_f(ponse);
-				}
-				else
-				{
-					var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-					e.response = ponse;
-					error_f(e);
-				}
-			});
-		
-		questToS3.on('error', 
-			function(e) { error_f(e); } );
+        var string = JSON.stringify(object);
+        var questToS3 = client.put(filePath,    {
+                    'Content-Length': string.length
+                ,   'Content-Type': 'application/json'
+                ,   'x-amz-acl': 'public-read'
+            /*  ,   'x-amz-storage-class' : 'REDUCED_REDUNDANCY'    */
+            });
+        
+        questToS3.on('response', 
+            function(ponse) {
+                if (ponse.statusCode == 200)
+                {
+                    success_f(ponse);
+                }
+                else
+                {
+                    var e = new Error('Failed with statusCode: ' + ponse.statusCode);
+                    e.response = ponse;
+                    error_f(e);
+                }
+            });
+        
+        questToS3.on('error', 
+            function(e) { error_f(e); } );
 
-		questToS3.end(string);
+        questToS3.end(string);
 
-		return string;
-	};
+        return string;
+    };
 
 
 function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
 {
-	_s3_assert_client(client);
-	assert(filePath != undefined, 'filePath is undefined' );
-	assert(_.isString(filePath), 'filePath is not a string');	
-	handy.assert_f(success_f);
-	handy.assert_f(error_f);
+    _s3_assert_client(client);
+    assert(filePath != undefined, 'filePath is undefined' );
+    assert(_.isString(filePath), 'filePath is not a string');   
+    a.assert_f(success_f);
+    a.assert_f(error_f);
 
-	client.deleteFile(filePath,
-		function(err, ponse){
-			if (err)
-				error_f(err);
-			else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
-			{
-				success_f(ponse);	
-			}
-			else
-			{
-				var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-				e.response = ponse;
-				error_f(e);
-			}
-		} );
+    client.deleteFile(filePath,
+        function(err, ponse){
+            if (err)
+                error_f(err);
+            else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
+            {
+                success_f(ponse);   
+            }
+            else
+            {
+                var e = new Error('Failed with statusCode: ' + ponse.statusCode);
+                e.response = ponse;
+                error_f(e);
+            }
+        } );
 }
 
 /*
@@ -285,59 +285,59 @@ function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /
  */
 
 s3.delete_one_by_one =
-	function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
-	{
-		_s3_assert_client(client);
-		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
-		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
-	
-		var filesToRemove;
+    function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
+    {
+        _s3_assert_client(client);
+        assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
+        assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');  
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+    
+        var filesToRemove;
 
-		if ( _.isString(filePath_or_arrayOfPaths) )
-			filesToRemove = [ filePath_or_arrayOfPaths ];
-		else if ( _.isArray(filePath_or_arrayOfPaths) )
-			filesToRemove = filePath_or_arrayOfPaths;
-		else
-			assert('filePath_or_arrayOfPaths is neither string or array');
+        if ( _.isString(filePath_or_arrayOfPaths) )
+            filesToRemove = [ filePath_or_arrayOfPaths ];
+        else if ( _.isArray(filePath_or_arrayOfPaths) )
+            filesToRemove = filePath_or_arrayOfPaths;
+        else
+            assert('filePath_or_arrayOfPaths is neither string or array');
 
-		assert(filesToRemove.length > 0, 'filesToRemove.length is not > 0');
+        assert(filesToRemove.length > 0, 'filesToRemove.length is not > 0');
 
-		var removeIndex = 0;
-		var successCount = 0;
-		var errorCount = 0;
+        var removeIndex = 0;
+        var successCount = 0;
+        var errorCount = 0;
 
-		_removeStep();
+        _removeStep();
 
-		/* ============== */
+        /* ============== */
 
-		function _removeStep()
-		{
-			if (successCount + errorCount == filesToRemove.length)
-				return _end();
+        function _removeStep()
+        {
+            if (successCount + errorCount == filesToRemove.length)
+                return _end();
 
-			var file_i = filesToRemove[removeIndex++];
+            var file_i = filesToRemove[removeIndex++];
 
-			_s3_delete_file(client, file_i
-				,	function success(reponse)
-					{
-						successCount++;
-						_removeStep();
-					}
-				,	function error(error)
-					{
-						errorCount++;
-						_removeStep();
-					} );
-		}
+            _s3_delete_file(client, file_i
+                ,   function success(reponse)
+                    {
+                        successCount++;
+                        _removeStep();
+                    }
+                ,   function error(error)
+                    {
+                        errorCount++;
+                        _removeStep();
+                    } );
+        }
 
-		function _end()
-		{
-			if (success_f)
-				success_f(successCount)
-		}
-	};
+        function _end()
+        {
+            if (success_f)
+                success_f(successCount)
+        }
+    };
 
 /*
  * s3.delete
@@ -347,164 +347,164 @@ s3.delete_one_by_one =
 
 
 s3.delete /* _using_deleteMultiple */ =
-	function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
-	{
-		_s3_assert_client(client);
-		assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
-		assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');	
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
+    function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
+    {
+        _s3_assert_client(client);
+        assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
+        assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');  
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		// console.log(typeof filePath_or_arrayOfPaths);
+        // console.log(typeof filePath_or_arrayOfPaths);
 
-		var deleteMethod = null;
+        var deleteMethod = null;
 
-		if ( _.isString(filePath_or_arrayOfPaths) )
-			deleteMethod = 'deleteFile';
-		else if ( _.isArray(filePath_or_arrayOfPaths) )
-		{
-			deleteMethod = 'deleteMultiple';
-		}
+        if ( _.isString(filePath_or_arrayOfPaths) )
+            deleteMethod = 'deleteFile';
+        else if ( _.isArray(filePath_or_arrayOfPaths) )
+        {
+            deleteMethod = 'deleteMultiple';
+        }
 
-		assert(deleteMethod != null, 'Couldnt find method to deal with input type');
+        assert(deleteMethod != null, 'Couldnt find method to deal with input type');
 
-		client[deleteMethod](filePath_or_arrayOfPaths,
-			function(err, ponse){
-				if (err)
-					error_f(err);
-				else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
-				{
-					success_f(ponse);
+        client[deleteMethod](filePath_or_arrayOfPaths,
+            function(err, ponse){
+                if (err)
+                    error_f(err);
+                else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
+                {
+                    success_f(ponse);
 
-					var bufferString = '';
+                    var bufferString = '';
 
-					ponse.on('data',
-						function (chunk) {
-							bufferString += chunk;
-						});
+                    ponse.on('data',
+                        function (chunk) {
+                            bufferString += chunk;
+                        });
 
-					ponse.on('end',	function () {
-							// console.log(deleteMethod + ' response:');
-							// console.log(bufferString );
-						});
-				}
-			} );
-	};
+                    ponse.on('end', function () {
+                            // console.log(deleteMethod + ' response:');
+                            // console.log(bufferString );
+                        });
+                }
+            } );
+    };
 
 
-function _copyStreamToS3(	client 
-						,	srcStream,	srcStreamLength,	srcMIMEType
-						,	pathOnS3
-						,	success_f,	error_f,	progress_f )
+function _copyStreamToS3(   client 
+                        ,   srcStream,  srcStreamLength,    srcMIMEType
+                        ,   pathOnS3
+                        ,   success_f,  error_f,    progress_f )
 {
-	var written = 0;
-	var total = 0;
+    var written = 0;
+    var total = 0;
 
-	var headers = {};
+    var headers = {};
 
-	headers['x-amz-acl'] = 'public-read';
+    headers['x-amz-acl'] = 'public-read';
 
-	if (srcStreamLength)
-		headers['Content-Length'] = srcStreamLength;
+    if (srcStreamLength)
+        headers['Content-Length'] = srcStreamLength;
 
-	if (srcMIMEType)
-		headers['Content-Type'] = srcMIMEType;
+    if (srcMIMEType)
+        headers['Content-Type'] = srcMIMEType;
 
-	var putStream = client.putStream(srcStream, pathOnS3, headers, 
-		function(err, streamPonse){
-	
-			streamPonse.on('end',
-				function() {
-					// console.log('streamPonse.on[end] written:' + written + ' total:' + total );
+    var putStream = client.putStream(srcStream, pathOnS3, headers, 
+        function(err, streamPonse){
+    
+            streamPonse.on('end',
+                function() {
+                    // console.log('streamPonse.on[end] written:' + written + ' total:' + total );
 
-					if  ( written == total && total != 0 ) 
-					{
-						success_f( Math.round(total) );
-					}
-					else
-					{
-						error_f( new Error(1, 'Couldnt complete file (' + fileURL + ') streaming to S3:'+filePath) );
-						srcStream.destroy();
-						streamPonse.destroy();
-					}
-				});
+                    if  ( written == total && total != 0 ) 
+                    {
+                        success_f( Math.round(total) );
+                    }
+                    else
+                    {
+                        error_f( new Error(1, 'Couldnt complete file (' + fileURL + ') streaming to S3:'+filePath) );
+                        srcStream.destroy();
+                        streamPonse.destroy();
+                    }
+                });
 
-		});
+        });
 
-	putStream.on('progress',
-		function(progressObj) {
-			written	= progressObj.written;
-			total	= progressObj.total;
-			// console.log('stream->progressObj.percent: ' + progressObj.percent );
+    putStream.on('progress',
+        function(progressObj) {
+            written = progressObj.written;
+            total   = progressObj.total;
+            // console.log('stream->progressObj.percent: ' + progressObj.percent );
 
-			if (progress_f)
-				progress_f(progressObj);
-		});
+            if (progress_f)
+                progress_f(progressObj);
+        });
 
-	putStream.on('error', 
-		function(error) {
-			console.log('stream->error: ' + error);
-		});
+    putStream.on('error', 
+        function(error) {
+            console.log('stream->error: ' + error);
+        });
 }
 
 /*
- *	success_f(total_byte_written)
- *	error_f( Error_obj )
- *	progress_f( p ), p: {written, total, percent}
- *	
+ *  success_f(total_byte_written)
+ *  error_f( Error_obj )
+ *  progress_f( p ), p: {written, total, percent}
+ *  
  */
 
 s3.copyURL =
-	function( client, remoteURL, pathOnS3, success_f, error_f, progress_f )
-	{
-		_s3_assert_client(client);
-		_s3_assert_path(pathOnS3);
-		handy.assert_http_url(remoteURL);
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
+    function( client, remoteURL, pathOnS3, success_f, error_f, progress_f )
+    {
+        _s3_assert_client(client);
+        _s3_assert_path(pathOnS3);
+        a.assert_http_url(remoteURL);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		var quest = handy.requestURL(remoteURL, {},
-			function handleResponseStream(ponse) {
+        var quest = handy.requestURL(remoteURL, {},
+            function handleResponseStream(ponse) {
 
-				if (ponse.statusCode != 200)
-				{
-					var errMessage = 'GET ' + remoteURL + ' failed, statusCode:' + ponse.statusCode;
-					
-					return error_f( new Error(ponse.statusCode, errMessage) );
-				}
+                if (ponse.statusCode != 200)
+                {
+                    var errMessage = 'GET ' + remoteURL + ' failed, statusCode:' + ponse.statusCode;
+                    
+                    return error_f( new Error(ponse.statusCode, errMessage) );
+                }
 
-				var ponseLength	= ponse.headers['content-length'];
-				var ponseType	= ponse.headers['content-type'];
+                var ponseLength = ponse.headers['content-length'];
+                var ponseType   = ponse.headers['content-type'];
 
-				_copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, success_f, error_f, progress_f);
-			});
+                _copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, success_f, error_f, progress_f);
+            });
 
-		quest.end();
-	};
+        quest.end();
+    };
 
 s3.copyFile =
-	function( client, localPath, pathOnS3, success_f, error_f, progress_f )
-	{
-		_s3_assert_client(client);
-		_s3_assert_path(pathOnS3);
-		_s3_assert_path(localPath);
-		handy.assert_f(success_f);
-		handy.assert_f(error_f);
+    function( client, localPath, pathOnS3, success_f, error_f, progress_f )
+    {
+        _s3_assert_client(client);
+        _s3_assert_path(pathOnS3);
+        _s3_assert_path(localPath);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		fs.stat(localPath, 
-			function(err, stats) {
+        fs.stat(localPath, 
+            function(err, stats) {
 
-				if (err)
-					return error_f(err);
+                if (err)
+                    return error_f(err);
 
-				var fileSize = stats.size;
-				var fileType = mime.lookup(localPath);
+                var fileSize = stats.size;
+                var fileType = mime.lookup(localPath);
 
-				var fileStream = fs.createReadStream(localPath);
+                var fileStream = fs.createReadStream(localPath);
 
-				_copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, success_f, error_f, progress_f);
-			} );
-	}
+                _copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, success_f, error_f, progress_f);
+            } );
+    }
 
 
 /* ============================================== */
@@ -517,25 +517,25 @@ s3.copyFile =
  
 function _s3_assert_client(client)
 {
-	assert( client != undefined,		'client is undefined');
-	assert( client.key != undefined,	'client.key is undefined');
-	assert( client.secret != undefined,	'client.secret is undefined');
-	assert( client.bucket != undefined,	'client.bucket is undefined');
+    assert( client != undefined,        'client is undefined');
+    assert( client.key != undefined,    'client.key is undefined');
+    assert( client.secret != undefined, 'client.secret is undefined');
+    assert( client.bucket != undefined, 'client.bucket is undefined');
 };
 
 
 function _s3_assert_path(filePath)
 {
-	assert( filePath != undefined,	'filePath is undefined');
-	assert( _.isString(filePath),	'filePath is not string');
-	assert( filePath.length > 1,	'filePath.length not valid');
+    assert( filePath != undefined,  'filePath is undefined');
+    assert( _.isString(filePath),   'filePath is not string');
+    assert( filePath.length > 1,    'filePath.length not valid');
 };
 
 
 function _s3_assert_bucket(bucket)
 {
-	assert( bucket != undefined,	'bucket is undefined');
-	assert( bucket == s3.test.bucket ||
-			bucket == s3.production.bucket,	'bucket is not test or production, is: ' + bucket);
+    assert( bucket != undefined,    'bucket is undefined');
+    assert( bucket == s3.test.bucket ||
+            bucket == s3.production.bucket, 'bucket is not test or production, is: ' + bucket);
 }
 

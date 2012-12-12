@@ -1,18 +1,17 @@
 
-var		assert		= require("assert")
-	,	identity	= require("./identity")
-	;
+var     assert      = require("assert")
+    ,   identity    = require("./identity")
+    ;
 
 
 describe('identity.js',
-	function() 
-	{
-		it( 'identity.validateEnviroment',
-			function() {
+    function() 
+    {
+        it( 'identity.validateEnviroment',
+            function() {
 
-				identity.validateEnviroment();
+                identity.validateEnviroment();
 
-			} );
+            } );
 
-	} );
-
+    } );

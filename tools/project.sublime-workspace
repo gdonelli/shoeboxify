@@ -1,0 +1,1338 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+			[
+				"ass",
+				"assert_uid"
+			],
+			[
+				"fa",
+				"failure"
+			],
+			[
+				"in",
+				"index"
+			],
+			[
+				"as",
+				"assert"
+			],
+			[
+				"re",
+				"result"
+			],
+			[
+				"is",
+				"isNumberString"
+			],
+			[
+				"Object",
+				"ObjectID"
+			],
+			[
+				"en",
+				"entry"
+			],
+			[
+				"con",
+				"context"
+			],
+			[
+				"Oper",
+				"OperationQueue"
+			],
+			[
+				"URL",
+				"URLForPath"
+			],
+			[
+				"ext",
+				"extension"
+			],
+			[
+				"e",
+				"e"
+			],
+			[
+				"eror",
+				"error_f"
+			],
+			[
+				"err",
+				"error_f"
+			],
+			[
+				"tmp",
+				"tmpDirectory"
+			],
+			[
+				"auth",
+				"authTest"
+			],
+			[
+				"s",
+				"s3"
+			],
+			[
+				"file",
+				"filesize"
+			],
+			[
+				"Unit",
+				"unit-test"
+			],
+			[
+				"cmd",
+				"cmd"
+			],
+			[
+				"iph",
+				"iphoneImagePath"
+			],
+			[
+				"w",
+				"width"
+			],
+			[
+				"succ",
+				"success"
+			],
+			[
+				"el",
+				"elapsedTimeSince"
+			],
+			[
+				"pro",
+				"production"
+			],
+			[
+				"i",
+				"identity"
+			],
+			[
+				"er",
+				"error"
+			],
+			[
+				"remov",
+				"removeId"
+			],
+			[
+				"succes",
+				"success_f"
+			],
+			[
+				"h",
+				"headers"
+			],
+			[
+				"asse",
+				"assert"
+			],
+			[
+				"ent",
+				"entity"
+			],
+			[
+				"string",
+				"stringify"
+			],
+			[
+				"mon",
+				"mongo"
+			],
+			[
+				"gra",
+				"graphId"
+			],
+			[
+				"shoeb",
+				"shoeboxify"
+			],
+			[
+				"coe",
+				"collection"
+			],
+			[
+				"co",
+				"console"
+			],
+			[
+				"graph",
+				"graph_id"
+			],
+			[
+				"su",
+				"success"
+			],
+			[
+				"ar",
+				"arguments"
+			],
+			[
+				"collecti",
+				"collectionName"
+			],
+			[
+				"_fin",
+				"_findByGraphID"
+			],
+			[
+				"erro",
+				"error_f"
+			],
+			[
+				"fn",
+				"function"
+			],
+			[
+				"strin",
+				"stringify"
+			],
+			[
+				"photo",
+				"photoObject"
+			],
+			[
+				"S",
+				"S3"
+			],
+			[
+				"phot",
+				"photoObject"
+			],
+			[
+				"ex",
+				"exports"
+			],
+			[
+				"lo",
+				"log"
+			],
+			[
+				"sho",
+				"shoeboxify"
+			],
+			[
+				"cl",
+				"client"
+			],
+			[
+				"cli",
+				"clientS3"
+			],
+			[
+				"bu",
+				"bucket"
+			],
+			[
+				"sh",
+				"sh"
+			],
+			[
+				"c",
+				"console"
+			],
+			[
+				"http",
+				"https"
+			],
+			[
+				"Access",
+				"accessToken"
+			],
+			[
+				"htt",
+				"http"
+			],
+			[
+				"fun",
+				"function"
+			],
+			[
+				"fb-",
+				"fb-opt"
+			],
+			[
+				"fade",
+				"fadeOut"
+			],
+			[
+				"SetU",
+				"SetupPage"
+			],
+			[
+				"marg",
+				"margin-left"
+			],
+			[
+				"r",
+				"rgba()"
+			],
+			[
+				"adve",
+				"Advertisments"
+			],
+			[
+				"mar",
+				"margin"
+			],
+			[
+				"padding",
+				"padding"
+			],
+			[
+				"margi",
+				"margin"
+			],
+			[
+				"bo",
+				"border"
+			],
+			[
+				"tex",
+				"text-decoration"
+			],
+			[
+				"margin",
+				"margin"
+			],
+			[
+				"srol",
+				"scrollTop"
+			],
+			[
+				"ma",
+				"margin-top"
+			],
+			[
+				"de",
+				"DebugGreen"
+			],
+			[
+				"rgb",
+				"rgb()"
+			],
+			[
+				"fon",
+				"font-size"
+			],
+			[
+				"pa",
+				"padding"
+			],
+			[
+				"b",
+				"black"
+			],
+			[
+				"shoebox",
+				"shoeboxify"
+			],
+			[
+				"De",
+				"DebugRed"
+			],
+			[
+				"deb",
+				"DebugBlue"
+			],
+			[
+				"Tra",
+				"Track"
+			],
+			[
+				"Track",
+				"LisaTourTrack"
+			],
+			[
+				"l",
+				"line-height"
+			],
+			[
+				"font",
+				"font-weight"
+			],
+			[
+				"p",
+				"position"
+			],
+			[
+				"DEb",
+				"DebugGreen"
+			],
+			[
+				"DEB",
+				"DebugGreen"
+			],
+			[
+				"DE",
+				"DebugBlue"
+			],
+			[
+				"padd",
+				"padding-bottom"
+			],
+			[
+				"bak",
+				"background-color"
+			],
+			[
+				"vis",
+				"visibility"
+			],
+			[
+				"borde",
+				"border-top"
+			],
+			[
+				"Shoebox",
+				"Shoeboxify"
+			],
+			[
+				"d",
+				"div"
+			],
+			[
+				"debu",
+				"DebugRed"
+			],
+			[
+				"len",
+				"length"
+			],
+			[
+				"Scale",
+				"ShoeboxScalePixel"
+			],
+			[
+				"Scal",
+				"ShoeboxScalePixel"
+			],
+			[
+				"Spinn",
+				"SpinnerTabElement"
+			],
+			[
+				"Remo",
+				"RemoveSpinner"
+			],
+			[
+				"Debu",
+				"DebugGreen"
+			],
+			[
+				"mag",
+				"margin-right"
+			],
+			[
+				"pad",
+				"padding"
+			],
+			[
+				"blu",
+				"DebugBlue"
+			],
+			[
+				"te",
+				"text-transform"
+			],
+			[
+				"appen",
+				"appendTo"
+			],
+			[
+				"debug",
+				"DebugRed"
+			],
+			[
+				"Deb",
+				"DebugGreen"
+			],
+			[
+				"margin-o",
+				"margin-bottom"
+			],
+			[
+				"Set",
+				"SetupPage"
+			],
+			[
+				"back",
+				"background-color"
+			],
+			[
+				"app",
+				"appendChild"
+			],
+			[
+				"yellow",
+				"yellow-button"
+			],
+			[
+				"inli",
+				"inline-block"
+			],
+			[
+				"text",
+				"text-align"
+			],
+			[
+				"he",
+				"height"
+			],
+			[
+				"Numb",
+				"PixelNumber"
+			],
+			[
+				"Shoeb",
+				"ShoeboxScaleFactor"
+			],
+			[
+				"ont",
+				"ontouchstart"
+			],
+			[
+				"defe",
+				"Defer100"
+			],
+			[
+				"tr",
+				"true"
+			],
+			[
+				"DEbug",
+				"DebugGreen"
+			],
+			[
+				"def",
+				"defaultBoldFont"
+			],
+			[
+				"when",
+				"andWhenDone"
+			]
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/test-resources.js",
+			"settings":
+			{
+				"buffer_size": 487,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/mongo.js",
+			"settings":
+			{
+				"buffer_size": 15670,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.test.js",
+			"settings":
+			{
+				"buffer_size": 4353,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/PhotoManager.js",
+			"settings":
+			{
+				"buffer_size": 897,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/operation.js",
+			"settings":
+			{
+				"buffer_size": 3093,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.js",
+			"settings":
+			{
+				"buffer_size": 2044,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.js",
+			"settings":
+			{
+				"buffer_size": 7782,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.test.js",
+			"settings":
+			{
+				"buffer_size": 5191,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.js",
+			"settings":
+			{
+				"buffer_size": 13971,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.test.js",
+			"settings":
+			{
+				"buffer_size": 1660,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.test.js",
+			"settings":
+			{
+				"buffer_size": 1204,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.js",
+			"settings":
+			{
+				"buffer_size": 17269,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 392.0,
+		"selected_items":
+		[
+		],
+		"width": 392.0
+	},
+	"console":
+	{
+		"height": 125.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/PhotoManager",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/operation.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/mongo.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/mongo.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/s3.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/service.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/public/javascripts/ui.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/public/javascripts/drop.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/service.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/handy.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/imageshop.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/debug-lib.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/imageshop.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/utest.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/image.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/view.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/stacktrace.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/dev.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/identity.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/s3.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/shoeboxify.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/node_modules/knox/lib/client.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/untitled.sublime-project",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/unittest.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/authetication.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/app.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/knoxDeleteMultipleBug.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/shoebox.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/shoebox.js",
+		"/Users/g/Desktop/out-jitsu-setenv.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/authetication-test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/tools/runapp.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/debug-lib.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/view.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/service.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/shoebox.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/dev.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/fb.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/handy.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/String-extension.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/handy.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/index.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/shoeboxify.test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/authetication-test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/code/authetication_test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/test/s3-test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/test/service-test.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/public/javascripts/ui.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/lib/String-extension.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/routes/view.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/lib/object.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/public/javascripts/common.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/views/index.jade",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/public/javascripts/drop.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/views/drop.jade",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/routes/fb.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/lib/s3.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/lib/debug-lib.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/routes/api.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/jitsu-setenv.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/runapp.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/lib/utils-lib.js",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/README.md",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/runapp.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/setenv.sh",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify-app/views/index.ejs",
+		"/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify-app/routes/index.js",
+		"/Users/g/Downloads/segment_Shoeboxify_Launch_Oct_7_2012-1.csv",
+		"/Users/g/Dropbox/Shoeboxify/19-Public-Release/html/index.less",
+		"/Users/g/Dropbox/Shoeboxify/19-Public-Release/html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/19-Public-Release/html/index.css",
+		"/Users/g/Dropbox/Shoeboxify/18-Andrew/html/index.html",
+		"/Users/g/Dropbox/Shoeboxify/18-Andrew/html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/18-Andrew/html/index.less",
+		"/Users/g/hosts.backup",
+		"/Users/g/Dropbox/Shoeboxify/18-Launch/html/sad.css",
+		"/Users/g/Dropbox/Shoeboxify/18-Launch/html/sad.js",
+		"/Users/g/Dropbox/Shoeboxify/18-Launch/html/sad.html",
+		"/Users/g/Dropbox/Shoeboxify/18-Launch/html/index.less",
+		"/Users/g/Dropbox/Shoeboxify/18-Launch/html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/js/ScalableCanvasLayout.js",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/index.less",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/sad.html",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/images/pencil.jpg",
+		"/Users/g/Dropbox/Shoeboxify/17-Photoshoot/html/index.css",
+		"/Users/g/Dropbox/Shoeboxify/16-SantaCruz/html/mailchimp/subscribe.php",
+		"/Users/g/Dropbox/Shoeboxify/shoeboxify.com/index.js",
+		"/Users/g/Dropbox/Shoeboxify/shoeboxify.com/index.html",
+		"/Users/g/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Users/g/Dropbox/Shoeboxify/15-Performance/html/index.less",
+		"/Users/g/Dropbox/Shoeboxify/15-Performance/images_lab/create.sh",
+		"/Users/g/Dropbox/Shoeboxify/15-Performance/html/sprites/wrap.jpeg",
+		"/Users/g/Documents/michelle.txt",
+		"/Users/g/Dropbox/Shoeboxify/14-Loi/html/index.html",
+		"/Users/g/Dropbox/Shoeboxify/14-Loi/html/js/ScalableCanvasLayout.js",
+		"/Users/g/Dropbox/Shoeboxify/13-Principessa/images_lab/create.sh",
+		"/Users/g/Dropbox/Shoeboxify/13-Principessa/shoebox_html/images_lab/build.sh",
+		"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/sprites_lab/design_pieces/__all_sheets/css/shoebox.css",
+		"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/sprites_lab/design_pieces/__all_sheets/css/lisa.css",
+		"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/images/make_sprites.sh",
+		"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/shoebox-sprites.css",
+		"/Users/g/Dropbox/Shoeboxify/11-Michelle/shoebox_html/images/make_sprites.sh",
+		"/Users/g/Dropbox/Shoeboxify/11-Michelle/shoebox_html/js/ScalableCanvasLayout.js",
+		"/Users/g/Dropbox/Shoeboxify/11-Michelle/shoebox_html/index.html",
+		"/Users/g/Dropbox/Shoeboxify/11-Michelle/shoebox_html/images/shoebox_pieces/shoebox_sheets/css/shoebox-content-sprites.css",
+		"/Users/g/Dropbox/Shoeboxify/11-Michelle/shoebox_html/shoebox.less",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/shoebox-sprites.css",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/js/ScalableCanvasLayout.js",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/shoebox.less",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/index.html",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/index.js",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/index.less",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_html/shoebox.js",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/shoebox_sheets/shoebox-color-sprites.css",
+		"/Users/g/Dropbox/Shoeboxify/10-Stripes/bg.html",
+		"/Users/g/Dropbox/Shoeboxify/08-Bianca/shoebox_sheets/pencil.css",
+		"/Users/g/Dropbox/Shoeboxify/08-Bianca/shoebox.less"
+	],
+	"find":
+	{
+		"height": 43.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+			""
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": false,
+		"find_history":
+		[
+			"newWithFacebookId",
+			"graphId",
+			"entry",
+			"entity",
+			"_abort",
+			"testUserId",
+			"mongo.k.entityId",
+			"_generateFilePath",
+			"_generatePhotoName",
+			"_copyFacebookPhotoObjectToS3",
+			"photoObject",
+			"newObject",
+			"_rollbackCopy",
+			"q",
+			"Q",
+			"q",
+			"info",
+			"imageInfo",
+			"sourceURL",
+			"originalEntry",
+			"photoObject",
+			"__addSource",
+			"testUserId",
+			"photoObject",
+			"s3.imageDestinationPath",
+			"_bundleBasePath",
+			"_objectBasePath",
+			"_copyFacebookPhotoObjectToS3",
+			"mongo.memento.addFacebookObject",
+			"graphId",
+			"mongo.memento.findOneFacebookObject",
+			"fbID",
+			"fbId",
+			"fbID",
+			"fbId",
+			"fbID",
+			"graphId",
+			"quest.session",
+			"handy.assert_f",
+			"_copyFacebookPhotoObjectToS3",
+			"_copyPhotoObjectToS3",
+			"ObjectID",
+			"mongo.k.MementoPhotoType",
+			"newWithId",
+			"fb.me",
+			".me",
+			"mementoPhotoType",
+			"memento.removeId",
+			"memento.findId",
+			"mongo.k.mementoPhotoType",
+			"mongo.k.mementoTypeKey",
+			"mongo.k.createDateKey",
+			"mongo.k.copyObjectKey",
+			"mongo.k.sourceObjectKey",
+			"mongo.k.facebookUserIdKey",
+			"mongo.const",
+			"mongo.const.facebookIdKey",
+			"file",
+			"_generateFilePath",
+			"resampled",
+			"maxSafeInputAreaKey",
+			"MaxConcurrentOperations",
+			"MAX_CONCURRENT_OPS",
+			"imageshop.k.defaultResampleOptions",
+			"imageshop.k.maxSafeInputAreaKey",
+			"imageshop.k.maxDimensionKey",
+			"_resize",
+			"done",
+			"assert_f",
+			"_size",
+			"mime",
+			"key",
+			"Key",
+			"key",
+			"shell",
+			"errstring",
+			"_setAccessToken",
+			"queue",
+			"Queue",
+			"queue",
+			"done",
+			"amDone_f",
+			"_simpleJSONWrite",
+			"_URLCopy",
+			"_simpleCopy",
+			"errorF",
+			"doneF",
+			"fileURL",
+			"ExitWithSuccess",
+			"_copyExitWithError",
+			"ExitWithError",
+			"_copyStream",
+			"getPonse",
+			"filePath",
+			"handy.requestURL",
+			"test.k.AccessTokenCacheFilePath",
+			"test.accessTokenCacheFilePath",
+			"MAX_IMAGE_BYTE_SIZE",
+			"mochaProcess",
+			"utest",
+			"_setupRoutesForModule",
+			"girlgeek",
+			"resampleOperationQueue",
+			"new",
+			"const",
+			"imageshop.size",
+			"safeMaxInputDimension",
+			"maxInputDimension",
+			"maxOutputDimension",
+			"imageshop.resize",
+			"maxSize",
+			"toobigError",
+			"_DEFAULT_IMAGE_OPTIONS",
+			"dstPath",
+			"_defaultImageOptions",
+			"fbObject:",
+			"imageDimesion",
+			"WriteObject",
+			"loginResponse",
+			"fb.path.response",
+			"fb.route.response",
+			"_isValidImageResponse",
+			"totbytes",
+			"s3.copyURL",
+			"options",
+			"Options",
+			"options",
+			"Options"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": false,
+		"replace_history":
+		[
+			"shoebox_loading"
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": false
+	},
+	"groups":
+	[
+		{
+			"selected": 4,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/test-resources.js",
+					"settings":
+					{
+						"buffer_size": 487,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								115,
+								88
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/mongo.js",
+					"settings":
+					{
+						"buffer_size": 15670,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								13636,
+								13313
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 7550.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 2,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.test.js",
+					"settings":
+					{
+						"buffer_size": 4353,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								2668,
+								2668
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 1217.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 3,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/PhotoManager.js",
+					"settings":
+					{
+						"buffer_size": 897,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								302,
+								302
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage"
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 4,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/operation.js",
+					"settings":
+					{
+						"buffer_size": 3093,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1115,
+								1140
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 5,
+			"sheets":
+			[
+				{
+					"buffer": 5,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.js",
+					"settings":
+					{
+						"buffer_size": 2044,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								351,
+								400
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 85.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 6,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/storage.js",
+					"settings":
+					{
+						"buffer_size": 7782,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								458,
+								483
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 7,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.test.js",
+					"settings":
+					{
+						"buffer_size": 5191,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1471,
+								1471
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/memento.js",
+					"settings":
+					{
+						"buffer_size": 13971,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								10624,
+								10624
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 2288.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 9,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/database.test.js",
+					"settings":
+					{
+						"buffer_size": 1660,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								63,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 207.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.test.js",
+					"settings":
+					{
+						"buffer_size": 1204,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								185,
+								193
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "/Users/g/Dropbox/Shoeboxify/20-Forward/shoeboxify/app/code/fb.js",
+					"settings":
+					{
+						"buffer_size": 17269,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								0,
+								0
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/JavaScript/JavaScript.tmLanguage",
+							"translate_tabs_to_spaces": false
+						},
+						"translation.x": 0.0,
+						"translation.y": 117.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 34.0
+	},
+	"input":
+	{
+		"height": 0.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			],
+			[
+				1,
+				0,
+				2,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			0.448901218524,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"replace":
+	{
+		"height": 0.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+			[
+				"open",
+				"/Users/g/Dropbox/Shoeboxify/12-Yao/shoebox_html/index.js"
+			]
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 500.0,
+		"selected_items":
+		[
+		],
+		"width": 380.0
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": true,
+	"side_bar_width": 205.0,
+	"status_bar_visible": true
+}

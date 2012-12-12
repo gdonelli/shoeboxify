@@ -12,40 +12,5 @@ TIMEOUT=10000
 
 source ../secret/setenv.sh
 
+node test-core.js $@
 
-####################
-##    one test    ##
-####################
-
-if [ "$#" -gt 0 ]; then
-	echo "$1.test.js"
-	mocha $APPFOLDER/code/$1.test.js -t $TIMEOUT -R $REPORTER
-
-	exit
-fi
-
-#####################
-##    all tests    ##
-#####################
-
-mocha $APPFOLDER/code/*.test.js -t $TIMEOUT -R $REPORTER
-
-exit 
-
-echo 'shoeboxify.test.js'
-mocha $APPFOLDER/code/shoeboxify.test.js -t $TIMEOUT -R $REPORTER
-
-echo 'mongo.test.js'
-mocha $APPFOLDER/code/mongo.test.js -t $TIMEOUT -R $REPORTER
-
-echo 'fb.test.js'
-mocha $APPFOLDER/code/fb.test.js -t $TIMEOUT -R $REPORTER
-
-echo 'service.test.js'
-mocha $APPFOLDER/code/service.test.js -t $TIMEOUT -R $REPORTER
-
-echo 'handy.test.js'
-mocha $APPFOLDER/code/handy.test.js -t $TIMEOUT -R $REPORTER
-
-echo 's3.test.js'
-mocha $APPFOLDER/code/s3.test.js -t $TIMEOUT -R $REPORTER

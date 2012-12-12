@@ -3,37 +3,37 @@
 ========[   App identity properties and secrets   ]========
 
 Facebook App:
-			identity.appID 
-			identity.appSecret
-			identity.appPermissions
+            identity.appID 
+            identity.appSecret
+            identity.appPermissions
 Session:
-			identity.sessionSecret
-			identity.sessionDatabaseName
-			identity.sessionDatabaseURL
+            identity.sessionSecret
+            identity.sessionDatabaseName
+            identity.sessionDatabaseURL
 S3:
-			identity.s3.host
-			identity.s3.user.R.key 
-			identity.s3.user.R.secret
-			identity.s3.user.RW.key
-			identity.s3.user.RW.secret
-			identity.s3.bucket.test
-			identity.s3.bucket.production
+            identity.s3.host
+            identity.s3.user.R.key 
+            identity.s3.user.R.secret
+            identity.s3.user.RW.key
+            identity.s3.user.RW.secret
+            identity.s3.bucket.test
+            identity.s3.bucket.production
 Mongo:
-			identity.dbServerHost
-			identity.dbServerPort
-			identity.dbServerUsername
-			identity.dbServerPassword
-			identity.dbName
+            identity.dbServerHost
+            identity.dbServerPort
+            identity.dbServerUsername
+            identity.dbServerPassword
+            identity.dbName
 Email:
-			identity.emailAddress
-			identity.SMTPUser
-			identity.SMTPPassword
-			identity.SMTPHost
+            identity.emailAddress
+            identity.SMTPUser
+            identity.SMTPPassword
+            identity.SMTPHost
 Other:
-			identity.adminID
+            identity.adminId
 Image Limits:
-			identity.maxImageAreaToProcess
-			identity.maxImageDimension
+            identity.maxImageAreaToProcess
+            identity.maxImageDimension
 
 
 
@@ -42,8 +42,8 @@ Image Limits:
 */
 
 
-var 	assert	= require('assert')
-	,	_ 		= require('underscore');
+var     assert  = require('assert')
+    ,   _       = require('underscore');
 
 
 var identity = exports;
@@ -56,27 +56,27 @@ var identity = exports;
 /* ===================================================== */
 
 identity.appID = 
-	function()	{	return _env('APP_ID');	};
+    function()  {   return _env('APP_ID');  };
 
 identity.appSecret = 
-	function()	{	return _env('APP_SECRET');	};
+    function()  {   return _env('APP_SECRET');  };
 
 identity.appPermissions =
-	function() {
-		var result = '';
+    function() {
+        var result = '';
 
-		// For email notifications
-		result += 'email, '; 
+        // For email notifications
+        result += 'email, '; 
 
-		// Obviously this is what identity is about
-		result += 'user_photos, friends_photos, ';
+        // Obviously this is what identity is about
+        result += 'user_photos, friends_photos, ';
 
-		// More subtle: some photos are posted as 
-		// status updates and we need this permission to access it
-		result += 'user_status, friends_status, ';
+        // More subtle: some photos are posted as 
+        // status updates and we need this permission to access it
+        result += 'user_status, friends_status, ';
 
-		return result;
-	};
+        return result;
+    };
 
 
 /* ===================================================== */
@@ -86,13 +86,13 @@ identity.appPermissions =
 /* ===================================================== */
 
 identity.sessionSecret = 
-	function()	{	return _env('SESSION_SECRET');	};
+    function()  {   return _env('SESSION_SECRET');  };
 
 identity.sessionDatabaseName =
- 	function()	{	return _env('SESSION_DB_NAME');	};
+    function()  {   return _env('SESSION_DB_NAME'); };
 
-identity.sessionDatabaseURL = 	
-	function()	{	return _env('SESSION_DB_URL');	};
+identity.sessionDatabaseURL =   
+    function()  {   return _env('SESSION_DB_URL');  };
 
 
 /* ===================================================== */
@@ -101,28 +101,28 @@ identity.sessionDatabaseURL =
 /* ===================================================== */
 /* ===================================================== */
 
-identity.s3			= { user: { R:{}, RW:{} }, bucket: {} };
+identity.s3         = { user: { R:{}, RW:{} }, bucket: {} };
 
 identity.s3.host =
-	function(){ return _env('S3_HOST_NAME');	};
+    function(){ return _env('S3_HOST_NAME');    };
 
 identity.s3.user.R.key =
-	function(){ return _env('S3_R_KEY');	};
+    function(){ return _env('S3_R_KEY');    };
 
 identity.s3.user.R.secret =
-	function(){ return _env('S3_R_SECRET');	};
+    function(){ return _env('S3_R_SECRET'); };
 
 identity.s3.user.RW.key =
-	function(){ return _env('S3_RW_KEY');	};
+    function(){ return _env('S3_RW_KEY');   };
 
 identity.s3.user.RW.secret =
-	function(){ return _env('S3_RW_SECRET');	};
+    function(){ return _env('S3_RW_SECRET');    };
 
 identity.s3.bucket.test =
-	function(){ return _env('S3_TEST_BUCKET');	};
+    function(){ return _env('S3_TEST_BUCKET');  };
 
 identity.s3.bucket.production =
-	function(){ return _env('S3_PRODUCTION_BUCKET');	};
+    function(){ return _env('S3_PRODUCTION_BUCKET');    };
 
 
 /* ===================================================== */
@@ -132,19 +132,19 @@ identity.s3.bucket.production =
 /* ===================================================== */
 
 identity.dbServerHost = 
-	function()	{	return _env('DB_SERVER_HOST');	};
+    function()  {   return _env('DB_SERVER_HOST');  };
 
 identity.dbServerPort = 
-	function()	{	return Math.round( _env('DB_SERVER_PORT') );	};
+    function()  {   return Math.round( _env('DB_SERVER_PORT') );    };
 
 identity.dbServerUsername = 
-	function()	{	return _env('DB_SERVER_USERNAME');	};
+    function()  {   return _env('DB_SERVER_USERNAME');  };
 
 identity.dbServerPassword =
-	function()	{	return _env('DB_SERVER_PASSWORD');	};
+    function()  {   return _env('DB_SERVER_PASSWORD');  };
 
 identity.dbName =
-	function()	{	return _env('DB_NAME');	};
+    function()  {   return _env('DB_NAME'); };
 
 
 /* ===================================================== */
@@ -154,16 +154,16 @@ identity.dbName =
 /* ===================================================== */
 
 identity.emailAddress = 
-	function()	{	return _env('EMAIL_ADDRESS');	};
+    function()  {   return _env('EMAIL_ADDRESS');   };
 
 identity.SMTPUser =
-	function()	{	return _env('SMTP_USER');	};
+    function()  {   return _env('SMTP_USER');   };
 
 identity.SMTPPassword = 
-	function()	{	return _env('SMTP_PASSWORD');	};
+    function()  {   return _env('SMTP_PASSWORD');   };
 
 identity.SMTPHost =
-	function()	{	return _env('SMTP_HOST');	};
+    function()  {   return _env('SMTP_HOST');   };
 
 
 /* ===================================================== */
@@ -173,10 +173,10 @@ identity.SMTPHost =
 /* ===================================================== */
 
 identity.maxImageAreaToProcess =
-	function()	{	return 3000 * 3000;	};
+    function()  {   return 3000 * 3000; };
 
 identity.maxImageDimension =
-	function()	{	return 2048;	};
+    function()  {   return 2048;    };
 
 
 /* ===================================================== */
@@ -185,8 +185,8 @@ identity.maxImageDimension =
 /* ===================================================== */
 /* ===================================================== */
 
-identity.adminID =
-	function() {	return _env('ADMIN_ID');	};
+identity.adminId =
+    function() {    return _env('ADMIN_ID');    };
 
 
 /* ===================================================== */
@@ -194,77 +194,77 @@ identity.adminID =
 
 function _env(name)
 {
-	var result =  process.env[name];
+    var result =  process.env[name];
 
-	assert( (result && result.length > 4), 'Cannot find env[' + name + ']' );
+    assert( (result && result.length > 4), 'Cannot find env[' + name + ']' );
 
-	return result;
+    return result;
 }
 
 identity.validateEnviroment = function() 
-	{
-		var properties = [
-				'appID'
-			,	'appSecret'
-			,	'appPermissions'
+    {
+        var properties = [
+                'appID'
+            ,   'appSecret'
+            ,   'appPermissions'
 
-			,	'sessionSecret'
-			,	'sessionDatabaseName'
-			,	'sessionDatabaseURL'
+            ,   'sessionSecret'
+            ,   'sessionDatabaseName'
+            ,   'sessionDatabaseURL'
 
-			,	'dbServerHost'
-			,	'dbServerPort'
-			,	'dbServerUsername'
-			,	'dbServerPassword'
-			,	'dbName'
+            ,   'dbServerHost'
+            ,   'dbServerPort'
+            ,   'dbServerUsername'
+            ,   'dbServerPassword'
+            ,   'dbName'
 
-			,	'emailAddress'
-			,	'SMTPUser'
-			,	'SMTPPassword'
-			,	'SMTPHost'
+            ,   'emailAddress'
+            ,   'SMTPUser'
+            ,   'SMTPPassword'
+            ,   'SMTPHost'
 
-			,	'adminID'
-		]
+            ,   'adminId'
+        ]
 
-		for (var i in properties)
-		{
-			var propertyKey = properties[i];
-			var value = identity[propertyKey]();
-			_validate(value);
-		}
+        for (var i in properties)
+        {
+            var propertyKey = properties[i];
+            var value = identity[propertyKey]();
+            _validate(value);
+        }
 
-		_callAllFunctionsNestedInObject( identity.s3 );
+        _callAllFunctionsNestedInObject( identity.s3 );
 
 
-		// ================================================================
+        // ================================================================
 
-		function _validate(value)
-		{	
-			// console.log('validate: ' + value);
-			assert( value != undefined, 'identity property is undefined' );
-			
-			if ( _.isString(value) )
-				assert( value.length > 3, 'property doesnt look valid, it is: ' + value );			
-		}
+        function _validate(value)
+        {   
+            // console.log('validate: ' + value);
+            assert( value != undefined, 'identity property is undefined' );
+            
+            if ( _.isString(value) )
+                assert( value.length > 3, 'property doesnt look valid, it is: ' + value );          
+        }
 
-		function _callAllFunctionsNestedInObject(o)
-		{
-			for (var key in o)
-			{
-				// console.log(key);
+        function _callAllFunctionsNestedInObject(o)
+        {
+            for (var key in o)
+            {
+                // console.log(key);
 
-				var valueForKey = o[key];
+                var valueForKey = o[key];
 
-				if ( _.isFunction(valueForKey) )
-				{
-					_validate( valueForKey() );
-				}
-				else if ( _.isObject(valueForKey) )
-				{
-					_callAllFunctionsNestedInObject(valueForKey);
-				}
-				else
-					console.error('dont know what to do with key: ' + key + 'value: ' + valueForKey);
-			}
-		}
-	};
+                if ( _.isFunction(valueForKey) )
+                {
+                    _validate( valueForKey() );
+                }
+                else if ( _.isObject(valueForKey) )
+                {
+                    _callAllFunctionsNestedInObject(valueForKey);
+                }
+                else
+                    console.error('dont know what to do with key: ' + key + 'value: ' + valueForKey);
+            }
+        }
+    };

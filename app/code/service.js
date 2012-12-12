@@ -3,28 +3,32 @@
 ==================[   /service/...   ]==================
 
 Routes:
-			service.route.facebookObjectForURL
-			service.route.shoeboxifyFacebookObject
-			service.route.shoeboxifyURL
+            service.route.facebookObjectForURL
+            service.route.shoeboxifyFacebookObject
+            service.route.shoeboxifyURL
 
 API:
-			service.facebookObjectForURL
-			
+            service.facebookObjectForURL
+            
 ====================================================
 
 */
 
 
-var 	assert	= require('assert')
-	,	https	= require('https')
-	,	url		= require('url')
-	,	path	= require('path')
-	,	_		= require('underscore')
-	
-	,	fb		= require('./fb')
-	,	handy	= require('./handy')
-	,	memento	= require('./memento')
-	;
+var     assert  = require('assert')
+    ,   https   = require('https')
+    ,   url     = require('url')
+    ,   path    = require('path')
+    ,   _       = require('underscore')
+    
+    ,   a       = use('a')
+    ,   fb      = use('fb')
+    ,   handy   = use('handy')
+    ,   memento = use('memento')
+
+    ,   FacebookAccess = use('FacebookAccess')
+    
+    ;
 
 var service = exports;
 
@@ -37,345 +41,331 @@ service.route = {};
 /* ====================================================== */
 /* ====================================================== */
 
-/*	API:	objectForURL
- *	URL:	/o4u
- *	args:	?u=<url>
+/*  API:    objectForURL
+ *  URL:    /o4u
+ *  args:   ?u=<url>
  *
- *	example: /o4u?u=https://www.facebook...
+ *  example: /o4u?u=https://www.facebook...
  *
- * 	returns json:
- *		{
- *			status:	  0 -> success
- *					  1 -> malformed request
- *					  2 -> Failed to look up Facebook Object
- *					403 -> User not logged-in in Shoeboxify
+ *  returns json:
+ *      {
+ *          status:   0 -> success
+ *                    1 -> malformed request
+ *                    2 -> Failed to look up Facebook Object
+ *                  403 -> User not logged-in in Shoeboxify
  *
- *			error: <error_string>
+ *          error: <error_string>
  *
- *			fb_object: <the facebook object found>
- *			
- *			placeholder: <placeholder for facebook object>
- *			
- *			source: <string used as look up source>
- *		}
+ *          fb_object: <the facebook object found>
+ *          
+ *          placeholder: <placeholder for facebook object>
+ *          
+ *          source: <string used as look up source>
+ *      }
  */
 
 service.path.facebookObjectForURL = '/service/facebookObjectForURL';
 
 service.route.facebookObjectForURL = 
-	function(quest, ponse)
-	{
-		_sevice_processInputURL(quest, ponse, 
-			function(input, exit)
-			{
-				service.facebookObjectForURL(quest, input
-					,	function success(o){
-							exit({		status: 0
-									,	fb_object: o
-									,	source: input	} );
+    function(quest, ponse)
+    {
+        _sevice_processInputURL(quest, ponse, 
+            function(input, exit_f)
+            {
+                a.assert_def(input);
+                a.assert_f(exit_f);
 
-						}
-					,	function placeholder(p){
-							exit({		status: 0
-									,	placeholder: p
-									,	source: input	} );
+                service.facebookObjectForURL(
+                        FacebookAccess.fromRequest(quest)
+                    ,   input
+                    ,   function success(o) {
+                            exit_f({     status: 0
+                                ,   fb_object: o
+                                ,      source: input   
+                            });
+                        }
+                    ,   function placeholder(p) {
+                            exit_f({       status: 0
+                                ,   placeholder: p
+                                ,        source: input   
+                            });
+                        }
+                    ,   function error(e) {
+                            exit_f({  status: (e.code ? e.code : 2)
+                                ,    error: 'objectForURL failed: ' + e.message
+                                ,   source: input   
+                            });
+                        } );
 
-						}
-					,	function error(e, statusCode) 
-						{
-							var status = statusCode ? statusCode : 2;
-
-							exit({		status: status
-									,	error : 'objectForURL failed: ' + e
-									,	source: input	} );
-						} );
-
-			});
-	}
+            });
+    }
 
 service.O_AUTH_ERROR_CODE = 190;
 
 service.facebookObjectForURL = 
-	function(	quest
-			,	inputURL
-			,	object_f		/* (fb_object) */
-			,	placeholder_f	/* (placeholder_object) */
-			,	error_f			/* (errString, statusCode) */
-			)
-	{
-		assert( quest 			!= undefined,	'quest is undefined');
-		assert( quest.session 	!= undefined,	'quest.session is undefined');
-		assert( object_f 		!= undefined,	'object_f is undefined');
-		assert( placeholder_f	!= undefined,	'placeholder_f is undefined');
-		assert( error_f 		!= undefined,	'error_f is undefined');
+    function(   fbAccess
+            ,   inputURL
+            ,   object_f        /* (fb_object) */
+            ,   placeholder_f   /* (placeholder_object) */
+            ,   error_f         /* (e) */
+            )
+    {
+        FacebookAccess.assert(fbAccess);
+        a.assert_def(inputURL);
+        a.assert_f(object_f);
+        a.assert_f(placeholder_f);
+        a.assert_f(error_f);
 
-		var fbID =  memento.facebookIdForURL(inputURL);
+        var fbId =  memento.facebookIdForURL(inputURL);
 
-		if (fbID)
-			return _facebook_lookup(fbID);
-		else
-			error_f('cannot find facebook object from URL');
+        if (!fbId)
+            return error_f( new Error('Cannot find facebook object from URL') );
 
-		/* =============================== */
+        fb.graph(
+                fbAccess
+            ,   fbId
+            ,   function success(fbObject)
+                {
+                    object_f(fbObject);
+                }
+            ,   function error(e)
+                {
+                    if (e.type == "OAuthException")
+                    {
+                        error_f(e);
+                    }
+                    else if (e.type == "GraphMethodException")
+                    {
+                        // Assume we have a valid & legit facebook ID 
+                        // but we don't have permission to access it
 
-		function _facebook_lookup(fbID)
-		{
-			assert(fbID != undefined, 'fbID is undefined');
+                        var placeholder = {}; 
+                        placeholder.id = fbId;
 
-			fb.graph( fbID, quest
-				,	function success(fbObject)
-					{
-						// console.log('fbObject:');
-						// console.log(fbObject);
+                        placeholder.error = e;
 
-						if (fbObject.error)
-						{
-							var errorType = fbObject.error.type;
+                        var extension = path.extname(inputURL);
+                        if (extension == '.jpg' || 
+                            extension == '.jpeg' || 
+                            extension == '.png') 
+                        {
+                            placeholder.source = inputURL;
+                        }
 
-							if (errorType == "OAuthException")
-								return error_f('OAuthException', service.O_AUTH_ERROR_CODE);
+                        placeholder_f(placeholder);
+                    }
+                    else
+                    {
+                        error_f(e);
+                    }
+                } );
 
-							// Let's be defensive. Assume we have a valid & legit 
-							// facebook ID but we don't have permission to access it
-
-							if (errorType == "GraphMethodException" && fbObject.error.code == 100) {
-								// Permission denied to look up the element (most likely)
-
-								// console.error('Permission denied to look up the element');
-							}
-
-							var placeholder = {}; 
-							placeholder.id = fbID;
-
-							placeholder.error = fbObject.error;
-
-							var extension = path.extname(inputURL);
-							if (extension == '.jpg' || 
-								extension == '.jpeg' || 
-								extension == '.png') 
-							{
-								placeholder.source = inputURL;
-							}
-
-							placeholder_f(placeholder);
-						}
-						else
-						{
-							object_f(fbObject);
-						}
-					}
-				,	function error(e)
-					{
-						error_f('Failed to lookup: ' + fbID + ' error:' + error);
-					} );
-		}
-	}
+    };
 
 
-/*	API:	shoeboxifyURL
- *	URL:	/service/shoeboxifyURL
- *	args:	?u=<url>
+/*  API:    shoeboxifyURL
+ *  URL:    /service/shoeboxifyURL
+ *  args:   ?u=<url>
  *
- *	example: /service/shoeboxifyURL?u=https://www.facebook...
+ *  example: /service/shoeboxifyURL?u=https://www.facebook...
  *
  */
 
 service.path.shoeboxifyURL = '/service/shoeboxifyURL';
 
 service.route.shoeboxifyURL =
-	function(quest, ponse)
-	{
-		_sevice_processInputURL(quest, ponse, 
-			function(inputURL, exit_f)
-			{
-				service.shoeboxifyURL(quest, inputURL
-					,	function success(r, options)
-						{
-							exit_f({	status: 0
-									,	source: inputURL
-									,	  data: r });
-						}
-					,	function error(e)
-						{
-							exit_f({	status: 1
-									,	source: inputURL
-									,	 error: 'shoeboxifyURL failed ' + e });				
-						} );
-			} );
-	};
+    function(quest, ponse)
+    {
+        _sevice_processInputURL(quest, ponse, 
+            function(inputURL, exit_f)
+            {
+                var user = User.fromRequest(quest);
+
+                service.shoeboxifyURL(
+                        user.facebookAccess()
+                    ,   user.facebookId()
+                    ,   inputURL
+                    ,   function success(r, options)
+                        {
+                            exit_f({    status: 0
+                                    ,   source: inputURL
+                                    ,     data: r });
+                        }
+                    ,   function error(e)
+                        {
+                            exit_f({    status: 1
+                                    ,   source: inputURL
+                                    ,    error: 'shoeboxifyURL failed ' + e });             
+                        } );
+            } );
+    };
 
 
 service.shoeboxifyURL =
-	function(quest, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
-	{
-		assert(quest != undefined, 'quest is undefined');
-		assert(theURL != undefined, 'theURL is undefined');
+    function(fbAccess, userId, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
+    {
+        FacebookAccess.assert(fbAccess);
+        a.assert_uid(userId);
+        a.assert_def(theURL);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		memento.addFromURL(	fb.me(quest, 'id'), theURL, quest
-						,	function success(r, options)
-							{
-								// console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
-
-								if (success_f)
-									success_f(r, options);
-							}
-						,	function error(e)
-							{
-								if (error_f)
-									error_f(e);
-							} );
-	};
-
-
+        memento.addFromURL( fbAccess
+                        ,   userId
+                        ,   theURL
+                        ,   function success(r, options) {
+                                success_f(r, options); 
+                            }
+                        ,   function error(e) { 
+                                error_f(e); 
+                            } );
+    };
 
 
 // TODO...
 // service.path.shoeboxifyFile = '/service/shoeboxifyFile';
 
 
-/*	API:	Copy Object
- *	URL:	/cp
- *	args:	?u=<url>
+/*  API:    Copy Object
+ *  URL:    /cp
+ *  args:   ?u=<url>
  *
- *	example: /cp?u=https://www.facebook...
+ *  example: /cp?u=https://www.facebook...
  *
- * 	returns json:
- *		{
- *			status:	  0 -> success
- *		}
+ *  returns json:
+ *      {
+ *          status:   0 -> success
+ *      }
  */
 
 service.path.shoeboxifyFacebookObject = '/service/shoeboxifyFB';
 
 service.route.shoeboxifyFacebookObject =
-	function(quest, ponse)
-	{
-		_sevice_processInputURL(quest, ponse, 
-			function(input, exit_f)
-			{
-				var fbID =  memento.facebookIdForURL(input);
+    function(quest, ponse)
+    {
+        _sevice_processInputURL(quest, ponse, 
+            function(input, exit_f)
+            {
+                var fbId =  memento.facebookIdForURL(input);
 
-				if (fbID)
-				{
-					service.shoeboxifyFacebookObject(quest, fbID
-						,	function success(r, options)
-							{
-								exit_f({	status: 0
-										,	source: input
-										,	  data: r });
-							}
-						,	function error(e)
-							{
-								exit_f({	status: 1
-										,	source: input
-										,	 error: 'copyObject failed ' + e });				
-							} );
-				}
-				else
-					exit_f('Cannot copy Facebook object from URL');
-			} );
-	};
+                if (fbId)
+                {
+                    var user = User.fromRequest(quest);
+
+                    service.shoeboxifyFacebookObject(
+                            user.facebookAccess()
+                        ,   user.facebookId()
+                        ,   fbId
+                        ,   function success(r, options)
+                            {
+                                exit_f({    status: 0
+                                        ,   source: input
+                                        ,     data: r });
+                            }
+                        ,   function error(e)
+                            {
+                                exit_f({    status: 1
+                                        ,   source: input
+                                        ,    error: 'copyObject failed ' + e });                
+                            } );
+                }
+                else
+                    exit_f('Cannot copy Facebook object from URL');
+            } );
+    };
 
 
 service.shoeboxifyFacebookObject =
-	function(quest, fbID, success_f /* (entry, meta) */, error_f  /* (error) */ )
-	{
-		assert(quest != undefined, 'quest is undefined');
-		assert(fbID != undefined, 'fbID is undefined');
+    function(fbAccess, userId, fbId, success_f /* (entry, meta) */, error_f  /* (error) */ )
+    {
+        FacebookAccess.assert(fbAccess);
+        a.assert_uid(userId);
+        a.assert_fbId(fbId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-		memento.addFacebookObject(	fb.me(quest, 'id'), fbID, quest
-								,	function success(r, options)
-									{
-										// console.log( 'memento.addFacebookObject took: ' + options.time + 'ms' );
+        memento.addFacebookObject(  fbAccess
+                                ,   userId
+                                ,   fbId
+                                ,   function success(r, options) {
+                                        success_f(r, options);
+                                    }
+                                ,   function error(e) {
+                                        error_f(e);
+                                    } );
 
-										if (success_f)
-											success_f(r, options);
-									}
-								,	function error(e)
-									{
-										if (error_f)
-											error_f(e);
-									} );
-
-	}
+    }
 
 /*
-	process_f (input, exit_f)
+    process_f (input, exit_f)
 
-	should pass to exit_f something like:
-		{
-			status: 0 (succcess) | > 0 (error)
-		,	source: url...
-		,	  data: <something>
-		}
+    should pass to exit_f something like:
+        {
+            status: 0 (succcess) | > 0 (error)
+        ,   source: url...
+        ,     data: <something>
+        }
 */
 
-function _sevice_processInputURL(	quest
-								,	ponse
-								,	process_f /* (input, exit_f) */
-								)
+function _sevice_processInputURL(   quest
+                                ,   ponse
+                                ,   process_f /* (input, exit_f) */
+                                )
 {
-	assert(process_f != undefined, 'processObjectF undefined');
-	var startDate = new Date();
+    a.assert_def(quest);
+    a.assert_def(ponse);
+    a.assert_f(process_f);
 
-	var urlElements = url.parse(quest.url, true);
-	var urlQuery = urlElements['query'];
+    var startDate = new Date();
 
-	ponse.writeHead(200, { 'Content-Type': 'application/json' } );
+    var urlElements = url.parse(quest.url, true);
+    var urlQuery = urlElements['query'];
 
-	console.log(quest.url);
+    ponse.writeHead(200, { 'Content-Type': 'application/json' } );
 
-	var jsonResult;
+    // console.log(quest.url);
 
-	if ( !urlQuery || urlQuery['u'].length <= 0 )
-	{
-		_exit({		status: 1
-				,   source: quest.url
-				,	 error: 'malformed request ?u= is empty'
-			});
+    var jsonResult;
 
-		console.error('urlQuery is malformed');
+    if ( !urlQuery || urlQuery['u'].length <= 0 )
+    {
+        _exit({     status: 1
+                ,   source: quest.url
+                ,    error: 'malformed request ?u= is empty'
+            });
 
-		return;
-	}
+        console.error('urlQuery is malformed');
 
-	var input = urlQuery['u'];
+        return;
+    }
 
-	if ( !fb.isAuthenticated(quest) )
-	{
-		_exit({		status: 403
-				,   source: input
-				,	 error: 'User is not logged-in'
-			});
-	}
-	else
-	{
-		// console.log(urlQuery);
-		
-		process_f(input, _exit);
-	}
+    var input = urlQuery['u'];
 
-	/* ======================================= */
+    if ( !fb.isAuthenticated(quest) )
+    {
+        _exit({ status: 403
+            ,   source: input
+            ,   error:  'User is not logged-in'
+            });
+    }
+    else
+    {
+        process_f(input, _exit);
+    }
 
-	function _exit(result)
-	{
-		assert(result != undefined, 'exiting with undefined result');
-		assert(_.isObject(result), 'exit result expected to be an object is: ' + result);
+    /* ======================================= */
 
-		if (result.meta == undefined)
-			result.meta = {};
+    function _exit(result)
+    {
+        a.assert_def(result);
+        a.assert_obj(result);
+ 
+        if (result.meta == undefined)
+            result.meta = {};
+       
+        result.meta.time = handy.elapsedTimeSince(startDate);
 
-		// console.log('result:');
-		// console.log(result);
-
-		// console.log('result.meta:');
-		// console.log(result.meta);
-		
-		// if (result.meta)
-		
-		result.meta.time = handy.elapsedTimeSince(startDate);
-
-		ponse.end( JSON.stringify(result) );
-	}
-	
+        ponse.end( JSON.stringify(result) );
+    }
+    
 }

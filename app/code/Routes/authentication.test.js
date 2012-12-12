@@ -16,10 +16,8 @@ var     assert  = require("assert")
     ,   fs      = require("fs")
     ,   spawn   = require('child_process').spawn
 
-    ,   a           = use("a") 
-    ,   fb          = use("fb") 
-    ,   handy       = use("handy")
-    ,   admin_test  = use("admin-test")
+    ,   a      = use("a") 
+    ,   admin  = use("admin")
 
     ,   FacebookAccess  = use('FacebookAccess')
     ,   User            = use('User')
@@ -44,7 +42,6 @@ authenticationTest.facebookAccess =
         return authenticationTest._facebookAccess;
     };
 
-
 authenticationTest._user = undefined;
 authenticationTest.user =
     function()
@@ -67,7 +64,6 @@ authenticationTest.request =
 /* ============================================================= */
 /* ============================================================= */
 
-
 describe('authentication.test.js',
     function() {
         
@@ -78,7 +74,7 @@ describe('authentication.test.js',
                 _getAccessToken( 
                         function success(jsonData)
                         {
-                            console.log(jsonData);
+                            // console.log(jsonData);
                             context.accessTokenData = jsonData;
                             done();
                         }
@@ -129,17 +125,21 @@ describe('authentication.test.js',
 
 function _getAccessToken( success_f /* jsonData */, error_f )
 {
-    fs.readFile(admin_test.k.AccessTokenCacheFilePath,
+    fs.readFile(admin.k.AccessTokenCacheFilePath,
         function (err, data) {
             if (err) 
             {
-                console.log('no cache file in ' + admin_test.k.AccessTokenCacheFilePath);
+                console.log('no cache file in ' + admin.k.AccessTokenCacheFilePath);
                 _miss();
             }
             else
             {
                 var fileContent = data.toString();
                 var cache =  JSON.parse(fileContent);
+
+                var logString = 'Cache: ';
+                logString += admin.k.AccessTokenCacheFilePath;
+
                 var cacheValid = true;
 
                 if (cache.date)
@@ -148,19 +148,18 @@ function _getAccessToken( success_f /* jsonData */, error_f )
                     var then = new Date(cache.date);
 
                     var cacheAge = now.getTime() - then.getTime();
-                    console.log( 'Using cached AccessToken');
-                    console.log( 'CacheFile: ' + admin_test.k.AccessTokenCacheFilePath);
-                    console.log( 'CacheAge:  ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes');    
+
+                    logString += ', age: ' + Math.round( cacheAge / 1000 / 60 * 10 ) / 10 + ' minutes';
 
                     cacheValid = (cacheAge < ACCESS_TOKEN_CACHE_MAX_AGE);
                 }
                 else
                 {
-                    console.log( 'Using cached AccessToken');
-                    console.log( 'CacheFile: ' + admin_test.k.AccessTokenCacheFilePath);
-                    console.log('no cache.date -> assume cache is valid');
+                    logString += ' no cache.date -> assume OK';
                 }
-                    
+
+                console.log(logString);
+
                 if (cacheValid)
                     _useAuth(cache.payload);
                 else
@@ -183,7 +182,7 @@ function _getAccessToken( success_f /* jsonData */, error_f )
                     cache.date = new Date();
                     cache.payload = jsonData;
 
-                    fs.writeFile(admin_test.k.AccessTokenCacheFilePath, JSON.stringify(cache) );
+                    fs.writeFile(admin.k.AccessTokenCacheFilePath, JSON.stringify(cache) );
                 }
             ,   error_f );
     }

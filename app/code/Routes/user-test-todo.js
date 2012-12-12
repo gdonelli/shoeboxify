@@ -18,12 +18,10 @@ var 	assert	= require('assert')
 	,	util	= require('util')
 	,	mime	= require('mime')
 
-	,	fb			= require('./fb')
-	,	handy		= require('./handy')
-	,	imageshop	= require('./imageshop')
-	,	debug		= require('./debug-lib')
-
-
+	,	fb			= use('fb')
+	,	handy		= use('handy')
+	,	imageshop	= use('imageshop')
+	,	debug		= use('debug-lib')
 	;
 
 var test = exports;
