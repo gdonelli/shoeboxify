@@ -54,6 +54,8 @@ var         assert      = require('assert')
 
         ,   a           = use('a')
         ,   identity    = use('identity')
+        
+        ,   OperationQueue  = use('OperationQueue')
         ;
 
 
@@ -85,11 +87,13 @@ mongo.init =
 function _init( host, port, name, username, password, 
                 success_f /* (db) */, error_f /* (e) */ )
 {
-    assert( host != undefined,      'host undefined');
-    assert( port != undefined,      'port undefined');
-    assert( name != undefined,      'name undefined');
-    assert( username != undefined,  'username undefined');
-    assert( password != undefined,  'password undefined');
+    a.assert_def(host, 'host');
+    a.assert_def(port, 'port');
+    a.assert_def(name, 'name');
+    a.assert_def(username, 'username');
+    a.assert_def(password, 'password');
+    a.assert_f(success_f);
+    a.assert_f(error_f);
 
     var server = new mongodb.Server( host, port, {auto_reconnect: true});
 
@@ -98,12 +102,8 @@ function _init( host, port, name, username, password,
     db.open(
         function (err, db_p)
         {
-            if (err) {
-                if (error_f)
-                    error_f(err);
-
-                return;
-            }
+            if (err)
+                return error_f(err);
 
             db.authenticate(username, password, 
                 function (err, result)
@@ -114,13 +114,16 @@ function _init( host, port, name, username, password,
 
                     mongo.db =  db;
 
-                    if (success_f)
-                        success_f(db);
-
+                    success_f(db);
                 } );
         } );
 }
 
+mongo.initWithMiddlewareOperation =
+    function(operation, success_f, error_f)
+    {
+
+    }
 
 /* ================================================================== */
 /* ================================================================== */
@@ -135,8 +138,8 @@ mongo.collection = {};
 mongo.collection.get =
     function(collectionName, success_f, error_f)
     {
-        assert( mongo.db != undefined,  'mongo.db undefined');
-        assert( collectionName != undefined,'collectionName undefined');
+        a.assert_def(mongo.db,          'mongo.db');
+        a.assert_def(collectionName,    'collectionName');
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -159,8 +162,8 @@ mongo.collection.get =
 mongo.collection.add = 
     function(collection, object, success_f /* (result) */, error_f)
     {
-        assert( collection != undefined, 'collection is undefined');
-        assert( object     != undefined, 'object is undefined');
+        a.assert_def(collection,    'collection');
+        a.assert_obj(object,        'object');
         a.assert_f(success_f);
         a.assert_f(error_f);
         
@@ -188,8 +191,8 @@ mongo.collection.add =
 mongo.collection.findOne =
     function(collection, findProperties, success_f, error_f)
     {
-        assert( collection      != undefined, 'collection is undefined');
-        assert( findProperties  != undefined, 'graphId is undefined');
+        a.assert_def(collection, 'collection');
+        a.assert_obj(findProperties, 'findProperties');
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -212,7 +215,7 @@ mongo.collection.findOne =
 mongo.collection.findAll =
     function(collection, findProperties, success_f, error_f)
     {
-        assert( collection != undefined, 'collection is undefined');
+        a.assert_def(collection, 'collection');
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -231,8 +234,8 @@ mongo.collection.findAll =
 mongo.collection.remove =
     function(collection, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
     {
-        assert(collection   != undefined,   'collection is undefined');
-        assert(findProperties != undefined, 'findProperties is undefined');
+        a.assert_def(collection, 'collection');
+        a.assert_obj(findProperties, 'findProperties');
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -266,7 +269,7 @@ mongo.collection.remove =
 mongo.collection.drop =
     function(collection, success_f /* () */, error_f)
     {
-        assert(collection   != undefined,   'collection is undefined');
+        a.assert_def(collection, 'collection');
         a.assert_f(success_f);
         a.assert_f(error_f);
     
@@ -293,16 +296,16 @@ mongo.memento = {};
 
 function _memento_collectionName(userId)
 {
-    assert( userId != undefined, 'userId is undefined' );
+    a.assert_uid(userId);
+
     return 'fb_' + userId + '_memento';
 };
 
 mongo.memento.getCollection = 
     function(userId, success_f, error_f)
     {
-        assert( userId!=undefined, 'userId is undefined');
-        assert( userId.length > 0, 'userId.length <= 0');
-        
+        a.assert_uid(userId);
+       
         var collectionName = _memento_collectionName(userId);
     
         mongo.collection.get(collectionName
@@ -313,8 +316,7 @@ mongo.memento.getCollection =
 mongo.memento.init =
     function(userId, success_f /* (collection) */, error_f)
     {
-        assert( userId!=undefined, 'userId is undefined');
-        assert( userId.length > 0, 'userId.length <= 0');
+        a.assert_uid(userId);
         
         mongo.memento.getCollection(
                 userId
@@ -366,7 +368,7 @@ mongo.memento.findAll =
 mongo.memento.remove =
     function(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
     {
-        assert(typeof findProperties == 'object', 'findProperties should be an object. it is ' + typeof findProperties);
+        a.assert_obj(findProperties, 'findProperties');
 
         mongo.memento.getCollection(
                 userId
@@ -390,8 +392,8 @@ mongo.memento.drop =
 mongo.memento.findId =
     function(userId, mongoId, success_f, error_f)
     {
-        assert(userId  != undefined, 'userId is undefined');
-        assert(mongoId != undefined, 'mongoId is undefined');
+        a.assert_uid(userId);
+        a.assert_def(mongoId, 'mongoId');
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -408,7 +410,7 @@ mongo.memento.findId =
 mongo.memento.removeId =
     function(userId, mongoId, success_f /* () */, error_f /* (err) */)
     {
-        assert(mongoId != undefined, 'mongoId is undefined');
+        a.assert_def(mongoId, 'mongoId');
         a.assert_f(success_f);
 
         mongo.memento.remove(userId
@@ -444,10 +446,10 @@ mongo.k.MementoPhotoType    = 1;
 mongo.memento.addFacebookObject =
     function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
     {
-        assert(userId != undefined,     'userId is undefined');
-        assert(graphId != undefined,    'graphId is undefined');
-        assert(sourceObject != undefined, 'sourceObject is undefined');
-        assert(copyObject != undefined, 'copyObject is undefined');
+        a.assert_uid(userId);
+        assert(graphId != undefined, 'graphId is undefined');
+        a.assert_obj(sourceObject);
+        a.assert_obj(copyObject);
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -475,8 +477,8 @@ mongo.memento.addFacebookObject =
 mongo.memento.findOneFacebookObject =
     function(userId, fbId, success_f, error_f)
     {
-        assert(userId != undefined, 'userId is undefined');
-        assert(  fbId != undefined, 'fbId is undefined');
+        a.assert_uid(userId);
+        a.assert_fbId(fbId);
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -486,7 +488,7 @@ mongo.memento.findOneFacebookObject =
 mongo.memento.findAllFacebookObjects =
     function(userId, success_f, error_f)
     {
-        assert(userId != undefined, 'userId is undefined');
+        a.assert_uid(userId);
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -496,7 +498,7 @@ mongo.memento.findAllFacebookObjects =
 mongo.memento.removeFacebookObject =
     function(userId, graphId, success_f, error_f)
     {
-        assert(userId != undefined, 'userId is undefined');
+        a.assert_uid(userId);
         a.assert_f(success_f);
         a.assert_f(error_f);
 
@@ -593,9 +595,7 @@ function _getEntryProperty(entry, property)
 
 function _getLongProperty(entry, property)
 {
-    assert(entry != undefined,  'entry is undefined');
-    var value = entry[property];
-    assert(value != undefined, property + ' for the entry is undefined');
+    var value = _getEntryProperty(entry, property);
 
     return value.toString();
 }

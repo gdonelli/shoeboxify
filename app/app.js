@@ -52,12 +52,13 @@ app.settings['x-powered-by'] = false;
 /*   init   */
 /************/
 
-/*
-memento.init(   function success() {}
+
+memento.init(   function success() {
+                    console.log('memento.init');
+                }
             ,   function error(e) {
                     throw new Error(e);
                 } );
-*/
 
 identity.validateEnviroment();
 
@@ -69,6 +70,7 @@ identity.validateEnviroment();
 
 _setupRoutesForModule(  'authentication',   {             } );
 _setupRoutesForModule(  'admin',            { admin: true } );
+_setupRoutesForModule(  'view',             { user:  true } );
 
 // _setupRoutesForModule( 'admin-test',    { admin: true } );
 

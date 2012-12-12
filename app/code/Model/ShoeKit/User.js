@@ -2,9 +2,12 @@
 var     assert  = require("assert")
     ,   _       = require("underscore")
     
-    ,   a   = use('a')
-    ,   fb  = use('fb')
+    ,   a       = use('a')
+    ,   fb      = use('fb')
+    ,   database        = use('database')
+
     ,   FacebookAccess  = use('FacebookAccess')
+    ,   OperationQueue  = use('OperationQueue')
     ;
 
 exports.User = User;
@@ -28,12 +31,13 @@ exports.User.fromRequest =
         return result; 
     }
 
-function User(  fbAccess, success_f /* (user) */, error_f /* (err) */)
+function User(  fbAccess 
+            ,   success_f   /* (user) */
+            ,   error_f     /* (err)  */    )
 {
-    if (fbAccess == undefined && 
-        success_f == undefined && 
-        error_f == undefined )
-    {
+    if (fbAccess    == undefined &&
+        success_f   == undefined && 
+        error_f     == undefined) {  // Clone scenario
         return this;
     }
 
@@ -42,43 +46,73 @@ function User(  fbAccess, success_f /* (user) */, error_f /* (err) */)
     a.assert_f(error_f);
 
     this._facebookAccess = fbAccess;
-    
-    var that = this;
 
-    // Init User!
-
-    // Get User Facebook Profile Object
-
-    fb.graph(fbAccess
-        ,   '/me'
-        ,   function success(fbObject)
-            {
-                // console.log(fbObject);
-                var meKeys = ['id', 'name', 'first_name', 'last_name', 'link', 'username', 'gender', 'email', 'timezone', 'locale', 'updated_time'];
-                that._me = _.pick(fbObject, meKeys);
-                success_f(that);
-            }
-        ,   function error(e){
-                error_f(e);
-            } );
-
-    // Should initialize user database
-/*
-            mongo.memento.init(
-                    quest.session.me.id
-                ,   function success(collection) {
-                        assert(collection != undefined, 'user collection is undefined');
-                        LastStep();
-                    }
-                ,   function error(e) {
-                        RespondWithError('mongo.user.init failed', e);
-                    } );
-
-*/
-
-
-    return this;
+    return this._init(success_f, error_f);
 }
+
+
+exports.User._init =
+    function(   success_f   /* (user) */
+            ,   error_f     /* (err)  */    )
+    {
+        var that = this;
+
+        var q = new OperationQueue(1);
+
+        q.on('abort', 
+            function(e){
+                error_f(e);           
+            });
+
+        q.add( 
+            function FetchMeOperation(doneOp)
+            {
+                fb.graph(fbAccess
+                    ,   '/me'
+                    ,   function success(fbObject) {
+                            // console.log(fbObject);
+                            var meKeys = [      'id'            ,   'name'
+                                            ,   'first_name'    ,   'last_name'
+                                            ,   'link'          ,   'username'
+                                            ,   'gender'        ,   'email'
+                                            ,   'timezone'      ,   'locale'
+                                            ,   'updated_time'  ];
+                                            
+                            that._me = _.pick(fbObject, meKeys);
+                            doneOp();
+                        }
+                    ,   function error(e) {
+                            q.abort(e);
+                        } );
+            });
+
+        q.add( 
+            function InitDatabaseOperation(doneOp)
+            {
+                database.init(  
+                        that.facebookId()
+                    ,   function success()
+                        {
+                            doneOp();   
+                        }
+                    ,   function error(e)
+                        {
+                            q.abort(e);
+                        }
+                    );
+            });
+
+        q.add( 
+            function EndOperation(doneOp)
+            {
+                if (success_f) success_f(that);
+
+                doneOp();   
+            });
+
+        return this;
+    };
+
 
 exports.User.assert = 
     function(user)

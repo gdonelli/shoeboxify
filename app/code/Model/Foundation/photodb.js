@@ -4,8 +4,8 @@
 Database based on mongo module
 
 API:
-            database.newObjectId
-            database.addFacebookPhoto
+            photodb.newObjectId
+            photodb.addFacebookPhoto
 
 ================================================================
 
@@ -14,27 +14,61 @@ API:
 var     assert  = require('assert')
     ,   _       = require('underscore')
 
-    ,   a       = use('a')
-    ,   mongo   = use('mongo')
+    ,   a               = use('a')
+    ,   mongo           = use('mongo')
     ,   OperationQueue  = use('OperationQueue')
     ;
 
 
-var database = exports;
+var photodb = exports;
 
-database.init = 
-    function(userId, success_f /* (collection) */, error_f)
+photodb.init = 
+    function(userId, success_f, error_f)
     {
-        return mongo.memento.init(userId, success_f /* (collection) */, error_f);
-    }
+        a.assert_uid(userId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-database.newObjectId = 
+        var q = new OperationQueue(1);
+
+        q.on('abort',
+            function(e) {
+                error_f(e);
+            } );
+
+        if (mongo.db == undefined) { // Main connection to Mongo DB
+            q.add(
+                function MongoInitOperation(doneOp)
+                {
+                    mongo.init( function success() { doneOp();      }
+                            ,   function error(e)  { q.abort(e);    } );
+                } );
+        }
+
+        q.add(  // User DB
+            function MementoInitOperation(doneOp)
+            {
+                mongo.memento.init( userId
+                                ,   function success() { doneOp();      }
+                                ,   function error(e)  { q.abort(e);    } );
+            } );
+
+        q.add(
+            function End(doneOp)
+            {
+                success_f();
+                doneOp();
+            } );
+    };
+
+
+photodb.newObjectId = 
     function()
     {
         return mongo.newObjectId()
     }
 
-database.addFacebookPhoto =
+photodb.addFacebookPhoto =
     function(userId, docId, fbObject, copyObject, success_f /* (entry) */, error_f )
     {
         a.assert_uid(userId);
@@ -67,7 +101,7 @@ database.addFacebookPhoto =
         return newEntry;
     }
 
-database.removeFacebookPhoto =
+photodb.removeFacebookPhoto =
     function(userId, fbId, success_f, error_f)
     {
         a.assert_def(userId);

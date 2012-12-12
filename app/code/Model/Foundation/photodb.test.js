@@ -80,8 +80,4 @@ describe('database.js',
                                     throw e;
                                 });
                 });
-
-
-        
-
     } );

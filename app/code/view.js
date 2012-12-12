@@ -10,6 +10,7 @@ var     https   = require('https')
     ,   mongo   = use('mongo')
     ,   memento = use('memento')
     ,   common  = use('common')
+    ,   User    = use('User')
     ;
 
 var view = exports;
@@ -28,14 +29,15 @@ view.route.shoeboxified =
         ponse.writeHead(200, {'Content-Type': 'text/html'});
 
         ponse.write('<html>');
-
         ponse.write('<script> function view(id) { window.open("' +view.path.shoeboxified + '/"+id, "_blank"); } </script>');
 
         ponse.write('<body>');
-
         ponse.write('<h1>' + 'Shoeboxified' + '</h1><div>');
 
-        mongo.memento.findAllFacebookObjects( fb.me(quest, 'id')
+        var user = User.fromRequest(quest);
+
+        mongo.memento.findAllFacebookObjects( 
+                user.facebookId()
             ,   function success(r)
                 {
                     for (var i in r)
