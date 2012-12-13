@@ -4,32 +4,13 @@ var     assert  = require("assert")
     
     ,   a       = use('a')
     ,   fb      = use('fb')
-    ,   database        = use('database')
+    ,   photodb = use('photodb')
 
     ,   FacebookAccess  = use('FacebookAccess')
     ,   OperationQueue  = use('OperationQueue')
     ;
 
 exports.User = User;
-
-exports.User.fromRequest =
-    function(quest)
-    {
-        a.assert_def(quest);
-        a.assert_def(quest.session);
-        a.assert_def(quest.session.user);
-
-        var result = new User();
-
-        result._facebookAccess = FacebookAccess.fromRequest(quest);
-
-        var questUser = quest.session.user;
-        result._me = questUser._me;
-
-        User.assert(result);
-        
-        return result; 
-    }
 
 function User(  fbAccess 
             ,   success_f   /* (user) */
@@ -50,8 +31,43 @@ function User(  fbAccess
     return this._init(success_f, error_f);
 }
 
+//
+// Class Methods
+//
 
-exports.User._init =
+exports.User.fromRequest =
+    function(quest)
+    {
+        a.assert_def(quest);
+        a.assert_def(quest.session);
+        a.assert_def(quest.session.user);
+
+        var result = new User();
+
+        result._facebookAccess = FacebookAccess.fromRequest(quest);
+
+        var questUser = quest.session.user;
+        result._me = questUser._me;
+
+        User.assert(result);
+        
+        return result; 
+    }
+
+exports.User.assert = 
+    function(user)
+    {
+        a.assert_def(user);
+        a.assert_def(user._facebookAccess);
+        a.assert_def(user._me);
+        a.assert_def(user._me.id);          
+    }
+
+//
+// Methods
+//
+
+User.prototype._init =
     function(   success_f   /* (user) */
             ,   error_f     /* (err)  */    )
     {
@@ -67,7 +83,7 @@ exports.User._init =
         q.add( 
             function FetchMeOperation(doneOp)
             {
-                fb.graph(fbAccess
+                fb.graph(that.facebookAccess()
                     ,   '/me'
                     ,   function success(fbObject) {
                             // console.log(fbObject);
@@ -87,9 +103,9 @@ exports.User._init =
             });
 
         q.add( 
-            function InitDatabaseOperation(doneOp)
+            function InitPhotoDatabaseOperation(doneOp)
             {
-                database.init(  
+                photodb.init(  
                         that.facebookId()
                     ,   function success()
                         {
@@ -112,17 +128,6 @@ exports.User._init =
 
         return this;
     };
-
-
-exports.User.assert = 
-    function(user)
-    {
-        a.assert_def(user);
-        a.assert_def(user._facebookAccess);
-        a.assert_def(user._me);
-        a.assert_def(user._me.id);          
-    }
-
 
 User.prototype.facebookAccess =
     function()

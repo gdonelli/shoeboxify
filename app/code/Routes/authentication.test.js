@@ -81,6 +81,7 @@ describe('authentication.test.js',
                     ,   function error(e)
                         {
                             console.error(e.stack);
+                            throw e;
                         } );
             });
 

@@ -53,13 +53,6 @@ app.settings['x-powered-by'] = false;
 /************/
 
 
-memento.init(   function success() {
-                    console.log('memento.init');
-                }
-            ,   function error(e) {
-                    throw new Error(e);
-                } );
-
 identity.validateEnviroment();
 
 /*********************/

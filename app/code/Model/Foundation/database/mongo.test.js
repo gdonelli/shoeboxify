@@ -28,15 +28,15 @@ describe('mongo.js',
 /* ================================================================== */
 /* ================================================================== */
 
-        describe( 'mongo.collection',
+        describe( 'mongo',
             function()
             {
                 var testCollection;
 
-                it( 'mongo.collection.get',
+                it( 'mongo.getCollection',
                     function(done) 
                     {   
-                        mongo.collection.get('test' 
+                        mongo.getCollection('test' 
                             ,   function success(c)
                                 {
                                     testCollection = c;
@@ -44,7 +44,7 @@ describe('mongo.js',
                                 }
                             ,   function error(e)
                                 {
-                                    throw new Error('mongo.collection.get failed ' + e);
+                                    throw new Error('mongo.getCollection failed ' + e);
                                 } );
                     } );
 
@@ -59,7 +59,7 @@ describe('mongo.js',
 
                 function _addSampleObject(done)
                 {
-                    mongo.collection.add(testCollection, sampleObject
+                    mongo.add(testCollection, sampleObject
                             ,   function success(entry)
                                 {
                                     assert(entry != undefined, 'addObject expected to return result');
@@ -74,24 +74,24 @@ describe('mongo.js',
                                 } );
                 }
 
-                it( 'mongo.collection.add',
+                it( 'mongo.add',
                     function(done) 
                     {
                         _addSampleObject(done);
                     } );
 
 
-                it( 'mongo.collection.add - same object',
+                it( 'mongo.add - same object',
                     function(done) 
                     {   
                         _addSampleObject(done);
                     } );
 
 
-                it( 'mongo.collection.findOne',
+                it( 'mongo.findOne',
                     function(done) 
                     {
-                        mongo.collection.findOne(testCollection, { id : sampleIdLong }
+                        mongo.findOne(testCollection, { id : sampleIdLong }
                             ,   function success(r)
                                 {
                                     assert(r != undefined, 'r is undefined');
@@ -104,10 +104,10 @@ describe('mongo.js',
                                 } );
                     } );
 
-                it( 'mongo.collection.findAll',
+                it( 'mongo.findAll',
                     function(done) 
                     {
-                        mongo.collection.findAll(testCollection, { id : sampleIdLong }
+                        mongo.findAll(testCollection, { id : sampleIdLong }
                             ,   function success(r)
                                 {   
                                     assert( r.length == 2, 'findAll expected to find only #2 result, found #'+ r.length);                   
@@ -122,10 +122,10 @@ describe('mongo.js',
                                 } );
                     } );
 
-                it( 'mongo.collection.remove {} - expected to fail with no force option',
+                it( 'mongo.remove {} - expected to fail with no force option',
                     function(done) 
                     {
-                        mongo.collection.remove(testCollection, {}
+                        mongo.remove(testCollection, {}
                             ,   function success(r)
                                 {   
                                     throw new Error('remove should fail with findOptions {} and no force option');
@@ -136,10 +136,10 @@ describe('mongo.js',
                             } );
                     } );
 
-                it( 'mongo.collection.remove {} force=true',
+                it( 'mongo.remove {} force=true',
                     function(done) 
                     {
-                        mongo.collection.remove(testCollection, {}
+                        mongo.remove(testCollection, {}
                             ,   function success(r) 
                                 {   
                                     done();
@@ -152,10 +152,10 @@ describe('mongo.js',
                     } );
 
 
-                it( 'mongo.collection.drop - success',
+                it( 'mongo.drop - success',
                     function(done) 
                     {
-                        mongo.collection.drop(testCollection
+                        mongo.drop(testCollection
                             ,   function success(r) 
                                 {   
                                     assert(r == true, 'r expected to be true');
@@ -167,10 +167,10 @@ describe('mongo.js',
                                 } );
                     } );
 
-                it( 'mongo.collection.drop - fail',
+                it( 'mongo.drop - fail',
                     function(done) 
                     {
-                        mongo.collection.drop(testCollection
+                        mongo.drop(testCollection
                             ,   function success(r) 
                                 {   
                                     throw e;
@@ -432,39 +432,6 @@ describe('mongo.js',
                                     done();
                                 }
                             ,   function error(e) { throw e; } );
-                    } );
-
-
-/* ============================ Clean Up ============================ */
-
-
-                it( 'mongo.memento.drop ' + userid1,
-                    function(done) 
-                    {   
-                        mongo.memento.drop( userid1
-                            ,   function success(r){ 
-                                    assert(r == true, 'drop should return true');
-                                    done();
-                                }
-                            ,   function error(e){   throw e; } );
-                    } );
-
-                it( 'mongo.memento.drop ' + userid1 +' - again',
-                    function(done) 
-                    {   
-                        mongo.memento.drop( userid1
-                            ,   function success(r){ throw new Error('not supposed to work') }
-                            ,   function error(e){  
-                                    assert(e != undefined, 'error is undefined');
-                                    done(); } );
-                    } );
-
-                it( 'mongo.memento.drop ' + userid2,
-                    function(done) 
-                    {   
-                        mongo.memento.drop( userid2
-                            ,   function success(r){ done();    }
-                            ,   function error(e){   throw e;   } );
                     } );
 
             } );

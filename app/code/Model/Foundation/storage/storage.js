@@ -26,10 +26,10 @@ storage.k = {};
 storage.k.InvalidObjectError = 'INVALID_OBJ_ERR';
 
 storage.copyFacebookPhoto =
-    function( userId, mongoDocId, fbPhotoObject, success_f /* (copyObject) */, error_f /* (e) */ )
+    function( userId, photoId, fbPhotoObject, success_f /* (copyObject) */, error_f /* (e) */ )
     {
         a.assert_uid(userId);
-        a.assert_def(mongoDocId);
+        a.assert_def(photoId);
         a.assert_obj(fbPhotoObject);
         a.assert_f(success_f);
         a.assert_f(error_f);
@@ -67,7 +67,7 @@ storage.copyFacebookPhoto =
                     function CopyImageToS3Operation(doneOp)
                     {
                         var options = { size:imageInfo.size, index:i }; 
-                        var dstPath = _imageDestinationPath(userId, mongoDocId, (imageInfo.original == true), options);
+                        var dstPath = _imageDestinationPath(userId, photoId, (imageInfo.original == true), options);
 
                         s3.copyURL( s3client, srcURL, dstPath
                                 ,   function success(total) {

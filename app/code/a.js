@@ -64,5 +64,7 @@ a.assert_uid =
     function(value)
     {
         assert( value != undefined, 'uid is undefined' );
+        assert( typeof value == 'string', 'uid is not a string' );
+        
         return value;
     };

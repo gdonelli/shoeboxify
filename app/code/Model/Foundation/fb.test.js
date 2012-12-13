@@ -1,7 +1,7 @@
 
 var     assert  = require('assert')
 
-    ,   a                  = use('a')   
+    ,   a                   = use('a')   
     ,   fb                  = use('fb')
     ,   authenticationTest  = use('authentication.test')
     ,   OperationQueue      = use('OperationQueue')
