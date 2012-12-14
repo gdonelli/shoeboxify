@@ -1,13 +1,9 @@
 /*
 
-=======================[   Database   ]=======================
+=======================[   Photo DB   ]=======================
 Database based on mongo module
 
 API:
-            photodb.init
-            photodb.newPhotoId
-            photodb.addFacebookPhoto
-            photodb.removeFacebookPhoto
 
 ================================================================
 
@@ -19,32 +15,11 @@ var     assert  = require('assert')
     ,   a               = use('a')
     ,   mongo           = use('mongo')
     ,   OperationQueue  = use('OperationQueue')
+    ,   Photo           = use('Photo')
     ;
 
 var photodb = exports;
 
-
-// Konstants
-
-photodb.k = {};
-
-var kPhotoIdKey         = '_id';
-var kFacebookIdKey      = 'fb_id';
-var kFacebookUserIdKey  = 'fb_userid';
-var kSourceObjectKey    = 'source';
-var kCopyObjectKey      = 'copy';
-var kCreateDateKey      = 'created';
-var kPhotoTypeKey       = 'type';
-var kPhotoType          = 1;
-
-photodb.k.PhotoIdKey        = kPhotoIdKey;
-photodb.k.FacebookIdKey     = kFacebookIdKey;
-photodb.k.FacebookUserIdKey = kFacebookUserIdKey;
-photodb.k.SourceObjectKey   = kSourceObjectKey;
-photodb.k.CopyObjectKey     = kCopyObjectKey;
-photodb.k.CreateDateKey     = kCreateDateKey;
-photodb.k.PhotoTypeKey      = kPhotoTypeKey;
-photodb.k.PhotoType         = kPhotoType;
 
 // API
 
@@ -90,20 +65,6 @@ photodb.init =
             } );
     };
 
-photodb.assert_photoId = _assert_photoId;
-
-function _assert_photoId(value)
-{
-    a.assert_def(value,             'value');
-    a.assert_def(value._bsontype,   'value._bsontype');
-    a.assert_def(value.id,          'value.id');
-};
-
-photodb.newPhotoId = 
-    function()
-    {
-        return mongo.newObjectId();
-    };
 
 photodb.addPhoto =
     function(userId, photo, success_f /* (photo) */, error_f /* (e) */)
@@ -113,10 +74,11 @@ photodb.addPhoto =
         a.assert_f(success_f);
         a.assert_f(error_f);
 
-        photo[kCreateDateKey] = new Date();
+        photo[Photo.kCreateDateKey] = new Date();
 
         _add(userId, photo, success_f, error_f);
     };
+
 
 photodb.removePhoto =
     function(userId, photo, success_f /* (photo) */, error_f /* (e) */)
@@ -126,7 +88,7 @@ photodb.removePhoto =
         a.assert_f(success_f);
         a.assert_f(error_f);
 
-        var findOptions = _findOptionsWithPhotoId( photo[kPhotoIdKey] );
+        var findOptions = _findOptionsWithPhotoId( photo[Photo.kIdKey] );
 
         _remove(userId, findOptions, success_f, error_f);
     }
@@ -146,7 +108,7 @@ photodb.removePhoto =
         
 //         var newEntry = {};
         
-//         newEntry[kPhotoIdKey]        = docId;
+//         newEntry[kIdKey]        = docId;
 //         newEntry[kFacebookIdKey]     = mongo.LongFromString(fbId);
 
 //         newEntry[kPhotoTypeKey]      = type;
@@ -196,15 +158,26 @@ photodb.removePhoto =
 //         _findOne(userId, findOptions, success_f, error_f);    
 //     };
 
-// photodb.findAllFacebookObjects =
-//     function(userId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
+photodb.getAllPhotos =
+    function(userId, success_f, error_f)
+    {
+        a.assert_uid(userId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-//         _findAll(userId, {}, success_f, error_f);  
-//     };
+        _findAll(userId, {}
+            ,   function success(array) {
+                    a.assert_array(array);
+                    
+                    var photos = _.map( array, 
+                        function(entry) {
+                            return Photo.fromEntry(entry);
+                        } );
+
+                    success_f(photos);
+                }
+            ,   error_f );
+    };
 
 
 /* ====================================================== */
@@ -228,7 +201,7 @@ function _collectionName(userId)
 {
     a.assert_uid(userId);
 
-    return 'user.fb.' + userId + '.photo';
+    return 'fbuser_' + userId + '_photo';
 }
 
 function _getCollection(userId, success_f, error_f)
@@ -250,13 +223,13 @@ function _setupCollection(userId, success_f, error_f)
             userId
         ,   function success(c) {
                 var propertyIndex= {};
-                propertyIndex[mongo.k.FacebookIdKey] = 1;
+                propertyIndex[Photo.FacebookIdKey] = 1;
 
                 c.ensureIndex( propertyIndex, { unique: true },
                     function(err, indexName)
                     {
                         if (err) {
-                            console.error('collection.ensureIndex for mongo.k.FacebookIdKey failed err:' + err);
+                            console.error('collection.ensureIndex for Photo.FacebookIdKey failed err:' + err);
                             error_f(err);
                         }
                         else
@@ -349,7 +322,7 @@ function _removeId(userId, photoId, success_f /* () */, error_f /* (err) */)
 function _findOptionsWithFacebookId(fbId)
 {
     var result = {};
-    result[kFacebookIdKey] = mongo.LongFromString(fbId);
+    result[Photo.kFacebookIdKey] = mongo.LongFromString(fbId);
     return result;
 }
 
@@ -360,13 +333,13 @@ function _findOptionsWithPhotoId( photoIdOrString )
 
     if ( _.isString(photoIdOrString) )
     {
-        result[kPhotoIdKey] = new ObjectID(photoIdOrString);
+        result[Photo.kIdKey] = new ObjectID(photoIdOrString);
     }
     else
     {
-        _assert_photoId(photoIdOrString);
+        Photo.assertId(photoIdOrString);
 
-        result[kPhotoIdKey] = photoIdOrString;
+        result[Photo.kIdKey] = photoIdOrString;
     }
 
     return result;

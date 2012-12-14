@@ -36,15 +36,6 @@ var         assert      = require('assert')
 
 var mongo = exports;
 
-mongo.k = {};
-
-/* ====================================================== */
-/* ====================================================== */
-/* =======================[  db  ]======================= */
-/* ====================================================== */
-/* ====================================================== */
-
-
 mongo.init = 
     function(success_f, error_f)
     {
@@ -56,43 +47,44 @@ mongo.init =
             ,   success_f
             ,   error_f
             );
-    };
+        
+        /* aux ==== */
 
-
-function _init( host, port, name, username, password, 
-                success_f /* (db) */, error_f /* (e) */ )
-{
-    a.assert_def(host, 'host');
-    a.assert_def(port, 'port');
-    a.assert_def(name, 'name');
-    a.assert_def(username, 'username');
-    a.assert_def(password, 'password');
-    a.assert_f(success_f);
-    a.assert_f(error_f);
-
-    var server = new mongodb.Server( host, port, {auto_reconnect: true});
-
-    var db = new mongodb.Db( name, server, {safe: true} );
-
-    db.open(
-        function (err, db_p)
+        function _init( host, port, name, username, password, 
+                        success_f /* (db) */, error_f /* (e) */ )
         {
-            if (err)
-                return error_f(err);
+            a.assert_def(host, 'host');
+            a.assert_def(port, 'port');
+            a.assert_def(name, 'name');
+            a.assert_def(username, 'username');
+            a.assert_def(password, 'password');
+            a.assert_f(success_f);
+            a.assert_f(error_f);
 
-            db.authenticate(username, password, 
-                function (err, result)
+            var server = new mongodb.Server( host, port, {auto_reconnect: true});
+
+            var db = new mongodb.Db( name, server, {safe: true} );
+
+            db.open(
+                function (err, db_p)
                 {
-                    assert(result == true, 'db.authenticate failed');
+                    if (err)
+                        return error_f(err);
 
-                    // You are now connected and authenticated.
+                    db.authenticate(username, password, 
+                        function (err, result)
+                        {
+                            assert(result == true, 'db.authenticate failed');
 
-                    mongo.db =  db;
+                            // You are now connected and authenticated.
 
-                    success_f(db);
+                            mongo.db =  db;
+
+                            success_f(db);
+                        } );
                 } );
-        } );
-}
+        }
+    };
 
 
 /* ================================================================== */
@@ -100,9 +92,6 @@ function _init( host, port, name, username, password,
 /* ===================[   Collection Foundation   ]================== */
 /* ================================================================== */
 /* ================================================================== */
-
-
-mongo.collection = {};
 
 
 mongo.getCollection =
@@ -271,322 +260,4 @@ mongo.LongFromString =
     {
         return mongodb.Long.fromString(string);
     };
-
-
-// /* ================================================================== */
-// /* ================================================================== */
-// /* ======================[   User Foundation   ]===================== */
-// /* ================================================================== */
-// /* ================================================================== */
-
-
-// mongo.memento = {}; 
-
-// function _memento_collectionName(userId)
-// {
-//     a.assert_uid(userId);
-
-//     return 'fb_' + userId + '_memento';
-// };
-
-// // done
-// mongo.memento.getCollection = 
-//     function(userId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-       
-//         var collectionName = _memento_collectionName(userId);
-    
-//         mongo.getCollection(collectionName
-//                 ,   function success(c) { success_f(c); }
-//                 ,   error_f );
-//     };
-
-// // done
-
-// mongo.memento.init =
-//     function(userId, success_f /* (collection) */, error_f)
-//     {
-//         a.assert_uid(userId);
-        
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) {
-//                     var propertyIndex= {};
-//                     propertyIndex[mongo.k.FacebookIdKey] = 1;
-
-//                     c.ensureIndex( propertyIndex, { unique: true },
-//                         function(err, indexName) 
-//                         {
-//                             if (err) {
-//                                 console.error('collection.ensureIndex for mongo.k.FacebookIdKey failed err:' + err);
-//                                 error_f(err);
-//                             }
-//                             else 
-//                                 success_f(c);                           
-//                         } );                
-//                 }
-//             ,   error_f );
-//     };
-
-// // done
-
-// mongo.memento.add =
-//     function(userId, object, success_f /* (new_entity) */, error_f)
-//     {
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) { mongo.add(c, object, success_f, error_f); }
-//             ,   error_f);
-//     };
-
-// mongo.memento.findOne =
-//     function(userId, findProperties, success_f, error_f)
-//     {
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) { mongo.findOne(c, findProperties, success_f, error_f); }
-//             ,   error_f);
-//     };
-
-// mongo.memento.findAll =
-//     function(userId, findProperties, success_f, error_f)
-//     {
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) { mongo.findAll(c, findProperties, success_f, error_f); }
-//             ,   error_f);
-//     };
-
-// mongo.memento.remove =
-//     function(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
-//     {
-//         a.assert_obj(findProperties, 'findProperties');
-
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) { mongo.remove(c, findProperties, success_f, error_f, options); }
-//             ,   error_f);
-//     };
-
-// mongo.memento.drop =
-//     function(userId, success_f, error_f)
-//     {
-//         mongo.memento.getCollection(
-//                 userId
-//             ,   function success(c) { mongo.drop(c, success_f, error_f); }
-//             ,   error_f);
-//     };
-
-
-// /* ================================================================== */
-
-
-// mongo.memento.findId =
-//     function(userId, mongoId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_def(mongoId, 'mongoId');
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-
-//         var id;
-
-//         if ( _.isString(mongoId) )
-//             id = new ObjectID(mongoId);
-//         else
-//             id = mongoId;
-
-//         mongo.memento.findOne(userId, mongo.memento.entity.newWithId(id), success_f, error_f);
-//     }
-
-// mongo.memento.removeId =
-//     function(userId, mongoId, success_f /* () */, error_f /* (err) */)
-//     {
-//         a.assert_def(mongoId, 'mongoId');
-//         a.assert_f(success_f);
-
-//         mongo.memento.remove(userId
-//                 ,   mongo.memento.entity.newWithId(mongoId)
-//                 ,   function(num)
-//                     {
-//                         assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
-//                         success_f();
-//                     } 
-//                 ,   error_f );  
-//     };
-
-
-// /* ================================================================== */
-// /* ================================================================== */
-// /* ===================[   User Facebook Methods  ]=================== */
-// /* ================================================================== */
-//  ================================================================== 
-
-// // Konstants
-
-// mongo.k.FacebookIdKey       = 'fb_id';
-// mongo.k.FacebookUserIdKey   = 'fb_userid';
-// mongo.k.SourceObjectKey     = 'source';
-// mongo.k.CopyObjectKey       = 'copy';
-// mongo.k.CreateDateKey       = 'created';
-
-// mongo.k.MementoTypeKey      = 'type';
-
-// mongo.k.MementoPhotoType    = 1;
-
-
-// mongo.memento.addFacebookObject =
-//     function(userId, graphId, sourceObject, copyObject, success_f /* (newDBEntry) */, error_f)
-//     {
-//         a.assert_uid(userId);
-//         assert(graphId != undefined, 'graphId is undefined');
-//         a.assert_obj(sourceObject);
-//         a.assert_obj(copyObject);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-
-//         var type = 0; // only photo type supported at this point
-
-//         if (sourceObject.picture != undefined &&
-//             sourceObject.source != undefined &&
-//             sourceObject.images != undefined)
-//             type = mongo.k.MementoPhotoType;
-
-//         assert(type == mongo.k.MementoPhotoType, 'Unsupported facebook object type');
-
-//         var entity = {};
-        
-//         entity[mongo.k.MementoTypeKey]      = type;
-//         entity[mongo.k.FacebookIdKey]       = mongo.LongFromString(graphId);
-//         entity[mongo.k.FacebookUserIdKey]   = mongo.LongFromString(userId);
-//         entity[mongo.k.SourceObjectKey]     = sourceObject;
-//         entity[mongo.k.CopyObjectKey]       = copyObject;
-//         entity[mongo.k.CreateDateKey]       = new Date();
-
-//         mongo.memento.add(userId, entity, success_f, error_f);
-//     };
-
-// mongo.memento.findOneFacebookObject =
-//     function(userId, fbId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_fbId(fbId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-
-//         mongo.memento.findOne(userId, mongo.memento.entity.newWithFacebookId(fbId), success_f, error_f);    
-//     };
-
-// mongo.memento.findAllFacebookObjects =
-//     function(userId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-
-//         mongo.memento.findAll(userId, {}, success_f, error_f);  
-//     };
-
-// mongo.memento.removeFacebookObject =
-//     function(userId, graphId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-
-//         mongo.memento.remove(userId, mongo.memento.entity.newWithFacebookId(graphId), 
-//             function success(numOfEntries)
-//             {
-//                 assert(numOfEntries == 1, 'numOfEntries expected to be #1 is #' + numOfEntries);
-//                 success_f();
-//             }, 
-//             error_f);   
-//     };
-
-
-// /* ========================================================== */
-// /* ========================================================== */
-// /* ===================[  Entry Methods  ]=================== */
-// /* ========================================================== */
-// /* ========================================================== */
-
-
-// mongo.k.IdKey = '_id'; // default mongo id
-
-// mongo.entity = {};
-
-// mongo.entity.getId =
-//     function(entity)
-//     {
-//         assert(entity != undefined, 'entity is undefined');
-
-//         return entity[mongo.k.IdKey];
-//     }
-
-// mongo.memento.entity = {};
-
-// mongo.memento.entity.newWithFacebookId = 
-//     function (graphId)
-//     {
-//         var result = {};
-//         result[mongo.k.FacebookIdKey] = mongo.LongFromString(graphId);
-//         return result;      
-//     }
-
-// mongo.memento.entity.newWithId = 
-//     function(theId)
-//     {
-//         var result = {};
-//         result[mongo.k.IdKey] = theId;
-//         return result;      
-//     }
-
-// mongo.memento.entity.getType =
-//     function(entry)
-//     {
-//         return _getEntryProperty(entry, mongo.k.MementoTypeKey);
-//     }
-
-// mongo.memento.entity.getFacebookId =
-//     function(entry)
-//     {
-//         return _getLongProperty(entry, mongo.k.FacebookIdKey);
-//     }
-
-// mongo.memento.entity.getFacebookUserId =
-//     function(entry)
-//     {
-//         return _getLongProperty(entry, mongo.k.FacebookUserIdKey);
-//     }
-
-// mongo.memento.entity.getSourceObject =
-//     function(entry)
-//     {
-//         return _getEntryProperty(entry, mongo.k.SourceObjectKey);
-//     }
-
-// mongo.memento.entity.getCopyObject =
-//     function(entry)
-//     {
-//         return _getEntryProperty(entry, mongo.k.CopyObjectKey);
-//     }
-
-// function _getEntryProperty(entry, property)
-// {
-//     assert(entry != undefined,  'entry is undefined');
-//     var value = entry[property];
-//     assert(value != undefined, property + ' for the entry is undefined');
-
-//     return value;
-// }
-
-// function _getLongProperty(entry, property)
-// {
-//     var value = _getEntryProperty(entry, property);
-
-//     return value.toString();
-// }
-
-
 

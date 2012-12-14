@@ -9,9 +9,9 @@ var use = exports;
 var MODULE_FILE_EXTENSION = '.js';
 
 use.setup =
-    function(srcDirectory)
+    function( source /* path or array of paths */ )
     {
-        use.modules(srcDirectory);
+        use.modules(source);
         global.use = use.use;
         global.use.lib = use;
     }
@@ -51,7 +51,22 @@ use.class =
         var classInModule = module[name];
 
         if (classInModule == undefined)
-            throw new Error(name + '.' + name + ' is undefined');
+        {
+            if ( Object.keys(module).length == 0 )
+            {
+                var circularErrString = 'Module: `' + name + '` appears to be empty - Is there circular dependency?';
+                console.error(circularErrString);
+                console.error('Circular dependency are not supported by the `use` directive');
+                throw new Error(circularErrString);
+            }
+            else
+            {
+                console.error('Error finding main class in module: `' + name + '`');
+                console.error('Module:');
+                console.error(module);                
+                throw new Error(name + '.' + name + ' is undefined');
+            }
+        }
         else if (typeof classInModule == 'function')
             return classInModule;
         else
@@ -62,20 +77,20 @@ use.class =
 var _modules;
 
 use.modules = 
-    function(srcArray)
+    function(source /* path or array of paths */)
     {
         if (!_modules) {
-            if (srcArray == undefined) {
+            if (source == undefined) {
                 throw new Error('use.setup was not called');
             }
 
-            if (typeof srcArray == 'string')
-                srcArray = [ srcArray ];
+            if (typeof source == 'string')
+                source = [ source ];
 
-            // console.log('srcArray: ' + srcArray);
+            // console.log('source: ' + source);
             // console.log('Loading modules to use...');
 
-           _modules = _loadModules(srcArray);
+           _modules = _loadModules(source);
         }
         
         return _modules;

@@ -1,7 +1,7 @@
 var     assert  = require("assert")
     ,   path    = require("path")
     ,   fs      = require("fs")
-	,	spawn	= require('child_process').spawn
+	,	child_process	= require('child_process')
 	;
 
 var GLOBAL_FILE = path.normalize( __dirname + '/../app/code/global.js' );
@@ -72,13 +72,15 @@ function main()
 
 	// console.log('appDir: ' + appDir);
 
-	var mochaProcess = spawn('node', args, { cwd: appDir } );
+	// spawn
+	var mochaProcess = child_process.spawn('node', args, { cwd: appDir } );
 
 	mochaProcess.stdout.pipe(process.stdout);
 	mochaProcess.stderr.pipe(process.stderr);
 
 	mochaProcess.on('exit', function(code) { process.exit(code); } );
 }
+
 
 function secret_env()
 {

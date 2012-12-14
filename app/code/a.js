@@ -68,3 +68,14 @@ a.assert_uid =
         
         return value;
     };
+
+a.assert_array = 
+    function(value, name_opz)
+    {
+        assert( value != undefined, ( name_opz ? name_opz : 'value' ) + ' is undefined' );
+        assert( Array.isArray(value), 'value is not a array' );
+        
+        return value;
+    };
+
+
