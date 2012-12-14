@@ -5,7 +5,7 @@ Minimal API to access S3
 
 S3 Client:  
             s3.getClient()
-            s3.object.clientRW()    defult client with RW permissions
+            s3.production.clientRW()    defult client with RW permissions
 Operations:
             s3.writeJSON    write JSON file to s3
             s3.delete       delete files from s3
@@ -34,11 +34,7 @@ var     assert  = require('assert')
 
 var s3 = exports;
 
-/* ====================================================== */
-/* ====================================================== */
-/* ===================[   Clients   ]==================== */
-/* ====================================================== */
-/* ====================================================== */
+/* === Clients */
 
 s3.production = {};
 s3.production.bucket    = identity.s3.bucket.production();
@@ -51,13 +47,12 @@ s3.test.clientR     = function(){ return s3.getClient(s3.test.bucket, 'R' ); };
 s3.test.clientRW    = function(){ return s3.getClient(s3.test.bucket, 'RW'); };
 
 
-s3.getClient = 
-    function(bucket, permission)
-    {
-        _s3_assert_bucket(bucket);
+s3.getClient = function(bucket, permission)
+{
+    _s3_assert_bucket(bucket);
 
-        return _getCachedClient(bucket, permission);
-    };
+    return _getCachedClient(bucket, permission);
+};
 
 
 var CLIENT_CACHE_DURATION = 60 * 1000; // 1 minute
@@ -130,7 +125,11 @@ function _s3client( bucket, permission )
 }
 
 
-/**
+/*  === API - Meta  */
+
+
+
+/*
 *   Given a URL of a S3 object it returns an object:
 *       {   bucket: ... , 
 *       ,     path: ... } 
@@ -140,7 +139,7 @@ function _s3client( bucket, permission )
 *   @return {Object} Returns object with 'bucket' and 'path' property
 **/
 
-s3.getInfoForURL =
+s3.getInfoForURL = 
     function(theURL)
     {
         var result = {};
@@ -173,7 +172,7 @@ s3.getInfoForURL =
  *  if the URLs are on a different bucket it will throw an exception
  */
 
-s3.getInfoForURLs =
+s3.getInfoForURLs = 
     function(arrayOfURLs)
     {
         var result = {};
@@ -197,13 +196,7 @@ s3.getInfoForURLs =
         return result;
     };
 
-
-/* =================================================== */
-/* =================================================== */
-/* =================[  Module API  ]================== */
-/* =================================================== */
-/* =================================================== */
-
+/*  === API - Operations */
 
 // http://docs.amazonwebservices.com/AmazonS3/latest/API/RESTObjectPUT.html
 /*
@@ -211,8 +204,8 @@ s3.getInfoForURLs =
  * error_f(ErrorObj), ErrorObj.response
  */
 
-s3.writeJSON =
-    function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
+s3.writeJSON = 
+	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
     {
         _s3_assert_client(client);
         assert(object != undefined, " object is undefined");
@@ -282,7 +275,7 @@ function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /
  *
  */
 
-s3.delete_one_by_one =
+s3.delete_one_by_one = 
     function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
     {
         _s3_assert_client(client);
@@ -290,7 +283,7 @@ s3.delete_one_by_one =
         assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');  
         a.assert_f(success_f);
         a.assert_f(error_f);
-    
+
         var filesToRemove;
 
         if ( _.isString(filePath_or_arrayOfPaths) )
@@ -343,8 +336,9 @@ s3.delete_one_by_one =
  *
  */
 
-
-s3.delete /* _using_deleteMultiple */ =
+ /* _using_deleteMultiple */
+ 
+s3.delete = 
     function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
     {
         _s3_assert_client(client);
@@ -452,7 +446,7 @@ function _copyStreamToS3(   client
  *  
  */
 
-s3.copyURL =
+s3.copyURL = 
     function( client, remoteURL, pathOnS3, success_f, error_f, progress_f )
     {
         _s3_assert_client(client);
@@ -480,7 +474,7 @@ s3.copyURL =
         quest.end();
     };
 
-s3.copyFile =
+s3.copyFile = 
     function( client, localPath, pathOnS3, success_f, error_f, progress_f )
     {
         _s3_assert_client(client);
@@ -510,7 +504,6 @@ s3.copyFile =
 /* =================[  Utils  ]================== */
 /* ============================================== */
 /* ============================================== */
-
 
  
 function _s3_assert_client(client)

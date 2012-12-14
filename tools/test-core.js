@@ -53,36 +53,36 @@ function main()
 		debugString += ' ' + fileName;
 	}
 
-	console.log('TEST:' + debugString);
-
 	var mochaBin = path.normalize( __dirname + '/../app/node_modules/mocha/bin/mocha' );
 
 	var basicArgs = [mochaBin, '-t', '10000', '-R', 'spec' ];
 
 	var args = basicArgs.concat(fileToRun);
 
-	// console.log('args: ');
-	// console.log(args);
-
-	 // var env = secret_env();
-	 // console.log('env: ');
-	 // console.log(env);
 
 	var appDir = path.normalize( __dirname + '/../app' );
 
-	// console.log('appDir: ' + appDir);
-
 	// spawn
+	/*
 	var mochaProcess = child_process.spawn('node', args, { cwd: appDir } );
 
 	mochaProcess.stdout.pipe(process.stdout);
 	mochaProcess.stderr.pipe(process.stderr);
-
 	mochaProcess.on('exit', function(code) { process.exit(code); } );
+	*/
+	
+	var cmdString = 'node ';
+	for (var i in args)
+	{
+		var arg_i = args[i];
+		cmdString += ' ' + arg_i; 
+	}
+	
+	console.log(cmdString );
 }
 
 
-function secret_env()
+function secret_env() // no used
 {
 	var value = fs.readFileSync( '../secret/setenv.sh', 'utf-8');
 
@@ -141,5 +141,4 @@ if (typeof String.prototype.contains != 'function') {
 
 main();
 
-// console.log( secret_env() );
 

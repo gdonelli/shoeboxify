@@ -10,7 +10,10 @@ var     assert  = require("assert")
     ,   OperationQueue  = use('OperationQueue')
     ;
 
-exports.User = User;
+
+var Class = exports;
+
+Class.User = User;
 
 function User(  fbAccess 
             ,   success_f   /* (user) */

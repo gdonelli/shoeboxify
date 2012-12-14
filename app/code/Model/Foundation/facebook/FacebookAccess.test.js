@@ -1,8 +1,6 @@
 
-var     assert  = require("assert")
-
-    ,   use = require('../../use')
-    ,   FacebookAccess  = use.class("FacebookAccess")
+var     a               = use('a')
+    ,   FacebookAccess  = use('FacebookAccess')
     ;
 
 describe('FacebookAccess.js',
@@ -11,6 +9,6 @@ describe('FacebookAccess.js',
             function(){
                 var fbAcccess = new FacebookAccess('XXXXX', '181');
                 
-                assert(fbAcccess != undefined, 'fbAcccess is undefined');
+                a.assert_def(fbAcccess, 'fbAcccess is undefined');
             } );
     });

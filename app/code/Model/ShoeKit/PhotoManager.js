@@ -3,15 +3,13 @@ var		assert	= require("assert")
 
 	,	a	= use("a")
 
-	,	OperationQueue	= use('OperationQueue')
-
-// Foundation:
 	,	fb		= use('fb')
 	,	photodb	= use('photodb')
 	,	storage	= use('storage')
 	,	Photo	= use('Photo')
 
 	,	FacebookAccess	= use('FacebookAccess')
+	,	OperationQueue	= use('OperationQueue')
 	;
 
 // Should only need storage.js and database.js

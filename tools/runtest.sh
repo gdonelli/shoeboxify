@@ -12,5 +12,10 @@ TIMEOUT=10000
 
 source ../secret/setenv.sh
 
-node test-core.js $@
+cmd=`node test-core.js $@`
 
+echo "cmd:"
+echo $cmd
+cd ..
+
+$cmd

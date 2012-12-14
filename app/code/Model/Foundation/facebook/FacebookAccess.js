@@ -7,7 +7,7 @@ var     assert  = require("assert")
 exports.FacebookAccess = FacebookAccess;
 
 exports.FacebookAccess.fromRequest =
-    function(quest)
+    function _c_fromRequest(quest)
     {
         a.assert_def(quest);
         a.assert_def(quest.session);
@@ -35,7 +35,7 @@ function FacebookAccess(token, expires)
 }
 
 exports.FacebookAccess.assert = 
-    function(fbAccess)
+    function _c_assert(fbAccess)
     {
        a.assert_def(fbAccess, 'fbAccess');
        a.assert_def(fbAccess._token, 'fbAccess._token');
@@ -43,13 +43,13 @@ exports.FacebookAccess.assert =
     };
 
 FacebookAccess.prototype.token = 
-    function()
+    function _i_token()
     {
         return this._token;
     };
 
 FacebookAccess.prototype.expires = 
-    function()
+    function _i_expires()
     {
         return this._expires;
     };

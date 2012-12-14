@@ -8,7 +8,7 @@ use('string-extension');
 var a = exports;
 
 a.assert_f = 
-    function( candidate_f, canBeUndefined )
+	function( candidate_f, canBeUndefined )
     {
         if (canBeUndefined != undefined) 
         {
@@ -21,13 +21,6 @@ a.assert_f =
         return candidate_f;
     };
 
-a.assert_session =
-    function(quest)
-    {
-        assert(quest != undefined,          'quest is undefined');
-        assert(quest.session != undefined,  'quest.session is undefined');
-        return quest;
-    };
 
 a.assert_http_url = 
     function(url)
