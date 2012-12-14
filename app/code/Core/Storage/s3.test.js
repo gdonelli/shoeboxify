@@ -8,13 +8,14 @@ var     assert  = require("assert")
     ,   s3              = use('s3')
     ,   mongo           = use('mongo')
     ,   handy           = use('handy')
+    ,   httpx           = use('httpx')
     ,   OperationQueue  = use('OperationQueue')
     ;
 
 
 function CheckFileExist(aPath, shouldExist, done)
 {
-    handy.is200OK(aPath,
+    httpx.is200OK(aPath,
         function(value)
         { 
             assert(value == shouldExist, 'file (' + aPath + ') expected to exist:' + shouldExist );
@@ -168,10 +169,10 @@ describe('s3.js',
                             var url1 = c.URLForPath(path1);
                             var url2 = c.URLForPath(path2);
 
-                            handy.is200OK(url1,
+                            httpx.is200OK(url1,
                                 function(exist1) {
                                     assert(exist1 == shouldExits, url1 + ' not expected to exist');
-                                    handy.is200OK(url2,
+                                    httpx.is200OK(url2,
                                         function(exist2) {
                                             assert(exist2 == shouldExits, url2 + ' not expected to exist');
                                             done();
@@ -181,7 +182,7 @@ describe('s3.js',
 
                     } );
 
-                var localFile = handy.testDirectory('nasa.jpg');
+                var localFile = handy.getTestDirectory('nasa.jpg');
 
                 it( 's3.copyFile',
                     function(done) 
@@ -225,7 +226,7 @@ describe('s3.js',
 
                         function _verify(doneOp, shouldExits)
                         {
-                            handy.HEAD( clientS3.URLForPath(destinationPath)
+                            httpx.HEAD( clientS3.URLForPath(destinationPath)
                                     ,   function success(ponse)
                                         {
                                             if (shouldExits) {
@@ -349,7 +350,7 @@ function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
 
             // console.log('clientS3.URLForPath(thePath): ' + clientS3.URLForPath(thePath) );
 
-            handy.GET(  clientS3.URLForPath(thePath)
+            httpx.GET(  clientS3.URLForPath(thePath)
                     ,   function _200OK(readBuffer) {
                             assert( stringWritten == readBuffer , 'data pushed to s3 is different: written(' + stringWritten +') vs read(' + readBuffer + ')' );
                             if (shouldSucceed)

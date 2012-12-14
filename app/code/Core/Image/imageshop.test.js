@@ -11,20 +11,20 @@ var     assert      =   require("assert")
 describe('imageshop.js',
     function() 
     {   
-        var googleImagePath = handy.testDirectory('google.png');
+        var googleImagePath = handy.getTestDirectory('google.png');
         var googleImageSize = imageshop.makeSize(275, 95);
 
-        var nasaImagePath = handy.testDirectory('nasa.jpg');
+        var nasaImagePath = handy.getTestDirectory('nasa.jpg');
         var nasaImageSize = imageshop.makeSize(185, 369);
 
-        var bigImagePath = handy.testDirectory('big.jpg');
+        var bigImagePath = handy.getTestDirectory('big.jpg');
         var bigImageSize = imageshop.makeSize(5616, 3744);
 
-        var faceImagePath   = handy.testDirectory('face.jpg');
+        var faceImagePath   = handy.getTestDirectory('face.jpg');
         var faceImageSize = imageshop.makeSize(1536, 1536);
     
 
-        var iphoneImagePath = handy.testDirectory('iPhone4S.JPG');
+        var iphoneImagePath = handy.getTestDirectory('iPhone4S.JPG');
 
         it( 'imageshop.getSize - google.png',
             function(done)

@@ -35,6 +35,7 @@ var     https       = require('https')
     ,   a           = use('a')
     ,   fb          = use('fb')
     ,   handy       = use('handy')
+    ,   httpx       = use('httpx')
     ,   identity    = use('identity')
 
     ,   OperationQueue  = use('OperationQueue')
@@ -151,7 +152,7 @@ authentication.route.loginResponse =
 
                 var oAuthURL = 'https://graph.facebook.com/oauth/access_token?'+ querystring.stringify(query);
 
-                handy.GET(  oAuthURL
+                httpx.GET(  oAuthURL
                         ,   function _200OK(read_s, ponse) 
                             {
                                 var bufferElements  = url.parse('?'+read_s, true);

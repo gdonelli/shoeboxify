@@ -26,8 +26,9 @@ var     assert  = require('assert')
     ,   mime    = require("mime")
     ,   _       = require("underscore")
 
-    ,   a   = use('a')
+    ,   a       = use('a')
     ,   handy   = use('handy')
+    ,   httpx   = use('httpx')
     ,   identity= use('identity')
     ;
 
@@ -455,7 +456,7 @@ s3.copyURL =
         a.assert_f(success_f);
         a.assert_f(error_f);
 
-        var quest = handy.requestURL(remoteURL, {},
+        var quest = httpx.requestURL(remoteURL, {},
             function handleResponseStream(ponse) {
 
                 if (ponse.statusCode != 200)

@@ -10,22 +10,11 @@ String:
             String.endsWith
             String.contains
 
-HTTP:
-            handy.is200OK
-            handy.HEAD
-            handy.GET
-            handy.requestURL
-
 Debug:
             handy.writeHTMLstacktrace
             handy.errorLogStacktrace
             handy.elapsedTimeSince
             handy.routeDebugPage
-
-            handy.makeSize
-Other:
-            handy.tmpFile
-            handy.testDirectory
 
 ======================================================
 
@@ -43,6 +32,7 @@ var     url     = require('url')
     ,   _       = require('underscore')
 
     ,   a       = use('a')
+    ,   httpx   = use('httpx')
 
     ;
 
@@ -65,169 +55,6 @@ handy.Base64toASCII =
     {
         return new Buffer(string64, 'base64').toString('ascii');
     }
-
-/* ======================================================== */
-/* ======================================================== */
-/* ========================= HTTP ========================= */
-/* ======================================================== */
-/* ======================================================== */
-
-handy.is200OK =
-    function( theURL, result_f  /* ( true_or_false ) */ )
-    {
-        assert(theURL != undefined, 'theURL is undefined');
-        a.assert_f(result_f);
-
-        handy.HEAD(theURL
-            ,   function success(ponse) {
-                    // console.log('success:');
-                    // console.log('ponse.statusCode: ' + ponse.statusCode);
-
-                    result_f( ponse.statusCode == 200 );
-                }
-            ,   function error(error) {
-                    // console.log('error:');
-                    // console.log(error);
-                    
-                    result_f(false);
-                } );
-    }
-
-
-handy.HEAD =
-    function(   theURL
-            ,   success_f   /*  (ponse) */
-            ,   error_f     /*  (error) */
-            )
-    {
-        a.assert_http_url(theURL);
-        a.assert_f(success_f,   true);
-        a.assert_f(error_f,     true);
-
-        return _makeHTTPRequest(
-                    theURL
-                ,   'HEAD'
-                ,   function(read_s, ponse)
-                    {
-                        /*                      
-                        console.log('read_s:');
-                        console.log(read_s);
-
-                        console.log('ponse:');
-                        console.log(ponse);
-                        */
-
-                        if (success_f)
-                            success_f(ponse);
-                    }
-                ,   error_f
-                ,   false);         
-
-    };
-
-
-handy.GET =
-    function(   theURL
-            ,   _200OK_f    /*  (read_s, ponse) */
-            ,   other_f     /*  (ponse)     */
-            ,   error_f     /*  (error)     */
-            ,   traverse
-            )
-    {
-        return _makeHTTPRequest(
-                    theURL
-                ,   'GET'
-                ,   function(read_s, ponse)
-                    {
-
-                        if (ponse.statusCode == 200)
-                        {
-                            if (_200OK_f)
-                                _200OK_f(read_s, ponse);
-                        }
-                        else if (traverse == true && ponse.statusCode == 302)
-                        {
-                            assert(ponse.headers.location != undefined, 'ponse.headers.location is undefined');
-
-                            handy.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
-                        }
-                        else
-                        {   
-                            ponse.readBuffer = read_s;
-
-                            if (other_f)
-                                other_f(ponse);         
-                        }
-                    }
-                ,   error_f
-                ,   traverse);          
-    };
-
-
-handy.requestURL =
-    function(theURL, extraOpz, requestHandler /* (ponse) */)
-    {
-        var theURLElements = url.parse(theURL);
-
-        var questOptions = {
-                    hostname:   theURLElements['hostname']
-                ,       path:   theURLElements['path']
-                }
-
-        if (extraOpz.method)
-            questOptions.method = extraOpz.method;
-
-        if (theURLElements.port)
-            questOptions.port = theURLElements.port;
-
-        var methodAgent = theURLElements['protocol'] == 'https:' ? https : http;
-
-        var quest = methodAgent.request(questOptions, requestHandler);
-
-        return quest;
-    }
- 
-
-function _makeHTTPRequest(  theURL
-                        ,   httpMethod
-                        ,   success_f   /*  (read_s, ponse) */
-                        ,   error_f     /*  (error)     */
-                        ,   traverse
-                        )
-    {
-        var quest = handy.requestURL(
-                theURL
-            ,   {
-                    method: httpMethod
-                }
-            ,   function(ponse) {
-                    // console.log("statusCode: ", ponse.statusCode);
-                    // console.log("headers: ", ponse.headers);
-
-                    var read_s = '';
-
-                    ponse.on('data',
-                        function(chuck) {
-                            read_s += chuck;
-                        });
-
-                    ponse.on('end',
-                        function(p) {
-                            if (success_f)
-                                success_f(read_s, ponse);
-                        });
-                } );
-
-        quest.on('error',
-            function(e) {
-                // console.error(e);
-
-                if (error_f)
-                    error_f(e);
-            } );
-
-        quest.end();
-    };
 
 
 /* ========================================================= */
@@ -301,69 +128,7 @@ handy.routeDebugPage =
     }
 
 
-/* ========================================================= */
-/* ========================================================= */
-/* ========================= Other ========================= */
-/* ========================================================= */
-/* ========================================================= */
-
-
-
-
-var _TMP_DIR = __dirname + '/../tmp';
-
-var _tmpDirectory_exist = false;
-
-handy.rmTmpDirectory = 
-    function()
-    {
-        if (fs.existsSync(_TMP_DIR)) {
-            // console.log('TMP_DIR exist -> ' + _TMP_DIR);
-            wrench.rmdirSyncRecursive(_TMP_DIR);
-        }
-    };
-
-handy.tmpDirectory = 
-    function() 
-    {
-        var result = _TMP_DIR;
-
-        if (!_tmpDirectory_exist)
-        {
-            try
-            {
-                var r = fs.mkdirSync(result);
-            }
-            catch(e)
-            {
-                if (e.code != 'EEXIST')
-                    throw e;
-            }
-
-            _tmpDirectory_exist = true;
-        }
-
-        return path.normalize( result + '/' );
-    };
-
-var _tmpFileIndex = 0;
-
-handy.tmpFile =
-    function(extension) 
-    {
-        var result = handy.tmpDirectory();
-
-        _tmpFileIndex++;
-        
-        result += _tmpFileIndex + '_' + nodeuuid.v1();
-
-        if (extension)
-            result += '.' + extension;
-
-        return path.normalize(result);
-    };
-
-handy.testDirectory =
+handy.getTestDirectory =
     function(file)
     {
         var result = __dirname + '/../test/';
@@ -373,119 +138,5 @@ handy.testDirectory =
 
         return path.normalize(result); 
     };
-
-
-var MAX_IMAGE_BYTE_SIZE = 1 * 1024 * 1024; // 1MB
-
-handy.downloadImageURL = 
-    function( theURL, success_f /* (local_path) */, error_f)
-    {
-        var quest = handy.requestURL(theURL, {},
-            function(ponse) {
-
-                var contentLength = ponse.headers['content-length'];
-
-                if (contentLength != undefined && 
-                    Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE )
-                {
-                    return _abortTransfer('File is too big');
-                }
-
-                var fileExtension = _isImageResponse(ponse);
-
-                if ( fileExtension == undefined )
-                {
-                    return _abortTransfer('File is not an image');
-                }
-
-                // Download file locally first...
-                var resultFilePath = handy.tmpFile(fileExtension);
-                var tmpFileStream = fs.createWriteStream(resultFilePath);
-
-                ponse.pipe(tmpFileStream);
-
-                tmpFileStream.on('error',
-                    function (err) {
-                        console.log(err);
-                    } );
-
-                var totBytes = 0;
-
-                ponse.on('data',
-                    function(chuck) {
-                        totBytes += chuck.length;
-                        // console.log('totBytes# ' + totBytes);
-
-                        if ( totBytes > MAX_IMAGE_BYTE_SIZE ) {
-                            _abortTransfer('File is too big (on stream)');
-                        }
-                    });
-
-                ponse.on('end',
-                    function(p) {
-                        // console.log('handy.requestURL -> done');
-
-                        if (success_f)
-                            success_f( resultFilePath );
-                    });
-            
-                /* aux =============================== */
-
-                function _abortTransfer(msg)
-                {
-                    if (error_f) {
-                        error_f( new Error(msg) );
-                        error_f = undefined; // makes sure this is the only invocation to error_f
-                    }
-                        
-                    ponse.destroy();
-                }
-
-            } );
-
-        quest.on('error',
-            function(e) {
-                // console.error(e);
-
-                if (error_f)
-                    error_f(e);
-            } );
-
-        quest.end();
-
-        /* aux ======================= */
-
-        function _isImageResponse(ponse) // returns file extension...
-        {   
-            assert(ponse != undefined, 'ponse is undefined');
-
-            // console.log("statusCode: " + ponse.statusCode);
-            // console.log("headers: ");
-            // console.log(ponse.headers);
-
-            var contentLength = ponse.headers['content-length'];
-            
-            if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
-                return undefined;
-
-            var contentType = ponse.headers['content-type'];
-            
-            if ( contentType.startsWith('image/') )
-            {
-                var elements = contentType.split('/');
-
-                if (elements.length == 2);
-                {
-                    var result = elements[1];
-
-                    if (result.length <= 4)
-                        return result;
-                }
-            }
-                
-            return undefined;
-        };
-
-    }
 
 

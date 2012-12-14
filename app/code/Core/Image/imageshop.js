@@ -24,6 +24,7 @@ var     assert      = require('assert')
 
     ,   a       = use('a')
     ,   handy   = use('handy')
+    ,   tmp     = use('tmp')
     ,   OperationQueue      = use('OperationQueue')
     ,   string_extension    = use('string-extension')
 
@@ -180,7 +181,7 @@ imageshop.resample =
                     else
                     {
                         // only resample...
-                        var outPath = handy.tmpFile('jpg');
+                        var outPath = tmp.getFile('jpg');
 
                         _convert( filePath, outPath, []
                                 ,   function success(outpath) {
@@ -336,7 +337,7 @@ function _resize(filePath, dimension, success_f /* (outPath, size) */, error_f)
     a.assert_f(error_f);
     assert( _.isNumber(dimension), 'dimension is expected to be a number');
 
-    var outPath = handy.tmpFile('jpg');
+    var outPath = tmp.getFile('jpg');
 
     _convert( filePath, outPath, [ '-resize', dimension+'x'+dimension ]
         ,   function success(resultPath)
