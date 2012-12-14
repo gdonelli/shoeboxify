@@ -59,13 +59,12 @@ identity.validateEnviroment();
 /*   Public Routes   */
 /*********************/
 
-// app.get('/', code.index);
 
-_setupRoutesForModule(  'authentication',   {             } );
-_setupRoutesForModule(  'admin',            { admin: true } );
-_setupRoutesForModule(  'view',             { user:  true } );
+_setupRoutesForModule( 'index');
+_setupRoutesForModule( 'authentication');
 
-// _setupRoutesForModule( 'admin-test',    { admin: true } );
+_setupRoutesForModule( 'admin',     { admin: true } );
+_setupRoutesForModule( 'view',      { user:  true } );
 
 
 /*

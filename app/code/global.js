@@ -1,5 +1,5 @@
 
-require(__dirname + '/use').setup(
+require(__dirname + '/Foundation/use').setup(
             [ 
                 __dirname 
             ,   __dirname + '/../public/script'
