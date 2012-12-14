@@ -5,11 +5,6 @@
 String: 
             handy.ASCIItoBase64
             handy.Base64toASCII
-            handy.isNumberString
-            String.startsWith
-            String.endsWith
-            String.contains
-
 Debug:
             handy.writeHTMLstacktrace
             handy.errorLogStacktrace
@@ -24,16 +19,10 @@ Debug:
 var     url     = require('url')
     ,   path    = require('path')
     ,   fs      = require('fs')
-    ,   http    = require('http')
-    ,   https   = require('https')
     ,   assert  = require('assert')
-    ,   nodeuuid= require('node-uuid')
-    ,   wrench  = require('wrench')
     ,   _       = require('underscore')
 
     ,   a       = use('a')
-    ,   httpx   = use('httpx')
-
     ;
 
 var handy = exports;
@@ -126,17 +115,3 @@ handy.routeDebugPage =
         
         ponse.end('</body></html>');
     }
-
-
-handy.getTestDirectory =
-    function(file)
-    {
-        var result = __dirname + '/../test/';
-
-        if (file)
-            result += file;
-
-        return path.normalize(result); 
-    };
-
-

@@ -128,6 +128,8 @@ authentication.route.loginResponse =
 
                     if (sourceInState)
                         q.context.source = handy.Base64toASCII(sourceInState);
+
+                    console.log(q.context.source);
                 }
 
                 doneOp();
@@ -236,7 +238,7 @@ authentication.route.loginResponse =
             function EndOperation(doneOp)
             {
                 if (q.context.source)
-                    ponse.redirect(source);
+                    ponse.redirect(q.context.source);
                 else
                     RespondWithLoginSuccess(quest, ponse);
 

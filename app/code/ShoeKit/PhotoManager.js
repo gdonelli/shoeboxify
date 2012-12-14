@@ -24,8 +24,7 @@ function PhotoManager(user)
 }
 
 
-
-PhotoManager.prototype.addFacebookPhoto = 
+PhotoManager.prototype.addPhotoWithFacebookId = 
 	function(fbAccess, fbId, succcess_f, error_f)
 	{
 		FacebookAccess.assert(fbAccess);
@@ -109,9 +108,9 @@ PhotoManager.prototype.addFacebookPhoto =
 
 	            a.assert_def(q.context.copyObject);
 	            
-	            var newPhoto = new Photo(	newPhotoId
-	            						,	q.context.facebookObject
-	            						,	q.context.copyObject );
+              var newPhoto = new Photo(	newPhotoId
+                                       ,	q.context.facebookObject
+                                       ,	q.context.copyObject );
 
 	            photodb.addPhoto(	userId
 	            				,	newPhoto
@@ -155,11 +154,6 @@ PhotoManager.prototype.photos =
 
 	};
 
-PhotoManager.prototype.photoWithFacebookId = 
-	function(fbId, succcess_f, error_f)
-	{
-		
-	};
 
 PhotoManager.prototype.deletePhoto = 
 	function(aPhoto, succcess_f, error_f)

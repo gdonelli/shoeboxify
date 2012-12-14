@@ -2,29 +2,29 @@
 var     assert      =   require("assert")
 
     ,   a           =   use('a')
-    ,   handy       =   use('handy')
     ,   imageshop   =   use('imageshop')
     ,   identity    =   use('identity')
+    ,   test_resources   =   use('test-resources')
     ;
 
 
 describe('imageshop.js',
     function() 
     {   
-        var googleImagePath = handy.getTestDirectory('google.png');
+        var googleImagePath = test_resources.getPath('google.png');
         var googleImageSize = imageshop.makeSize(275, 95);
 
-        var nasaImagePath = handy.getTestDirectory('nasa.jpg');
+        var nasaImagePath = test_resources.getPath('nasa.jpg');
         var nasaImageSize = imageshop.makeSize(185, 369);
 
-        var bigImagePath = handy.getTestDirectory('big.jpg');
+        var bigImagePath = test_resources.getPath('big.jpg');
         var bigImageSize = imageshop.makeSize(5616, 3744);
 
-        var faceImagePath   = handy.getTestDirectory('face.jpg');
+        var faceImagePath   = test_resources.getPath('face.jpg');
         var faceImageSize = imageshop.makeSize(1536, 1536);
     
 
-        var iphoneImagePath = handy.getTestDirectory('iPhone4S.JPG');
+        var iphoneImagePath = test_resources.getPath('iPhone4S.JPG');
 
         it( 'imageshop.getSize - google.png',
             function(done)

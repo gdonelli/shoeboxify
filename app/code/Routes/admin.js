@@ -479,7 +479,7 @@ admin.route.tmp =
 
         ponse.write('<html><body>');
 
-        var tmpDirectory = handy.tmpDirectory();
+        var tmpDirectory = tmp.getDirectoryPath();
 
         ponse.write('<h1>' + tmpDirectory + '</h1>');
 
@@ -508,7 +508,7 @@ admin.route.tmpFile =
         if ( quest.params.filename.startsWith(':') )
             return admin.route.tmp(quest, ponse);
 
-        var tmpDirectory = handy.tmpDirectory();
+        var tmpDirectory = tmp.getDirectoryPath();
         var filePath = path.normalize( tmpDirectory + '/' + quest.params.filename );
 
         var fileReadStream = fs.createReadStream(filePath);
@@ -554,7 +554,7 @@ admin.route.rmtmp =
 
         ponse.write('<h1>handy.rmTmpDirectory()</h1>');
 
-        handy.rmTmpDirectory();
+        tmp.rmTmpDirectory();
 
         ponse.end('</body></html>');
     }

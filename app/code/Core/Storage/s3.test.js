@@ -7,8 +7,9 @@ var     assert  = require("assert")
 
     ,   s3              = use('s3')
     ,   mongo           = use('mongo')
-    ,   handy           = use('handy')
     ,   httpx           = use('httpx')
+    ,   test_resources   =   use('test-resources')
+    
     ,   OperationQueue  = use('OperationQueue')
     ;
 
@@ -182,7 +183,7 @@ describe('s3.js',
 
                     } );
 
-                var localFile = handy.getTestDirectory('nasa.jpg');
+                var localFile = test_resources.getPath('nasa.jpg');
 
                 it( 's3.copyFile',
                     function(done) 

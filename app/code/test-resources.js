@@ -1,6 +1,9 @@
 
 
-var assert  = require("assert");
+var		assert  = require("assert")
+	,	path	= require("path")
+	;
+
 
 var test_resources = exports;
 
@@ -18,4 +21,15 @@ test_resources.k.SamplePhotoId           = '10151324834642873';
 // Others
 test_resources.k.FacebookUserId      = '554390706';
 
+
+test_resources.getPath =
+    function(filename)
+    {
+        var result = __dirname + '/../test/';
+
+        if (filename)
+            result += filename;
+
+        return path.normalize(result); 
+    };
 
