@@ -270,27 +270,45 @@ describe('photodb.js',
                                             });
                                 });
                     });
+                
+                it ('photodb.getPhotoWithFacebookId', 
+                    function(done) {
+                        
+                        photodb.getPhotoWithFacebookId(
+                                    testResources.k.TestUserId
+                                ,   testResources.k.SteveJobsPhotoId
+                                ,   function success(entry) {
+                                        var photo = Photo.fromEntry(entry);
+                                        Photo.assert(photo);
+
+                                        assert(photo.getFacebookId() == testResources.k.SteveJobsPhotoId, 'fbId do not match');
+
+                                        done();
+                                    }
+                                ,   function error(e) {
+                                        throw e;
+                                    } );
+                    });
+
                 it( 'photodb.getAllPhotos',
                     function(done)
                     {
-                        photodb.getAllPhotos(   testResources.k.TestUserId
-                                            ,   function success(arrayOfPhotos)
-                                                {
-                                                    for (var i in arrayOfPhotos)
-                                                    {
-                                                        var photo_i = arrayOfPhotos[i];
-                                                        
-                                                        Photo.assert(photo_i);
-                                                    }
+                        photodb.getAllPhotos(   
+                                    testResources.k.TestUserId
+                                ,   function success(arrayOfPhotos)
+                                    {
+                                        for (var i in arrayOfPhotos)
+                                        {
+                                            var photo_i = arrayOfPhotos[i];
+                                            
+                                            Photo.assert(photo_i);
+                                        }
 
-                                                    done();
-                                                }
-                                            ,   function error(e)
-                                                {
-
-                                                }
-                                            );
-
+                                        done();
+                                    }
+                                ,   function error(e) {
+                                        throw e;
+                                    } );
                     });
 
             });

@@ -145,18 +145,19 @@ photodb.removePhoto =
 //             ,   error_f );
 //     };
 
-// photodb.findOneFacebookObject =
-//     function(userId, fbId, success_f, error_f)
-//     {
-//         a.assert_uid(userId);
-//         a.assert_fbId(fbId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
+photodb.getPhotoWithFacebookId =
+    function(userId, fbId, success_f, error_f)
+    {
+        a.assert_uid(userId);
+        a.assert_fbId(fbId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
-//         var findOptions = _findOptionsWithFacebookId(fbId);
+        var findOptions = _findOptionsWithFacebookId(fbId);
 
-//         _findOne(userId, findOptions, success_f, error_f);    
-//     };
+        _findOne(userId, findOptions, success_f, error_f);    
+    };
+
 
 photodb.getAllPhotos =
     function(userId, success_f, error_f)

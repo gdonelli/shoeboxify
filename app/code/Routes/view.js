@@ -20,7 +20,6 @@ view.route  = {};
 view.path   = {}; 
 
 
-
 view.path.shoeboxified = '/view/shoeboxified';
 
 view.route.shoeboxified =
@@ -37,7 +36,7 @@ view.route.shoeboxified =
         var user = User.fromRequest(quest);
 
         mongo.memento.findAllFacebookObjects( 
-                user.facebookId()
+                user.getFacebookId()
             ,   function success(r)
                 {
                     for (var i in r)

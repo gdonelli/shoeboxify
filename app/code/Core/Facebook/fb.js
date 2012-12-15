@@ -59,7 +59,7 @@ fb.batch =
             });
 
         // the data to POST needs to be a string or a buffer
-        outQuest.write( 'access_token=' + fbAccess.token() );
+        outQuest.write( 'access_token=' + fbAccess.getToken() );
         outQuest.write( '&' );
         outQuest.write( 'batch=' + JSON.stringify(batchAPI) ) ;
         
@@ -86,7 +86,7 @@ function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /*
         var questPath = ( path.startsWith('/') ? '' : '/');
         questPath += path;
         questPath += (path.indexOf('?') < 0 ? '?' : '&');
-        questPath += 'access_token='+ fbAccess.token();
+        questPath += 'access_token='+ fbAccess.getToken();
 
         questOptions.hostname   = 'graph.facebook.com';
         questOptions.path       = questPath;

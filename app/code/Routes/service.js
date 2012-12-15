@@ -182,8 +182,8 @@ service.route.shoeboxifyURL =
                 var user = User.fromRequest(quest);
 
                 service.shoeboxifyURL(
-                        user.facebookAccess()
-                    ,   user.facebookId()
+                        user.getFacebookAccess()
+                    ,   user.getFacebookId()
                     ,   inputURL
                     ,   function success(r, options)
                         {
@@ -253,8 +253,8 @@ service.route.shoeboxifyFacebookObject =
                     var user = User.fromRequest(quest);
 
                     service.shoeboxifyFacebookObject(
-                            user.facebookAccess()
-                        ,   user.facebookId()
+                            user.getFacebookAccess()
+                        ,   user.getFacebookId()
                         ,   fbId
                         ,   function success(r, options)
                             {

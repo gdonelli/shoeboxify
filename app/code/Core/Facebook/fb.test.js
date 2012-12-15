@@ -16,7 +16,7 @@ describe('fb.js',
     {
          it( 'Graph: /me',
             function(done) {
-                var fbAcccess = authenticationTest.facebookAccess();
+                var fbAcccess = authenticationTest.getFacebookAccess();
 
                 fb.graph(   fbAcccess
                         ,   '/me'
@@ -65,7 +65,7 @@ fbTest.processFacebookObject =
         // Fetch FB object      ->  q.context.object
         q.add(
             function FetchMeOperation(doneOp) {
-                var fbAcccess = authenticationTest.facebookAccess();
+                var fbAcccess = authenticationTest.getFacebookAccess();
 
                 fb.graph(   fbAcccess
                         ,   graphPath

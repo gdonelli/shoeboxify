@@ -21,21 +21,28 @@ a.assert_f =
         return candidate_f;
     };
 
-
+function _assert_valid_string(value, name)
+{
+    assert( value != undefined,         name + ' is undefined' );
+    assert( typeof value == 'string',   name + ' is not string is:' + typeof value );
+    assert( value.length > 0,           'Not a valid ' + name + ', len == 0' );
+}
+    
 a.assert_http_url = 
-    function(url)
+    function(value)
     {
-        assert( url != undefined, 'url is undefined');
-        assert( url.startsWith('http') != undefined, 'url doesnt start with http');
-        return url;
+        _assert_valid_string(value, 'url');
+        assert( value.startsWith('http') != undefined, 'url doesnt start with http');
+        return value;
     };
 
 a.assert_fbId =
     function(value)
     {
-        assert( value != undefined, 'fbId is undefined' );
-        assert( value.isNumber(), 'Not a valid Facebook Id' );
-        return value;
+        _assert_valid_string(value, 'fbId');
+        assert( value.isNumber(),   'Not a valid Facebook Id' );
+        
+        return value;        
     };
 
 a.assert_def =
@@ -56,9 +63,10 @@ a.assert_obj =
 a.assert_uid = 
     function(value)
     {
-        assert( value != undefined, 'uid is undefined' );
-        assert( typeof value == 'string', 'uid is not a string' );
-        
+        assert( value != undefined,         'uid is undefined' );
+        assert( typeof value == 'string',   'uid is not a string' );
+        assert( value.length > 0,           'invalid uid, len == 0' );
+
         return value;
     };
 

@@ -1,13 +1,12 @@
 
 var     assert  = require("assert")
-
     ,   a       = use('a')
     ;
 
 exports.FacebookAccess = FacebookAccess;
 
 exports.FacebookAccess.fromRequest =
-    function _c_fromRequest(quest)
+    function(quest)
     {
         a.assert_def(quest);
         a.assert_def(quest.session);
@@ -35,21 +34,21 @@ function FacebookAccess(token, expires)
 }
 
 exports.FacebookAccess.assert = 
-    function _c_assert(fbAccess)
+    function(fbAccess)
     {
        a.assert_def(fbAccess, 'fbAccess');
        a.assert_def(fbAccess._token, 'fbAccess._token');
        a.assert_def(fbAccess._expires, 'fbAccess._expires');
     };
 
-FacebookAccess.prototype.token = 
-    function _i_token()
+FacebookAccess.prototype.getToken = 
+    function()
     {
         return this._token;
     };
 
-FacebookAccess.prototype.expires = 
-    function _i_expires()
+FacebookAccess.prototype.getExpires = 
+    function()
     {
         return this._expires;
     };

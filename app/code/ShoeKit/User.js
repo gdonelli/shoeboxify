@@ -60,10 +60,10 @@ exports.User.fromRequest =
 exports.User.assert = 
     function(user)
     {
-        a.assert_def(user);
-        a.assert_def(user._facebookAccess);
-        a.assert_def(user._me);
-        a.assert_def(user._me.id);          
+        a.assert_def(user,                  'user'          );
+        a.assert_def(user._facebookAccess,  'user._facebookAccess');
+        a.assert_def(user._me ,             'user._me'      );
+        a.assert_def(user._me.id,           'user._me.id'   );
     }
 
 //
@@ -86,7 +86,7 @@ User.prototype._init =
         q.add( 
             function FetchMeOperation(doneOp)
             {
-                fb.graph(that.facebookAccess()
+                fb.graph(that.getFacebookAccess()
                     ,   '/me'
                     ,   function success(fbObject) {
                             // console.log(fbObject);
@@ -109,7 +109,7 @@ User.prototype._init =
             function InitPhotoDatabaseOperation(doneOp)
             {
                 photodb.init(  
-                        that.facebookId()
+                        that.getFacebookId()
                     ,   function success()
                         {
                             doneOp();   
@@ -132,13 +132,13 @@ User.prototype._init =
         return this;
     };
 
-User.prototype.facebookAccess =
+User.prototype.getFacebookAccess =
     function()
     {
         return this._facebookAccess;
     };
 
-User.prototype.facebookId =
+User.prototype.getFacebookId =
     function()
     {
         return this._me.id;

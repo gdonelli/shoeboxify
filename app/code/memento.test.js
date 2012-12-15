@@ -55,7 +55,7 @@ describe('memento.js',
                         var url = 'http://shoeboxify.com/images/shoebox.png';
 
                         memento.addFromURL(
-                                authenticationTest.facebookAccess()
+                                authenticationTest.getFacebookAccess()
                             ,   testResources.k.TestUserId  
                             ,   url
                             ,   function success(newEntry, meta) {
@@ -81,7 +81,7 @@ describe('memento.js',
                 function _addSJPhoto(done, processOptions_f /* (options) */ )
                 {
                     memento.addFacebookObject(
-                            authenticationTest.facebookAccess()
+                            authenticationTest.getFacebookAccess()
                         ,   testResources.k.TestUserId
                         ,   sjPhotoId
                         ,   function success(r, options)
@@ -120,7 +120,7 @@ describe('memento.js',
                     function(done)
                     {
                         memento.addFacebookObject(
-                                authenticationTest.facebookAccess()
+                                authenticationTest.getFacebookAccess()
                             ,   testResources.k.TestUserId   
                             ,   testResources.k.FacebookUserId
                             ,   function success(r, options)

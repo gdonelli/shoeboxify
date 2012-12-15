@@ -29,7 +29,7 @@ storage.copyFacebookPhoto =
     function( userId, photoId, fbPhotoObject, success_f /* (copyObject) */, error_f /* (e) */ )
     {
         a.assert_uid(userId);
-        a.assert_def(photoId);
+        a.assert_def(photoId,   'photoId');
         a.assert_obj(fbPhotoObject);
         a.assert_f(success_f);
         a.assert_f(error_f);

@@ -35,26 +35,26 @@ var authenticationTest = exports;
 /* ============================================================= */
 
 authenticationTest._facebookAccess = undefined;
-authenticationTest.facebookAccess =
+authenticationTest.getFacebookAccess =
     function()
     {
-        a.assert_def(authenticationTest._facebookAccess)
+        FacebookAccess.assert(authenticationTest._facebookAccess);
         return authenticationTest._facebookAccess;
     };
 
 authenticationTest._user = undefined;
-authenticationTest.user =
+authenticationTest.getUser =
     function()
     {
-        a.assert_def(authenticationTest._user)
+        User.assert(authenticationTest._user);
         return authenticationTest._user;
     };
 
 authenticationTest._quest = undefined;
-authenticationTest.request =
+authenticationTest.getRequest =
     function()
     {
-        a.assert_def(authenticationTest._quest)
+        a.assert_def(authenticationTest._quest);
         return authenticationTest._quest;
     };
 
@@ -91,17 +91,24 @@ describe('authentication.test.js',
                 var accessToken = a.assert_def(context.accessTokenData.accessToken);
                 var expires = a.assert_def(context.accessTokenData.expires);
 
-                context.fbAccess = new FacebookAccess( accessToken, expires );
+                var fbAccess = new FacebookAccess( accessToken, expires ); 
+                FacebookAccess.assert(fbAccess);
+
+                context.fbAccess = fbAccess;
             });
         
         it('new User',  //                  -> context.user
-            function()
+            function(done)
             {
                 new User(   context.fbAccess
                         ,   function success(user)
                             {
-                                a.assert_def(user);
+                                User.assert(user);
+
                                 context.user = user;
+
+
+                                done();
                             }
                         ,   function error(e)
                             {

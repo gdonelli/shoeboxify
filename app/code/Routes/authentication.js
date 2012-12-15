@@ -265,10 +265,10 @@ function RespondWithJSONSuccess(quest, ponse)
 {
     ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
     
-    var fbAcccess = quest.session.user.facebookAccess();
+    var fbAcccess = quest.session.user.getFacebookAccess();
 
-    var object = {  'accessToken'   : fbAcccess.token(),
-                    'expires'       : fbAcccess.expires()   };
+    var object = {  'accessToken'   : fbAcccess.getToken(),
+                    'expires'       : fbAcccess.getExpires()   };
 
     ponse.end( JSON.stringify(object) );    
 }
@@ -288,11 +288,11 @@ function RespondWithHTMLSuccess(quest, ponse)
     ponse.write('<body>');
     ponse.write('<h1>' + title + '</h1>');
 
-    var fbAcccess = quest.session.user.facebookAccess();
+    var fbAcccess = quest.session.user.getFacebookAccess();
 
-    ponse.write('<p><strong>accessToken: </strong>' + fbAcccess.token() + '</p>');
-    ponse.write('<p><strong>expires: </strong>'     + fbAcccess.expires() + 
-                ' seconds (' + fbAcccess.expires()/(60*60*24) + ' days)</p>');
+    ponse.write('<p><strong>accessToken: </strong>' + fbAcccess.getToken() + '</p>');
+    ponse.write('<p><strong>expires: </strong>'     + fbAcccess.getExpires() + 
+                ' seconds (' + Math.round( fbAcccess.getExpires()/(60*60*24) ) + ' days)</p>');
 
     ponse.write('</body>');
     
@@ -464,7 +464,7 @@ authentication.validateAdminSession =
 
         // console.log(user);
 
-        if ( user.facebookId() == identity.adminId() )
+        if ( user.getFacebookId() == identity.adminId() )
         {
             next();
         }

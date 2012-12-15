@@ -6,41 +6,51 @@ var		assert	= require("assert")
 	,	fb		= use('fb')
 	,	photodb	= use('photodb')
 	,	storage	= use('storage')
-	,	Photo	= use('Photo')
 
+	,	Photo	= use('Photo')
+	,	User	= use('User')
 	,	FacebookAccess	= use('FacebookAccess')
 	,	OperationQueue	= use('OperationQueue')
 	;
 
 // Should only need storage.js and database.js
 
-exports.PhotoManager = PhotoManager;
+var Class = exports;
+
+Class.PhotoManager = PhotoManager;
 
 
 function PhotoManager(user)
 {
 	User.assert(user);
-	this.user = user;
+	this._user = user;
 }
 
 
-PhotoManager.prototype.addPhotoWithFacebookId = 
-	function(fbAccess, fbId, succcess_f, error_f)
+Class.PhotoManager.assert = 
+	function(pm)
 	{
-		FacebookAccess.assert(fbAccess);
+		a.assert_def(pm);
+		a.assert_def(pm._user);
+	}
+
+
+PhotoManager.prototype.addPhotoWithFacebookId = 
+	function(fbId, success_f, error_f)
+	{
 		a.assert_fbId(fbId);
-		a.assert_f(succcess_f);
+		a.assert_f(success_f);
 		a.assert_f(error_f);
 
-		that = this;
-		var userId = that.user.facebookId();
+		var userId	= this._user.getFacebookId();
+		var fbAccess= this._user.getFacebookAccess();
+		
+		var that = this;
 
 	    var q = new OperationQueue(1);
 
 	    q.context = {};
 	    // q.debug = true;
-
-	    var newPhotoId = mongo.newObjectId();
 
 	    q.on('abort', 
 	        function(e) {
@@ -74,19 +84,29 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	        });
 
 	    //
+	    // Make sure it is not a duplicate, if so we abort
+	    //
+
+
+
+	    //
 	    // Make Copy in S3
 	    //      -> q.context.copyObject
+	    //		-> q.context.photo
 	    
 	    q.add(
 	        function MakeCopyInStorage(doneOp)
 	        {
 	            a.assert_def(q.context.facebookObject);
 
+	            var photo = new Photo(true);
+	            q.context.photo = photo;
+
 	            assert( q.context.facebookObject.id == fbId,    
 	                   'q.context.facebookObject.id:' + q.context.facebookObject.id + ' != fbId:' + fbId );
 
 	            storage.copyFacebookPhoto(  userId
-	            						,	newPhotoId
+	            						,	photo.getId()
 	            						,	q.context.facebookObject
 	                                    ,   function success(theCopy) {
 	                                            q.context.copyObject = theCopy;
@@ -99,36 +119,39 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 
 	    //
 	    // Insert new photo in photodb
-	    //      -> q.context.newPhoto
+	    //      -> q.context.insertedPhoto
 
 	    q.add(
 	        function InsertPhotoInDatabaseOperation(doneOp)
 	        {
-	            // console.log(arguments.callee.name);
+				Photo.assert(q.context.photo);
 
-	            a.assert_def(q.context.copyObject);
-	            
-              var newPhoto = new Photo(	newPhotoId
-                                       ,	q.context.facebookObject
-                                       ,	q.context.copyObject );
+				var photo = q.context.photo;
+				photo.setSourceObject(q.context.facebookObject);
+				photo.setCopyObject(q.context.copyObject);
 
-	            photodb.addPhoto(	userId
-	            				,	newPhoto
-	            				,	function success(aPhoto)
-	            					{
-	            						q.context.newPhoto =  aPhoto;
-	            					}
-	            				,	function error(e)
-	            					{
-	            						_abort('photodb.addPhoto failed for ' + fbId, e);
-	            					});
+				photodb.addPhoto(	userId
+								,	photo
+								,	function success(insertedPhoto)
+									{
+										q.context.insertedPhoto = insertedPhoto;
+										doneOp();
+									}
+								,	function error(e)
+									{
+										if (e.code == 11000)
+											_abort('photodb.addPhoto failed because of a duplicate of ' + fbId, e);
+										else
+											_abort('photodb.addPhoto failed for ' + fbId, e);
+									});
 	        });
 
 	    q.add(
 	        function Finish(doneOp)
 	        {
-	            a.assert_def(q.context.newPhoto);
-	            success_f( q.context.newPhoto );
+	        	Photo.assert(q.context.insertedPhoto);
+	          
+	            success_f( q.context.insertedPhoto );
 	            doneOp();
 	        });
 
@@ -141,14 +164,15 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	        var error = new Error(message);
 	        error.source = srcError;
 
+	        console.error(srcError.stack);
+
 	        q.abort(error);
 	    }
 
 	};
 
 
-
-PhotoManager.prototype.photos = 
+PhotoManager.prototype.getPhotos = 
 	function(succcess_f, error_f)
 	{
 
