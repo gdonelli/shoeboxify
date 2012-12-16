@@ -64,28 +64,31 @@ var _clientCache = {
                     R:  null
                 ,   RW: null
             }
-        ,   object: {
+        ,   production: {
                     R:  null
                 ,   RW: null
             }
     };
 
-
 function _getCachedClient(bucket, permission)
 {
-    var bucketEndName = bucket.split('.')[1];
+    var bucketCacheKey;
 
-    assert(bucketEndName == 'test' || bucketEndName == 'object', 'bucketEndName is not valid: ' + bucketEndName);
+    if ( bucket == identity.s3.bucket.test() )
+        bucketCacheKey = 'test';
+    else if ( bucket == identity.s3.bucket.production() )
+        bucketCacheKey = 'production';
+    else
+        assert(false, 'Wrong bucket name');
 
-    if (_clientCache[bucketEndName][permission] == null) {
+    if (_clientCache[bucketCacheKey][permission] == null)
+    {
 
-        // console.log('_getCachedClient ' + bucketEndName + ' ' + permission );
-
-        _clientCache[bucketEndName][permission] = _s3client(bucket, permission);
-        _clearCache(bucketEndName, permission);
+        _clientCache[bucketCacheKey][permission] = _s3client(bucket, permission);
+        _clearCache(bucketCacheKey, permission);
     }
 
-    return _clientCache[bucketEndName][permission];
+    return _clientCache[bucketCacheKey][permission];
 
     /* ========================================================== */
     

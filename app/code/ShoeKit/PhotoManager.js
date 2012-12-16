@@ -58,6 +58,35 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	        });
 
 	    //
+	    // Make sure it is not a duplicate, if so we just return it. 
+	    // We have nothing to do.
+	    //
+	    q.add(
+	        function CheckForDuplicateOperation(doneOp)
+	        {
+	        	photodb.getPhotoWithFacebookId(
+	        				userId
+	        			,	fbId
+	        			,	function success(entry) 
+	        				{
+	        					if (entry != null)
+	        					{
+	        						// We have the picture in the db already
+	        						var photo = Photo.fromEntry(entry);
+	        						success_f(photo);
+	        						q.purge();	        						
+	        					}
+
+	        					doneOp();
+	        				}
+	        			,	function error(e) {
+	        					_abort('photodb.getPhotoWithFacebookId failed for ' + fbId, e);
+	        				} );
+
+
+	        });
+
+	    //
 	    // Fetch Facebook Object
 	    //      -> q.context.facebookObject
 	    
@@ -65,7 +94,6 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	        function FetchFacebookObjectOperation(doneOp)
 	        {
 	            // console.log(arguments.callee.name);
-
 	            fb.graph(   fbAccess
 	                    ,   fbId
 	                    ,   function success(fbObject) {
@@ -82,12 +110,6 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	                            _abort('fb.graph failed for ' + fbId, e);
 	                        } );
 	        });
-
-	    //
-	    // Make sure it is not a duplicate, if so we abort
-	    //
-
-
 
 	    //
 	    // Make Copy in S3
@@ -162,9 +184,11 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 	        // console.log(arguments.callee.name);
 
 	        var error = new Error(message);
-	        error.source = srcError;
 
-	        console.error(srcError.stack);
+	        if (srcError) {
+	        	error.source = srcError;
+	        	console.error(srcError.stack);
+	        }
 
 	        q.abort(error);
 	    }

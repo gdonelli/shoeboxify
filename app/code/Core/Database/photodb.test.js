@@ -272,8 +272,8 @@ describe('photodb.js',
                     });
                 
                 it ('photodb.getPhotoWithFacebookId', 
-                    function(done) {
-                        
+                    function(done) 
+                    {    
                         photodb.getPhotoWithFacebookId(
                                     testResources.k.TestUserId
                                 ,   testResources.k.SteveJobsPhotoId
@@ -289,6 +289,27 @@ describe('photodb.js',
                                         throw e;
                                     } );
                     });
+
+                it ('photodb.getPhotoWithFacebookId - undefined entry', 
+                    function(done) 
+                    {    
+                        photodb.getPhotoWithFacebookId(
+                                    testResources.k.TestUserId
+                                ,   testResources.k.PublicPhotoId
+                                ,   function success(entry) 
+                                    {
+                                        if (entry)
+                                            console.error(entry);
+
+                                        assert(entry == null, 'expected to have undefined entry');
+
+                                        done();
+                                    }
+                                ,   function error(e) {
+                                        throw e;
+                                    } );
+                    });
+
 
                 it( 'photodb.getAllPhotos',
                     function(done)

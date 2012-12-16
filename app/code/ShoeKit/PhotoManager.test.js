@@ -7,7 +7,7 @@ var     assert	=   require("assert")
 
     ,   test_resources		=   use('test-resources')
     ,   authenticationTest	=   use('authentication.test')
-    
+
     ;
 
 
@@ -23,8 +23,14 @@ describe('PhotoManager.js',
 
 	           	photoManager.addPhotoWithFacebookId( 
             								test_resources.k.SteveJobsPhotoId
-            							,	function success(photo) {
+            							,	function success(photo) 
+            							{
             									Photo.assert(photo);
+
+            									var photoId = photo.getFacebookId(photo);
+            									assert(	photoId == test_resources.k.SteveJobsPhotoId,
+            											'photoId dont match');
+
             									done();
             								}
             							,	function error(e) {
