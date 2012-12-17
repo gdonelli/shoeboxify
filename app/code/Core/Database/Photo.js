@@ -1,5 +1,7 @@
 
-var   		a		= use('a')
+var   		assert	= require('assert')
+
+		,	a		= use('a')
 		,	mongo	= use('mongo')
 		;
 
@@ -17,7 +19,7 @@ var kFacebookIdKey      = 'fb_id';
 var kFacebookUserIdKey  = 'fb_userid';
 var kSourceObjectKey    = 'source';
 var kCopyObjectKey      = 'copy';
-var kCreateDateKey      = 'created';
+var kCreatedDateKey      = 'created';
 var kPhotoTypeKey       = 'type';
 var kPhotoType          = 1;
 
@@ -26,7 +28,7 @@ Class.Photo.kFacebookIdKey    	= kFacebookIdKey;
 Class.Photo.kFacebookUserIdKey	= kFacebookUserIdKey;
 Class.Photo.kSourceObjectKey  	= kSourceObjectKey;
 Class.Photo.kCopyObjectKey     	= kCopyObjectKey;
-Class.Photo.kCreateDateKey     	= kCreateDateKey;
+Class.Photo.kCreatedDateKey     = kCreatedDateKey;
 Class.Photo.kPhotoTypeKey      	= kPhotoTypeKey;
 Class.Photo.kPhotoType         	= kPhotoType;
 
@@ -59,9 +61,9 @@ function Photo(photoId, fbObject, copyObject)
 Class.Photo.assert =
 	function(photo)
 	{
-		a.assert_def(photo, 		'photo undefined' );
-		a.assert_def(photo[kIdKey], 'photo is not valid (_id missing)' );
-		a.assert_def(typeof photo.getId == 'function',	'photo is not valid (photo.getId not there)' );
+		a.assert_def(photo, 'photo undefined' );
+		a.assert_def(photo[kIdKey], 'photo is not valid Photo object (_id method missing)'  );
+		assert(typeof photo.getId == 'function', 'photo is not valid Photo object (getId method missing)' );
 	};
 
 Class.Photo.assertId =
@@ -145,3 +147,11 @@ Photo.prototype.setCopyObject =
 	{
 		this[kCopyObjectKey] = value;
 	};
+
+
+Photo.prototype.getCreatedDate =
+	function()
+	{
+		return this[kCreatedDateKey];
+	};
+

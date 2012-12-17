@@ -70,16 +70,21 @@ var _clientCache = {
             }
     };
 
+function _cacheKeyForBucket(bucket)
+{
+    if ( bucket == s3.test.bucket )
+        return 'test';
+    else if ( bucket == s3.production.bucket )
+        return 'production';
+    else
+        return undefined;
+}
+
 function _getCachedClient(bucket, permission)
 {
-    var bucketCacheKey;
+    var bucketCacheKey = _cacheKeyForBucket(bucket);
 
-    if ( bucket == identity.s3.bucket.test() )
-        bucketCacheKey = 'test';
-    else if ( bucket == identity.s3.bucket.production() )
-        bucketCacheKey = 'production';
-    else
-        assert(false, 'Wrong bucket name');
+    a.assert_def(bucketCacheKey, 'Wrong bucket name');
 
     if (_clientCache[bucketCacheKey][permission] == null)
     {
@@ -155,15 +160,19 @@ s3.getInfoForURL =
         var urlPath = urlElements.path;
         var urlPathElements = urlPath.split('/');
 
-        var s3Bucket = urlPathElements[1];
-        var s3Path = '';
-        
+        if (urlPathElements.length < 3)
+            return undefined;
+
+        // Get bucket
+        result.bucket = urlPathElements[1];
+        _s3_assert_bucket(result.bucket);
+
+        // Get path
+        var s3Path = '';       
         for (var i=2; i<urlPathElements.length; i++) {
             s3Path += '/' + urlPathElements[i];
         }
-
-        result.path  = s3Path;
-        result.bucket= s3Bucket;
+        result.path = s3Path;
 
         return result;  
     };
@@ -364,27 +373,28 @@ s3.delete =
 
         assert(deleteMethod != null, 'Couldnt find method to deal with input type');
 
-        client[deleteMethod](filePath_or_arrayOfPaths,
-            function(err, ponse){
-                if (err)
-                    error_f(err);
-                else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
-                {
-                    success_f(ponse);
+        client[deleteMethod](
+                    filePath_or_arrayOfPaths
+                ,   function(err, ponse) {
+                        if (err)
+                        {
+                            error_f(err);
+                        }
+                        else if (ponse && ponse.statusCode >= 200 && ponse.statusCode < 300) 
+                        {
+                            success_f(ponse);
+                        }
+                        else 
+                        {
+                            var err;
+                            if (!ponse)
+                                err = new Error('S3.delete response is undefined');
+                            else
+                                err = new Error('S3.delete response with statusCode: ' + ponse.statusCode);
 
-                    var bufferString = '';
-
-                    ponse.on('data',
-                        function (chunk) {
-                            bufferString += chunk;
-                        });
-
-                    ponse.on('end', function () {
-                            // console.log(deleteMethod + ' response:');
-                            // console.log(bufferString );
-                        });
-                }
-            } );
+                            error_f(err);
+                        }
+                    } );
     };
 
 

@@ -175,6 +175,40 @@ storage.copyFacebookPhoto =
 
 // TODO: storage.copyImageURL
 
+storage.deleteFilesInCopyObject = 
+    function (userId, copyObject, success_f /* () */, error_f)
+    {
+        a.assert_uid(userId);
+        a.assert_obj(copyObject);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+
+        var imageDict = _getImageDictionaryForFacebookPhoto(copyObject);
+        var images = Object.keys(imageDict);
+
+        var info = s3.getInfoForURLs(images);
+
+        assert( images.length >= info.paths.length,
+                'something is wrong with the paths images.length: ' + images.length + ' ' +
+                'info.paths.length: ' + info.paths.length );
+
+        for (var i in info.paths) {
+            var path_i = info.paths[i];
+            assert(path_i.startsWith('/' + userId), 'S3 path:' + path_i + ' doesnt match userId:' + userId );
+        }
+
+        var s3client = s3.getClient(info.bucket, 'RW');
+
+        s3.delete(  s3client
+                ,   info.paths
+                ,   function(s3ponse)
+                    {
+                        success_f();
+                    }
+                ,   error_f
+                );
+    };
+
 
 /* ========================================================== */
 /* ========================================================== */

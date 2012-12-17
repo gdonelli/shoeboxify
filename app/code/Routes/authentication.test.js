@@ -104,10 +104,7 @@ describe('authentication.test.js',
                         ,   function success(user)
                             {
                                 User.assert(user);
-
                                 context.user = user;
-
-
                                 done();
                             }
                         ,   function error(e)

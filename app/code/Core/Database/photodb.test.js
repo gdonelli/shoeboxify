@@ -114,10 +114,10 @@ describe('photodb.js',
                             ,   function error(e){   throw e;   } );
                     } );
 
-                it( 'photodb._findId sampleObjectId from ' + userid1,
+                it( 'photodb.getPhotoWithId sampleObjectId from ' + userid1,
                     function(done) 
                     {   
-                        photodb._findId( 
+                        photodb.getPhotoWithId( 
                                 userid1
                             ,   sampleObjectId
                             ,   function success(r) {
@@ -208,7 +208,7 @@ describe('photodb.js',
                             ,   function error(e){   throw e;   });
                     } );
 
-                it( 'photodb._add _removeId _findId',
+                it( 'photodb._add removePhotoWithId getPhotoWithId',
                     function(done) 
                     {   
                         photodb._add( userid1, sampleObject
@@ -218,10 +218,14 @@ describe('photodb.js',
 
                                     a.assert_def( newObjectId, 'newObjectId');
 
-                                    photodb._removeId(userid1, newObjectId 
-                                        ,   function success() {
-
-                                                photodb._findId(userid1, newObjectId
+                                    photodb.removePhotoWithId(
+                                            userid1
+                                        ,   newObjectId 
+                                        ,   function success()
+                                            {
+                                                photodb.getPhotoWithId(
+                                                        userid1
+                                                    ,   newObjectId
                                                     ,   function success(entry) {
                                                             assert(entry == null, 'entry expected to be null');
                                                             done();
@@ -231,7 +235,8 @@ describe('photodb.js',
                                                         });
 
                                             }
-                                        ,   function error(error) {
+                                        ,   function error(error)
+                                            {
                                                 throw e;                
                                             } );
                                 }
@@ -277,12 +282,10 @@ describe('photodb.js',
                         photodb.getPhotoWithFacebookId(
                                     testResources.k.TestUserId
                                 ,   testResources.k.SteveJobsPhotoId
-                                ,   function success(entry) {
-                                        var photo = Photo.fromEntry(entry);
+                                ,   function success(photo) 
+                                    {
                                         Photo.assert(photo);
-
                                         assert(photo.getFacebookId() == testResources.k.SteveJobsPhotoId, 'fbId do not match');
-
                                         done();
                                     }
                                 ,   function error(e) {

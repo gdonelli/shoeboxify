@@ -6,11 +6,10 @@ var     assert  = require("assert")
     ,   mongo   = use('mongo')
     ,   storage = use('storage')
 
+    ,   test_resources  =  use('test-resources')
     ,   OperationQueue  = use('OperationQueue');
     ;
 
-
-var testUserId = 'T1';
 
 describe('storage.js',
     function()
@@ -32,26 +31,30 @@ describe('storage.js',
                     });
 
                 // gdonelli my profile pict
-                it( 'storage.private.getImageDictionaryForFacebookPhoto - 10152170979900707',
+                it( 'storage.private.getImageDictionaryForFacebookPhoto - kProfilePhotoId',
                     function(done) {
-                        _checkSizeFacebookObject( '10152170979900707', done );      
+                        _checkSizeFacebookObject( test_resources.kProfilePhotoId, done );      
                     });
 
                 // gdonelli oldest pict
-                it( 'storage.private.getImageDictionaryForFacebookPhoto - 515258326088',
+                it( 'storage.private.getImageDictionaryForFacebookPhoto - kOldPhotoId',
                     function(done) {
-                        _checkSizeFacebookObject( '515258326088', done );       
+                        _checkSizeFacebookObject( test_resources.kOldPhotoId, done );       
                     });
 
+                var copyObject;
 
-                it( 'storage.copyFacebookObject - 515258326088',
+                it( 'storage.copyFacebookObject - kOldPhotoId',
                     function(done) {
-                        _copyFB('515258326088'
-                            ,   function success(copy) {
-                                    a.assert_def(copy);
-                                    a.assert_def(copy.picture);
-                                    a.assert_def(copy.source);
-                                    a.assert_def(copy.images);
+                        _copyFB(test_resources.kOldPhotoId
+                            ,   function success(theCopy) {
+                                    a.assert_def(theCopy);
+                                    a.assert_def(theCopy.picture);
+                                    a.assert_def(theCopy.source);
+                                    a.assert_def(theCopy.images);
+
+                                    copyObject = theCopy;
+
                                     done();
                                 }
                             ,   function error(e) {
@@ -59,9 +62,9 @@ describe('storage.js',
                                 });             
                     });
 
-                it( 'storage.copyFacebookObject - 515258326088 - fail',
+                it( 'storage.copyFacebookObject - kOldPhotoId - fail',
                     function(done) {
-                        _copyFB('515258326088'
+                        _copyFB( test_resources.kOldPhotoId
                             ,   function success(copy) {
                                     throw new Error('not expected to work');
                                 }
@@ -70,6 +73,19 @@ describe('storage.js',
                                 }
                             ,   true );
 
+                    });
+
+                it ('storage.deleteFilesInCopyObject',
+                    function(done)  {
+                        storage.deleteFilesInCopyObject(
+                                test_resources.kTestUserId
+                            ,   copyObject
+                            ,   function success() {
+                                    done();
+                                }
+                            ,   function error(e) {
+                                    throw e;
+                                });
                     });
 
                 /* aux ====================== */
@@ -123,7 +139,11 @@ describe('storage.js',
                     fbTest.processFacebookObject(
                                 graphPath
                             ,   function process(fbObject) { 
-                                    var q = storage.copyFacebookPhoto( testUserId, mongo.newObjectId(), fbObject, success_f, error_f );
+                                    var q = storage.copyFacebookPhoto(  test_resources.kTestUserId
+                                                                    ,   mongo.newObjectId()
+                                                                    ,   fbObject
+                                                                    ,   success_f
+                                                                    ,   error_f );
                                     if (forceFail)
                                         q.context.failure = true;
                                 });
@@ -137,19 +157,19 @@ describe('storage.js',
                 it( 'storage.private.imageDestinationPath',
                     function(){
                         var id1 = mongo.newObjectId();
-                        var path1a = storage.private.imageDestinationPath('T1', id1, false, { index: 0 } );
-                        var path1b = storage.private.imageDestinationPath('T1', id1, true, { index: 0 } );
+                        var path1a = storage.private.imageDestinationPath(test_resources.kTestUserId, id1, false, { index: 0 } );
+                        var path1b = storage.private.imageDestinationPath(test_resources.kTestUserId, id1, true, { index: 0 } );
                         
                         assert( path1a.split('/').length > 3, 'path not looking right: ' + path1a);
                         assert(path1a != path1b, 'path1a expected to be different from path1b');
 
-                        var path2 = storage.private.imageDestinationPath('T1', mongo.newObjectId(), true, { index: 0, size: { width: 256, height: 128 } } );
+                        var path2 = storage.private.imageDestinationPath(test_resources.kTestUserId, mongo.newObjectId(), true, { index: 0, size: { width: 256, height: 128 } } );
                         assert(path2.split('/').length > 3, 'path not looking right: ' + path2);
                     });
 
                 it( 'storage.private.jsonDestinationPath',
                     function(){
-                        var jsonPath = storage.private.jsonDestinationPath('T1', mongo.newObjectId() );
+                        var jsonPath = storage.private.jsonDestinationPath(test_resources.kTestUserId , mongo.newObjectId() );
 
                         assert(jsonPath.split('/').length > 3, 'path not looking right: ' + jsonPath);
                     });
