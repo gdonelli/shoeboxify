@@ -197,7 +197,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 
 Class.PhotoManager.kNoEntryFoundCode = 'NO-ENTRY-FOUND';
 
-PhotoManager.prototype.deletePhoto = 
+PhotoManager.prototype.removePhoto = 
     function(photo, succcess_f, error_f)
     {
         Photo.assert(photo);
@@ -224,8 +224,6 @@ PhotoManager.prototype.deletePhoto =
         q.add(
             function FindPhotoOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
                 var photoId = photo.getId();
 
                 photodb.getPhotoWithId(
@@ -253,8 +251,6 @@ PhotoManager.prototype.deletePhoto =
         q.add(
             function DeleteFromStorageOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
                 var copyObject = q.context.photo.getCopyObject();
 
                 storage.deleteFilesInCopyObject(
@@ -276,9 +272,17 @@ PhotoManager.prototype.deletePhoto =
         q.add(
             function DeleteFromDatabaseOperation(doneOp)
             {
-                console.log(arguments.callee.name);
+                photodb.removePhoto(
+                        userId
+                    ,   q.context.photo
+                    ,   function success()
+                        {
+                            doneOp();
+                        }
+                    ,   function error(e) { q.abort(e); }
+                    );
 
-                doneOp();
+                
             });
 
         //
@@ -287,8 +291,7 @@ PhotoManager.prototype.deletePhoto =
         q.add(
             function EndOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
+                succcess_f();
                 doneOp();
             });
     };

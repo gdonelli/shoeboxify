@@ -64,10 +64,10 @@ describe('PhotoManager.js',
                                 } );
                     });
 
-                it( 'PhotoManager.delete',
+                it( 'PhotoManager.removePhoto',
                     function(done)
                     {
-                        photoManager.deletePhoto(
+                        photoManager.removePhoto(
                                 photo
                             ,   function success() {
                                     done();
@@ -76,6 +76,7 @@ describe('PhotoManager.js',
                                     throw e;
                                 } );
                     });
+
 
 
             } );

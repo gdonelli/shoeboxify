@@ -81,7 +81,7 @@ photodb.addPhoto =
 
 
 photodb.removePhoto =
-    function(userId, photo, success_f /* (photo) */, error_f /* (e) */)
+    function(userId, photo, success_f /*()*/, error_f /* (e) */)
     {
         a.assert_uid(userId);
         Photo.assert(photo);
