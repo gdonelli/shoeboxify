@@ -12,18 +12,22 @@ storage.copyFacebookPhoto
 
 var     assert  = require('assert')
     ,   _       = require('underscore')
+    ,   fs      = require('fs')
+    ,   path    = require('path')
 
-    ,   a               = use('a')
-    ,   s3              = use('s3')
+    ,   a       = use('a')
+    ,   s3      = use('s3')
+    ,   httpx   = use('httpx')
+    ,   tmp     = use('tmp')
+
+    ,   imageshop       = use('imageshop')
     ,   OperationQueue  = use('OperationQueue')
     ;
 
 
 var storage = exports;
 
-storage.k = {};
-
-storage.k.InvalidObjectError = 'INVALID_OBJ_ERR';
+storage.kInvalidObjectError = 'INVALID_OBJ_ERR';
 
 storage.copyFacebookPhoto =
     function( userId, photoId, fbPhotoObject, success_f /* (copyObject) */, error_f /* (e) */ )
@@ -36,7 +40,7 @@ storage.copyFacebookPhoto =
         
         if ( !_isFacebookPhotoObject(fbPhotoObject) ) {
             var err = new Error('Object is not a valid Facebook Photo');
-            err.code = storage.k.InvalidObjectError;
+            err.code = storage.kInvalidObjectError;
             return process.nextTick( function() { error_f(err) } );
         }
 
@@ -173,8 +177,6 @@ storage.copyFacebookPhoto =
         }
     };
 
-// TODO: storage.copyImageURL
-
 storage.deleteFilesInCopyObject = 
     function (userId, copyObject, success_f /* () */, error_f)
     {
@@ -208,6 +210,342 @@ storage.deleteFilesInCopyObject =
                 ,   error_f
                 );
     };
+
+
+storage.copyImageURL = 
+    function(userId, photoId, theURL, success_f /* () */, error_f) 
+    {
+        a.assert_uid(userId);
+        a.assert_obj(photoId);
+        a.assert_http_url(theURL);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+
+        var q = new OperationQueue(1);
+
+        // q.debug = true;
+
+        q.context = {};
+
+        q.on('abort',
+            function(e) {
+                if (error_f)
+                    error_f(e); 
+            });
+
+        //
+        // Download image locally
+        //      -> q.context.downloadedPath
+        q.add( 
+            function DownloadOperation(doneOp) {
+                _downloadImageURL( 
+                        theURL
+                    ,   function success(localPath) { 
+                            q.context.downloadedPath = localPath;
+                            // console.log('image downloaded: ' + localPath);
+                            doneOp();
+                        }
+                    ,   function error(e){  q.abort(e); }
+                    );
+            });
+        
+        //
+        // Resample original image
+        //      ->  q.context.original = {path, size}
+        q.add(
+            function ResampleOperation(doneOp) {
+                a.assert_def(q.context.downloadedPath, 'q.context.downloadedPath');
+
+                imageshop.resample(
+                        q.context.downloadedPath
+                    ,   imageshop.k.DefaultResampleOptions
+                    ,   function success(outPath, outSize)
+                        {    
+                            q.context.original = {};
+                            q.context.original.path = outPath;
+                            q.context.original.size = outSize;
+                            doneOp();
+                        }   
+                    ,   function error(e){ q.abort(e); }
+                    );
+            });
+
+        //
+        // Make thumbnails
+        //      ->  q.context.thumbnails = [ {path, size}, ... ]
+        q.add( 
+            function MakeThumbnails(doneOp) {
+                a.assert_def(q.context.original.path, 'q.context.original.path');
+                a.assert_def(q.context.original.size, 'q.context.original.size');
+
+                imageshop.createThumbnails(
+                        q.context.original.path
+                    ,   q.context.original.size
+                    ,   function success(array){
+                            q.context.thumbnails = array;
+                            // console.log('thumb array: ');
+                            // console.log(array);
+                            doneOp();
+                        }
+                    ,   function error(e){ q.abort(e); }
+                    );
+            });
+
+        //
+        // Upload images to S3
+        //      -> q.context.uploaded = [ { path, size, s3path, URL }, ... ]
+        //      -> q.context.original
+        //      -> q.context.thumbnail
+        q.add( 
+            function UploadToS3(doneOp) {
+                q.context.uploaded = _.union( [ q.context.original ], q.context.thumbnails);
+
+                var s3client = s3.production.clientRW();
+
+                for ( var i in q.context.uploaded )
+                {
+                    var fileInfo = q.context.uploaded[i];
+                    assert(fileInfo != undefined, 'fileInfo is undefined');
+                    assert(fileInfo.path != undefined, 'fileInfo.path is undefined');
+                    assert(fileInfo.size != undefined, 'fileInfo.size is undefined');
+
+                    var imageOpz = {  index: i, 
+                                       size:fileInfo.size
+                                   };
+                    
+                    var original = ( fileInfo == q.context.original );
+
+                    if (original)
+                        q.context.original = fileInfo;
+                    else if (i == 1)
+                        q.context.thumbnail = fileInfo;
+
+                    var s3path = _imageDestinationPath(userId, photoId, original, imageOpz);
+
+                    _copyFileInfo(fileInfo, s3path);
+                }
+
+                /* aux ==== */
+
+                var successCount = 0;
+                var errorCount = 0;
+
+                function _copyFileInfo(theFileInfo, s3path)
+                {
+                    s3.copyFile( s3client, theFileInfo.path, s3path
+                        ,   function success(byteLen)
+                            {
+                                theFileInfo.s3path = s3path;
+                                theFileInfo.URL = s3client.URLForPath(s3path);
+                                successCount++;
+                                _checkDone();
+                            }
+                        ,   function error(e)
+                            {
+                                theFileInfo.error = e;  
+                                errorCount++;
+                                _checkDone();
+                            } );
+                }
+
+                function _checkDone()
+                {
+                    if (successCount + errorCount >= q.context.uploaded.length)
+                    {
+                        if (errorCount == 0)
+                            doneOp();
+                        else
+                            q.abort(e);
+                    }
+                }               
+            });
+
+        //
+        // <!!!> Compose CopyObject entry <!!!>
+        //          -> q.context.copyObject
+        //
+        q.add( 
+            function MakeEntryOperation(doneOp)
+            {
+                var entry = {};
+
+                entry.picture = q.context.thumbnail.URL;
+                entry.source  = q.context.original.URL; 
+                entry.width   = q.context.original.size.width;
+                entry.height  = q.context.original.size.height;
+                entry.images  = [];
+
+                for (var i in q.context.uploaded) {
+                    var imageInfo = q.context.uploaded[i];
+
+                    entry.images.push( {    source: imageInfo.URL
+                                        ,     size: imageInfo.size  }   );
+                }
+
+                q.context.copyObject = entry;
+
+                doneOp();
+            });
+
+
+        //
+        // Clean up tmp files
+        //
+        q.add(
+            function CleanUpTempFilesOperation(doneOp)
+            {
+                var allTmpPath =    [   q.context.downloadedPath
+                                    ,   q.context.original.path     ];
+
+                for (var i in q.context.uploaded) {
+                    var image_i     = q.context.uploaded[i];
+                    var imagePath_i = image_i.path;
+
+                    allTmpPath.push(imagePath_i);
+                }
+                
+                var removedCount = 0;
+
+                for (var j in allTmpPath)
+                {
+                    var path_j = allTmpPath[j];
+
+                    fs.unlink(path_j, 
+                        function() {
+                            removedCount++;
+
+                            if (removedCount >= allTmpPath.length) {
+                                doneOp();
+                            }
+                        });
+                }
+            } );
+
+        //
+        // Done!
+        //
+        q.add(
+            function SuccessOperation(doneOp)
+            {
+                success_f(q.context.copyObject);
+                doneOp();
+            } );
+
+    };
+
+
+function _downloadImageURL( theURL
+                        ,   success_f /* (local_path) */
+                        ,   error_f )
+{
+    var MAX_IMAGE_BYTE_SIZE = 1024 * 1024 * 1; // 1 MB
+
+    var quest = httpx.requestURL(theURL, {},
+        function(ponse) {
+
+            var contentLength = ponse.headers['content-length'];
+
+            if (contentLength != undefined && 
+                Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE )
+            {
+                return _abortTransfer('File is too big');
+            }
+
+            var fileExtension = _isImageResponse(ponse);
+
+            if ( fileExtension == undefined )
+            {
+                return _abortTransfer('File is not an image');
+            }
+
+            // Download file locally first...
+            var resultFilePath = tmp.getFile(fileExtension);
+            var tmpFileStream = fs.createWriteStream(resultFilePath);
+
+            ponse.pipe(tmpFileStream);
+
+            tmpFileStream.on('error',
+                function (err) {
+                    console.log(err);
+                } );
+
+            var totBytes = 0;
+
+            ponse.on('data',
+                function(chuck) {
+                    totBytes += chuck.length;
+                    // console.log('totBytes# ' + totBytes);
+
+                    if ( totBytes > MAX_IMAGE_BYTE_SIZE ) {
+                        _abortTransfer('File is too big (on stream)');
+                    }
+                });
+
+            ponse.on('end',
+                function(p) {
+                    // console.log('httpx.requestURL -> done');
+
+                    if (success_f)
+                        success_f( resultFilePath );
+                });
+        
+            /* aux =============================== */
+
+            function _abortTransfer(msg)
+            {
+                if (error_f) {
+                    error_f( new Error(msg) );
+                    error_f = undefined; // makes sure this is the only invocation to error_f
+                }
+                    
+                ponse.destroy();
+            }
+
+        } );
+
+    quest.on('error',
+        function(e) {
+            // console.error(e);
+
+            if (error_f)
+                error_f(e);
+        } );
+
+    quest.end();
+
+    /* aux ======================= */
+
+    function _isImageResponse(ponse) // returns file extension...
+    {   
+        a.assert_def(ponse, 'ponse');
+
+        // console.log("statusCode: " + ponse.statusCode);
+        // console.log("headers: ");
+        // console.log(ponse.headers);
+
+        var contentLength = ponse.headers['content-length'];
+        
+        if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
+            return undefined;
+
+        var contentType = ponse.headers['content-type'];
+        
+        if ( contentType.startsWith('image/') )
+        {
+            var elements = contentType.split('/');
+
+            if (elements.length == 2);
+            {
+                var result = elements[1];
+
+                if (result.length <= 4)
+                    return result;
+            }
+        }
+            
+        return undefined;
+    };
+}
 
 
 /* ========================================================== */

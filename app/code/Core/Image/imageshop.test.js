@@ -29,8 +29,8 @@ describe('imageshop.js',
         it( 'imageshop.getSize - google.png',
             function(done)
             {
-                console.log(googleImagePath);
-                console.log(googleImageSize);
+                // console.log(googleImagePath);
+                // console.log(googleImageSize);
 
                 imageshop.getSize(  googleImagePath
                             ,   function success(size) {

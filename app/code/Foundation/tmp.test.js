@@ -17,8 +17,8 @@ describe('tmp.js',
 
         it('tmp.tmpDirectory',
             function() {
-                var tmpDir = tmp.tmpDirectory();
-                console.log(tmpDir);
+                var tmpDir = tmp.getDirectoryPath();
+                // console.log(tmpDir);
 
                 var local = '/shoeboxify/app/tmp/'
                 var jitsu = '/shoeboxify/package/tmp/'

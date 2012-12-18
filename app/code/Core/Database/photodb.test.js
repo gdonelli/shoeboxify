@@ -6,7 +6,7 @@ var     assert  = require("assert")
     ,   fbTest  = use("fb.test")
 
     ,   photodb         = use("photodb")
-    ,   testResources   = use("test-resources")
+    ,   test_resources  = use("test-resources")
     ,   OperationQueue  = use("OperationQueue")
     ,   Photo           = use("Photo")
     ;
@@ -21,7 +21,7 @@ describe('photodb.js',
                 it( 'photodb.init',
                     function(done)
                     {
-                        photodb.init(testResources.k.TestUserId
+                        photodb.init(test_resources.kTestUserId
                             ,   function success() {
                                     done();
                                 }
@@ -52,7 +52,7 @@ describe('photodb.js',
                     function(done)
                     {                       
                         photodb._getCollection(
-                                testResources.k.TestUserId
+                                test_resources.kTestUserId
                             ,   function success(c) {
                                     a.assert_def(c);
                                     testCollection = c;
@@ -67,7 +67,7 @@ describe('photodb.js',
                     function(done)
                     {
                         photodb._setupCollection(
-                                testResources.k.TestUserId
+                                test_resources.kTestUserId
                             ,   function success(c) {
                                     a.assert_def(c);
                                     done();
@@ -253,12 +253,12 @@ describe('photodb.js',
                     function(done)
                     {
                         fbTest.processFacebookObject( 
-                                testResources.k.SteveJobsPhotoId
+                                test_resources.kSteveJobsPhotoId
                             ,   function(fbObject) {
                                     var photo = new Photo( true, fbObject );
 
                                     photodb.addPhoto(  
-                                            testResources.k.TestUserId
+                                            test_resources.kTestUserId
                                         ,   photo
                                         ,   function success(addedPhoto) 
                                             {
@@ -280,12 +280,12 @@ describe('photodb.js',
                     function(done) 
                     {    
                         photodb.getPhotoWithFacebookId(
-                                    testResources.k.TestUserId
-                                ,   testResources.k.SteveJobsPhotoId
+                                    test_resources.kTestUserId
+                                ,   test_resources.kSteveJobsPhotoId
                                 ,   function success(photo) 
                                     {
                                         Photo.assert(photo);
-                                        assert(photo.getFacebookId() == testResources.k.SteveJobsPhotoId, 'fbId do not match');
+                                        assert(photo.getFacebookId() == test_resources.kSteveJobsPhotoId, 'fbId do not match');
                                         done();
                                     }
                                 ,   function error(e) {
@@ -297,8 +297,8 @@ describe('photodb.js',
                     function(done) 
                     {    
                         photodb.getPhotoWithFacebookId(
-                                    testResources.k.TestUserId
-                                ,   testResources.k.PublicPhotoId
+                                    test_resources.kTestUserId
+                                ,   test_resources.kPublicPhotoId
                                 ,   function success(entry) 
                                     {
                                         if (entry)
@@ -318,7 +318,7 @@ describe('photodb.js',
                     function(done)
                     {
                         photodb.getAllPhotos(   
-                                    testResources.k.TestUserId
+                                    test_resources.kTestUserId
                                 ,   function success(arrayOfPhotos)
                                     {
                                         for (var i in arrayOfPhotos)

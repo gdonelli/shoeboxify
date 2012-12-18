@@ -35,7 +35,7 @@ describe('memento.js',
                 it( 'memento.initUser',
                     function(done)
                     {
-                        memento.initUser( testResources.k.TestUserId    
+                        memento.initUser( testResources.kTestUserId    
                                 ,   function success(){ done(); }
                                 ,   std_error_handler   
                                 );
@@ -56,7 +56,7 @@ describe('memento.js',
 
                         memento.addFromURL(
                                 authenticationTest.getFacebookAccess()
-                            ,   testResources.k.TestUserId  
+                            ,   testResources.kTestUserId  
                             ,   url
                             ,   function success(newEntry, meta) {
                                     console.log('newEntry:');
@@ -82,7 +82,7 @@ describe('memento.js',
                 {
                     memento.addFacebookObject(
                             authenticationTest.getFacebookAccess()
-                        ,   testResources.k.TestUserId
+                        ,   testResources.kTestUserId
                         ,   sjPhotoId
                         ,   function success(r, options)
                             {   
@@ -121,7 +121,7 @@ describe('memento.js',
                     {
                         memento.addFacebookObject(
                                 authenticationTest.getFacebookAccess()
-                            ,   testResources.k.TestUserId   
+                            ,   testResources.kTestUserId   
                             ,   testResources.k.FacebookUserId
                             ,   function success(r, options)
                                 {   
@@ -139,7 +139,7 @@ describe('memento.js',
                     function(done)
                     {
                         memento.findId(
-                                    testResources.k.TestUserId 
+                                    testResources.kTestUserId 
                                 ,   addedEntryId
                                 ,   function success(entry)
                                     {
@@ -156,12 +156,12 @@ describe('memento.js',
                 it( 'memento.removeId',
                     function(done)
                     {
-                        memento.removeId(testResources.k.TestUserId , addedEntryId
+                        memento.removeId(testResources.kTestUserId , addedEntryId
                             ,   function success(elapsedTime)
                                 {
                                     // console.log('memento.removeId took: ' + elapsedTime + 'ms');
 
-                                    memento.findId(testResources.k.TestUserId   , addedEntryId
+                                    memento.findId(testResources.kTestUserId   , addedEntryId
                                         ,   function success(entry)
                                             {
                                                 assert(entry == null,  'entry is not null! ' + entry);

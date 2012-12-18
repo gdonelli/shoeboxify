@@ -75,3 +75,13 @@ tmp.getFile =
         return path.normalize(result);
     };
 
+
+tmp.getFileList =
+    function( result_f /* (err, files)*/)
+    {
+        a.assert_f(result_f);
+        
+        var tmpDirectory = tmp.getDirectoryPath();
+
+        fs.readdir( tmpDirectory, result_f);
+    };

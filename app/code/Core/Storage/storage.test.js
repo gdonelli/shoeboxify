@@ -1,12 +1,15 @@
 
-var     assert  = require("assert")
+var     assert  = require('assert')
+    ,   _       = require('underscore')
 
     ,   a       = use('a')
-    ,   fbTest  = use('fb.test')
+    ,   tmp     = use('tmp')
     ,   mongo   = use('mongo')
     ,   storage = use('storage')
 
-    ,   test_resources  =  use('test-resources')
+    ,   fbTest  = use('fb.test')
+
+    ,   test_resources  = use('test-resources')
     ,   OperationQueue  = use('OperationQueue');
     ;
 
@@ -14,7 +17,7 @@ var     assert  = require("assert")
 describe('storage.js',
     function()
     {
-        describe('storage', 
+        describe.skip('storage - Facebook', 
             function()
             {
                 it( 'storage.copyFacebookObject - me',
@@ -25,7 +28,7 @@ describe('storage.js',
                                 }
                             ,   function error(e) {
                                     a.assert_def(e);
-                                    assert(e.code == storage.k.InvalidObjectError, 'expected storage.k.InvalidObjectError is:' + e.code );
+                                    assert(e.code == storage.kInvalidObjectError, 'expected storage.kInvalidObjectError is:' + e.code );
                                     done();
                                 });             
                     });
@@ -54,6 +57,8 @@ describe('storage.js',
                                     a.assert_def(theCopy.images);
 
                                     copyObject = theCopy;
+
+                                    // console.log(copyObject);
 
                                     done();
                                 }
@@ -150,6 +155,75 @@ describe('storage.js',
                 }
 
             } );
+
+        describe('storage - Generic URL', 
+            function()
+            {
+                var genericURLCopy;
+                var tmpSnapshot = [];
+
+                it ('tmp.snapshot', 
+                    function(done) {
+                        tmp.getFileList(
+                            function (err, files) {
+                                assert(err == null, 'cannot list /tmp');
+                                tmpSnapshot = files;
+                                done();
+                            });
+                    });
+
+                it ('storage.copyImageURL',
+                    function(done)
+                    {
+                        storage.copyImageURL(   test_resources.kTestUserId
+                                            ,   mongo.newObjectId()
+                                            ,   test_resources.kSamplePhotoDirectURL
+                                            ,   function success(copyObject){
+                                                    genericURLCopy = copyObject;
+
+                                                    // console.log(copyObject);
+
+                                                    done();
+                                                }
+                                            ,   function error(e)
+                                                {
+                                                    throw e;
+                                                } );
+                    });
+
+                it ('storage.deleteFilesInCopyObject',
+                    function(done)
+                    {
+                        storage.deleteFilesInCopyObject(
+                                                test_resources.kTestUserId
+                                            ,   genericURLCopy
+                                            ,   function success(){
+                                                    done();
+                                                }
+                                            ,   function error(e)
+                                                {
+                                                    throw e;
+                                                } );
+                    });
+
+                it ('No traces in tmp', 
+                    function(done) {
+                        tmp.getFileList(
+                            function (err, files) 
+                            {
+                                var filediff = _.difference(files, tmpSnapshot);
+
+                                if ( filediff.length > 0) {
+                                    console.error('extra files in /tmp:');
+                                    console.error(filediff);
+                                    throw new Error('tmp is not clean as expected');
+                                }
+                                else
+                                    done();
+                            });
+                    });
+
+            });
 
         describe('storage.private',
             function()

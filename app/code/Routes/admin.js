@@ -26,11 +26,13 @@ var     assert  = require('assert')
     ,   mime    = require('mime')
     ,   _       = require('underscore')
 
-    ,   a           = use('a')
-    ,   fb          = use('fb')
-    ,   handy       = use('handy')
+    ,   a   = use('a')
+    ,   fb  = use('fb')
+    ,   tmp = use('tmp')
+    ,   handy   = use('handy')
+    ,   common  = use('common')
     ,   imageshop   = use('imageshop')
-    ,   common      = use('common')
+    ,   test_resources  = use('test-resources')
 
     ,   User            = use('User')
     ,   OperationQueue  = use('OperationQueue')
@@ -295,7 +297,7 @@ admin.path.intense = basePath + '/intense-image-resample';
 admin.route.intense =
     function(quest, ponse)
     {
-        var iphoneImagePath = handy.testDirectory('iPhone4S.JPG');
+        var iphoneImagePath = test_resources.getPath('iPhone4S.JPG');
 
         console.log('-> ' + admin.path.intense);
 
@@ -476,26 +478,23 @@ admin.route.tmp =
     function(quest, ponse)
     {
         ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
-
         ponse.write('<html><body>');
 
         var tmpDirectory = tmp.getDirectoryPath();
 
         ponse.write('<h1>' + tmpDirectory + '</h1>');
 
-        fs.readdir( tmpDirectory,
+        tmp.getFileList(
             function(err, files) {
 
                 for (var i = 0; i < files.length; i++ )
                 {
                     var file_i = files[i];
-
                     ponse.write('<a href="' + admin.path.tmp + '/' + file_i + '">' + file_i + '</a> <br>');
                 }
 
                 ponse.end('</body></html>');
             } );
-
     };
 
 /* Route ===== */
