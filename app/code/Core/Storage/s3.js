@@ -512,6 +512,39 @@ s3.copyFile =
             } );
     }
 
+s3.getPathsWithPrefix =
+    function(client, prefix, success_f, error_f)
+    {
+        _s3_assert_client(client);
+        
+        a.assert_string(prefix, 'prefix');
+        assert( prefix[0] != '/', 'leading / is not valid in path prefix');
+
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+           
+        client.list(
+                { prefix: prefix }
+            ,   function(err, data) {
+                    if (err)
+                        return error_f(err);
+
+                    a.assert_obj(data);
+                    var contents = a.assert_array(data.Contents);
+
+                    var result = [];
+
+                    for (var i in contents)
+                    {
+                        var fileInfo_i = contents[i];
+                        var filepath_i = fileInfo_i.Key;
+                        
+                        result.push(filepath_i);
+                    }
+
+                    success_f(result);
+                } );
+    }
 
 /* ============================================== */
 /* ============================================== */

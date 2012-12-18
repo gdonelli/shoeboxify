@@ -548,6 +548,30 @@ function _downloadImageURL( theURL
 }
 
 
+storage.getUserFiles = 
+    function (userId, success_f /* () */, error_f)
+    {
+        a.assert_uid(userId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+
+        var s3client = s3.production.clientR();
+
+        s3.getPathsWithPrefix(
+                s3client
+            ,   userId
+            ,   function(paths)
+                {
+                    var URLs = _.map(   paths
+                                    ,   function(path) {
+                                            return s3client.URLForPath(path);
+                                        });
+                    success_f(URLs)
+                }
+            ,   error_f
+            );
+    }
+
 /* ========================================================== */
 /* ========================================================== */
 /* ======================[  Private  ]======================= */

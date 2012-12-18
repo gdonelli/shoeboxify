@@ -17,7 +17,37 @@ var     assert  = require('assert')
 describe('storage.js',
     function()
     {
-        describe.skip('storage - Facebook', 
+        var s3snapshot  = [];
+        var tmpSnapshot = [];
+
+        describe('Save footprint',
+            function()
+            {
+                it( 'storage.getUserFiles - s3 snapshot',
+                    function(done) {
+                        storage.getUserFiles(
+                                    test_resources.kTestUserId
+                                ,   function success(list) {
+                                        s3snapshot = list;
+                                        done();
+                                    }
+                                ,   function error(e) { throw e; }
+                            );
+                    });
+
+                it ('tmp.getFileList - tmp snapshot', 
+                    function(done) {
+                        tmp.getFileList(
+                            function (err, files) {
+                                assert(err == null, 'cannot list /tmp');
+                                tmpSnapshot = files;
+                                done();
+                            });
+                    });
+            });
+
+
+        describe('storage - Facebook', 
             function()
             {
                 it( 'storage.copyFacebookObject - me',
@@ -80,6 +110,20 @@ describe('storage.js',
 
                     });
 
+                it( 'storage.getUserFiles - midcheck - more s3 files',
+                    function(done) {
+                        storage.getUserFiles(
+                                    test_resources.kTestUserId
+                                ,   function success(list) {
+                                        var listDiff = _.difference(list, s3snapshot);
+                                        assert( listDiff.length > 0, 'no file has been added');
+                                        done();
+                                    }
+                                ,   function error(e) { throw e; }
+                            );
+                    });
+
+
                 it ('storage.deleteFilesInCopyObject',
                     function(done)  {
                         storage.deleteFilesInCopyObject(
@@ -93,7 +137,9 @@ describe('storage.js',
                                 });
                     });
 
+
                 /* aux ====================== */
+
                 function _checkSizeFacebookObject(graphPath, done)
                 {
                     fbTest.processFacebookObject(
@@ -160,17 +206,6 @@ describe('storage.js',
             function()
             {
                 var genericURLCopy;
-                var tmpSnapshot = [];
-
-                it ('tmp.snapshot', 
-                    function(done) {
-                        tmp.getFileList(
-                            function (err, files) {
-                                assert(err == null, 'cannot list /tmp');
-                                tmpSnapshot = files;
-                                done();
-                            });
-                    });
 
                 it ('storage.copyImageURL',
                     function(done)
@@ -206,23 +241,6 @@ describe('storage.js',
                                                 } );
                     });
 
-                it ('No traces in tmp', 
-                    function(done) {
-                        tmp.getFileList(
-                            function (err, files) 
-                            {
-                                var filediff = _.difference(files, tmpSnapshot);
-
-                                if ( filediff.length > 0) {
-                                    console.error('extra files in /tmp:');
-                                    console.error(filediff);
-                                    throw new Error('tmp is not clean as expected');
-                                }
-                                else
-                                    done();
-                            });
-                    });
-
             });
 
         describe('storage.private',
@@ -248,5 +266,47 @@ describe('storage.js',
                         assert(jsonPath.split('/').length > 3, 'path not looking right: ' + jsonPath);
                     });
             } );
+
+        describe('Check footprint',
+            function()
+            {
+                it( 'storage.getUserFiles - Zero footprint in S3',
+                    function(done) {
+                        storage.getUserFiles(
+                                    test_resources.kTestUserId
+                                ,   function success(list) {
+                                        var listDiff = _.difference(list, s3snapshot);
+                                        if (listDiff.length == 0)
+                                            done();
+                                        else
+                                        {
+                                            throw new Error('');
+                                        }
+                                            
+                                    }
+                                ,   function error(e) { throw e; }
+                            );
+                    });
+
+                it ('tmp.getFileList - No traces in tmp', 
+                    function(done) {
+                        tmp.getFileList(
+                            function (err, files) 
+                            {
+                                var filediff = _.difference(files, tmpSnapshot);
+
+                                if ( filediff.length > 0) {
+                                    console.error('extra files in /tmp:');
+                                    console.error(filediff);
+                                    throw new Error('tmp is not clean as expected');
+                                }
+                                else
+                                    done();
+                            });
+                    });
+            
+            });
+
+
 
     } );

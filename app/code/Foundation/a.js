@@ -53,10 +53,10 @@ a.assert_def =
     };
 
 a.assert_obj =
-    function(value)
+    function(value, name_opz)
     {
-        assert( value != undefined, 'object is undefined' );
-        assert( _.isObject(value), 'object expected' );
+        assert( value != undefined, ( name_opz ? name_opz : 'object' ) + ' is undefined' );
+        assert( _.isObject(value),  ( name_opz ? name_opz : 'object' ) + ' expected' );
         return value;
     };
 
@@ -66,16 +66,22 @@ a.assert_uid =
         assert( value != undefined,         'uid is undefined' );
         assert( typeof value == 'string',   'uid is not a string' );
         assert( value.length > 0,           'invalid uid, len == 0' );
-
         return value;
     };
 
 a.assert_array = 
     function(value, name_opz)
     {
-        assert( value != undefined, ( name_opz ? name_opz : 'value' ) + ' is undefined' );
-        assert( Array.isArray(value), 'value is not a array' );
-        
+        assert( value != undefined,   ( name_opz ? name_opz : 'value' ) + ' is undefined' );
+        assert( Array.isArray(value), ( name_opz ? name_opz : 'value' ) + ' is not a array' );
+        return value;
+    };
+
+a.assert_string =
+    function(value, name_opz)
+    {
+        assert( value != undefined,         ( name_opz ? name_opz : 'value' ) + ' is undefined' );
+        assert( typeof value == 'string',   ( name_opz ? name_opz : 'value' ) + ' is not a string' );
         return value;
     };
 

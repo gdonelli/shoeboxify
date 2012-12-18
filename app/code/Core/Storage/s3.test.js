@@ -4,6 +4,7 @@ var     assert  = require("assert")
     ,   http    = require("http")
     ,   url     = require("url")
     ,   fs      = require("fs")
+    ,   _       = require("underscore")
 
     ,   s3              = use('s3')
     ,   mongo           = use('mongo')
@@ -30,7 +31,7 @@ function CheckFileExist(aPath, shouldExist, done)
 describe('s3.js',
     function() 
     {
-        describe('r + w',
+        describe('w + list + r',
             function() 
             {
                 var jsonTestPath = '/test/test.json';
@@ -38,6 +39,31 @@ describe('s3.js',
                 it( 's3.writeJSON ' + jsonTestPath + ' to test-bucket',
                     function(done) {
                         _simpleJSONWrite( s3.test, jsonTestPath, done, true );
+                    } );
+
+                it( 's3.getPathsWithPrefix',
+                    function(done) 
+                    {
+                        s3.getPathsWithPrefix( 
+                                s3.test.clientR()
+                            ,   'test'
+                            ,   function success(files)
+                                {
+                                    var expected = [ 'test/test.json' ];
+                                    var filediff = _.difference(files, expected);
+
+                                    if (filediff.length > 0) {
+                                        console.error('files list doesnt match diff:');
+                                        console.error(filediff);
+                                        throw new Error('files list doesnt match');
+                                    }
+                                    
+                                    done();
+                                }
+                            ,   function error(e)
+                                {
+                                    throw e;
+                                } );
                     } );
 
                 it ( 's3.delete ' + jsonTestPath + ' from test-bucket', 
@@ -93,7 +119,6 @@ describe('s3.js',
                 it( 's3.delete ' + fbpict,      function(done) {
                                                 _deleteFile(s3.test, fbpict, done);
                                             } );
-
 
                 it( 's3.copyURL - fail',
                     function(done) {
