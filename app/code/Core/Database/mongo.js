@@ -6,6 +6,8 @@ Shoeboxify layer to interface with the mongo database.
 Built on top of the mongodb native driver:
 http://mongodb.github.com/node-mongodb-native
 
+Deals with collections and basic database operations
+
 Setup:  
             mongo.init
 Collection:
@@ -16,6 +18,7 @@ Collection:
             mongo.remove
             mongo.drop
 Utils:
+            mongo.newObjectId
             mongo.LongFromString
 
 =================================================================
@@ -36,55 +39,55 @@ var         assert      = require('assert')
 
 var mongo = exports;
 
-mongo.init = 
-    function(success_f, error_f)
+function _init(success_f /* (db) */, error_f)
+{
+    a.assert_f(success_f);
+    a.assert_f(error_f);
+
+    _aux(   identity.dbServerHost()
+        ,   identity.dbServerPort()
+        ,   identity.dbName()
+        ,   identity.dbServerUsername()
+        ,   identity.dbServerPassword()
+        ,   success_f
+        ,   error_f
+        );
+    
+    /* aux ==== */
+
+    function _aux( host, port, name, username, password,
+                    success_f /* (db) */, error_f /* (e) */ )
     {
-        _init(  identity.dbServerHost()
-            ,   identity.dbServerPort()
-            ,   identity.dbName()
-            ,   identity.dbServerUsername()
-            ,   identity.dbServerPassword()
-            ,   success_f
-            ,   error_f
-            );
-        
-        /* aux ==== */
+        a.assert_def(host, 'host');
+        a.assert_def(port, 'port');
+        a.assert_def(name, 'name');
+        a.assert_def(username, 'username');
+        a.assert_def(password, 'password');
 
-        function _init( host, port, name, username, password, 
-                        success_f /* (db) */, error_f /* (e) */ )
-        {
-            a.assert_def(host, 'host');
-            a.assert_def(port, 'port');
-            a.assert_def(name, 'name');
-            a.assert_def(username, 'username');
-            a.assert_def(password, 'password');
-            a.assert_f(success_f);
-            a.assert_f(error_f);
+        var server = new mongodb.Server( host, port, {auto_reconnect: true});
 
-            var server = new mongodb.Server( host, port, {auto_reconnect: true});
+        var db = new mongodb.Db( name, server, {safe: true} );
 
-            var db = new mongodb.Db( name, server, {safe: true} );
+        db.open(
+            function (err, db_p)
+            {
+                if (err)
+                    return error_f(err);
 
-            db.open(
-                function (err, db_p)
-                {
-                    if (err)
-                        return error_f(err);
+                db.authenticate(username, password, 
+                    function (err, result)
+                    {
+                        assert(result == true, 'db.authenticate failed');
 
-                    db.authenticate(username, password, 
-                        function (err, result)
-                        {
-                            assert(result == true, 'db.authenticate failed');
+                        // You are now connected and authenticated.
 
-                            // You are now connected and authenticated.
+                        mongo.db =  db;
 
-                            mongo.db =  db;
-
-                            success_f(db);
-                        } );
-                } );
-        }
-    };
+                        success_f(db);
+                    } );
+            } );
+    }
+};
 
 
 /* ================================================================== */
@@ -97,24 +100,51 @@ mongo.init =
 mongo.getCollection =
     function(collectionName, success_f, error_f)
     {
-        a.assert_def(mongo.db,          'mongo.db');
-        a.assert_def(collectionName,    'collectionName');
+        a.assert_string(collectionName, 'collectionName');
         a.assert_f(success_f);
         a.assert_f(error_f);
-
-        mongo.db.collection(    
-            collectionName,
-            function(err, collection)
+        
+        var q = new OperationQueue(1);
+        
+        q.on('abort',
+            	function(e){
+                    error_f(e);
+                });
+        
+        // Lazy init if needed
+        if (mongo.db == undefined)
+        {
+            q.add(
+                function InitOperation(doneOp) {
+                    _init(
+                        function success() {
+                            doneOp();
+                        }
+                    ,	function error() {
+                            q.abort(new Error('mongo.init failed'));
+                        });
+                });
+        
+        }
+        
+        q.add(
+            function GetCollectionOperation(doneOp)
             {
-                if (err) {
-                    console.error('db.collection failed err:' + err);
-                    error_f(err);
-                }
-                else
-                {
-                    success_f(collection);
-                }
-            } );
+            	mongo.db.collection(collectionName,
+                    function(err, collection)
+                    {
+                        if (err) {
+                            console.error('db.collection failed err:' + err);
+                            error_f(err);
+                        }
+                        else
+                        {
+                            success_f(collection);
+                            doneOp();
+                        }
+                    } );
+            });
+
     };
 
 

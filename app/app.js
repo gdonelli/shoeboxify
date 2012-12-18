@@ -48,23 +48,31 @@ app.configure('development',
 
 app.settings['x-powered-by'] = false;
 
-/************/
-/*   init   */
-/************/
+
+/*
+ =========[   init   ]=========
+ */
 
 
 identity.validateEnviroment();
 
-/*********************/
-/*   Public Routes   */
-/*********************/
+/*
+ =========[   Routes   ]=========
+ */
 
 
+// Public
 _setupRoutesForModule( 'index');
 _setupRoutesForModule( 'authentication');
 
+// Admin
 _setupRoutesForModule( 'admin',     { admin: true } );
+
+// User
 _setupRoutesForModule( 'view',      { user:  true } );
+_setupRoutesForModule( 'usertest',  { user:  true } );
+
+
 
 
 /*
@@ -78,23 +86,28 @@ _setupRoutesForModule( service, { name: 'service'   } );
 /**************************/
 
 /*
-app.get('/dev/exploreGraph',    fb.requiresAuthentication, dev.exploreGraph);
-app.get('/dev/me',              fb.requiresAuthentication, dev.me);
+    app.get('/dev/me',              fb.requiresAuthentication, dev.me);
+    app.get('/dev/permissions', fb.requiresAuthentication, dev.permissions);
+    app.get('/dev/drop',        fb.requiresAuthentication, dev.drop);
+ 
+app.get('/dev/session',     dev.session);
+app.get('/dev/rmsession',   dev.rmsession);
+ 
+    app.get('/dev/exploreGraph',    fb.requiresAuthentication, dev.exploreGraph);
+
 app.get('/dev/checkfriends',    fb.requiresAuthentication, dev.checkfriends);
 app.get('/dev/test-email',      fb.requiresAuthentication, dev.testEmail);
 
 app.get('/dev/whoami',      fb.requiresAuthentication, dev.whoami);
 app.get('/dev/myphotos',    fb.requiresAuthentication, dev.myphotos);
 
-app.get('/dev/drop',        fb.requiresAuthentication, dev.drop);
-app.get('/dev/permissions', fb.requiresAuthentication, dev.permissions);
+ 
 
 app.get('/dev/s3test',  dev.s3test);
 
 app.get('/dev/shoeboxified', fb.requiresAuthentication, dev.shoeboxified);
 
-app.get('/dev/session',     dev.session);
-app.get('/dev/rmsession',   dev.rmsession);
+
 */
 
 /*******************/

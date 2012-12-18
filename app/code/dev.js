@@ -32,16 +32,16 @@ exports.whoami =
     };
 
 
-exports.testEmail = 
-    function(quest, ponse)
-    {
-        ponse.writeHead(200, {'Content-Type': 'text/html'});
-        ponse.write('<html><body>');
-
-        EmailStarts('<html><body> <h1 style="color: green;">Ciao!</h1> </body></html>');
-
-        ponse.end('</body></html>');
-    }
+exports.testEmail =
+function(quest, ponse)
+{
+    ponse.writeHead(200, {'Content-Type': 'text/html'});
+    ponse.write('<html><body>');
+    
+    EmailStarts('<html><body> <h1 style="color: green;">Ciao!</h1> </body></html>');
+    
+    ponse.end('</body></html>');
+}
 
 
 function _emailServerConnect()
@@ -59,22 +59,22 @@ function SendTextEmail( toAddress, subject, textMessage )
 {
     var server = _emailServerConnect();
     // send the message and get a callback with an error or details of the message that was sent
-
+    
     var senderField = "Shoeboxify Survey <" + identity.emailAddress + ">";
-
+    
     var message = {
-            text:       textMessage
-       ,    from:       senderField
-       ,    to:         toAddress   
-       ,    cc:         senderField 
-       ,    subject:    subject
+    			text:       textMessage
+        ,	from:       senderField
+        ,	to:         toAddress
+        ,    cc:         senderField
+        ,    subject:    subject
     };
-
-    server.send( message, 
-        function(err, message)
-        {   
-            console.log(err || message); 
-        } );
+    
+    server.send( message,
+                function(err, message)
+                {
+                console.log(err || message);
+                } );
 }
 
 

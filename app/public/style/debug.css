@@ -37,6 +37,8 @@ div[class="array"]:nth-child(odd) {
 .plus {
   cursor: pointer;
 }
+.null,
+color: #AAA,
 .id,
 .link {
   cursor: pointer;

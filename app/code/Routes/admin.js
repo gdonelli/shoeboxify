@@ -58,7 +58,7 @@ admin.path.index = basePath;
 admin.route.index =
     function(quest, ponse)
     {
-        handy.routeDebugPage( ponse, admin, 'test' );
+        handy.routeDebugPage( ponse, admin, 'Admin Routes' );
     }
 
 
@@ -87,8 +87,6 @@ admin.route.unitTest =
         q.add(
             function StartOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
                 ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
                 ponse.write('<html><body>');
                 // var urlElements = url.parse(quest.url, true);
@@ -99,13 +97,11 @@ admin.route.unitTest =
         q.add(
             function GetAccessTokenOperation(doneOp)  //      --> q.context.cache
             {
-                console.log(arguments.callee.name);
-
                 var user = User.fromRequest(quest);
-                var fbAccess = user.facebookAccess();
+                var fbAccess = user.getFacebookAccess();
 
-                var accessToken = fbAccess.token();
-                var expiresToken= fbAccess.expires();
+                var accessToken = fbAccess.getToken();
+                var expiresToken= fbAccess.getExpires();
 
                 assert(accessToken  != undefined, 'accessToken is undefined');
                 assert(expiresToken != undefined, 'expiresToken is undefined');
@@ -124,8 +120,6 @@ admin.route.unitTest =
         q.add(
             function WriteFacebookTokenCacheOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
                 var cacheContent = JSON.stringify(q.context.cache)
 
                 console.log('cacheContent: ' + cacheContent);
@@ -133,11 +127,9 @@ admin.route.unitTest =
                 fs.writeFile(admin.k.AccessTokenCacheFilePath, cacheContent,
                     function(err) 
                     {
-                        console.log('fs.writeFile:');
-                        console.log(err);
-
-                        if(err) 
+                        if(err)
                         {
+                    		console.log('fs.writeFile error:');
                             console.error(err);
                             q.abort(err);
                         }
@@ -152,8 +144,6 @@ admin.route.unitTest =
         q.add(
             function GetTestFilesOperation(doneOp)    //      --> q.context.files
             {
-                console.log(arguments.callee.name);
-
                 q.context.files = [];
                 var allModules =  use.lib.modules();
 
@@ -185,7 +175,6 @@ admin.route.unitTest =
                             var pathToTest = allModules[module];
                             q.context.files.push(pathToTest);
                         }
-                            
                     }
                 }
 
@@ -195,8 +184,6 @@ admin.route.unitTest =
         q.add(
             function RunTestsOperation(doneOp)
             {
-                console.log(arguments.callee.name);
-
                 var modulesPath = path.dirname(require.main.filename) + '/node_modules';
 
                 // console.log(modulesPath);

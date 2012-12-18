@@ -35,7 +35,7 @@ function debug_expand(val)
 
 function openWindowWithGraphAPI(path)
 {
-	window.open('/dev/exploreGraph?api=' + Base64.encode(path) );
+	window.open('/test/exploreGraph?api=' + Base64.encode(path) );
 }
 
 

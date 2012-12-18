@@ -52,8 +52,16 @@ var _common = (function ()
 				var isArray  = _isArray(obj);
 				var isObject = _isObject(obj);
 				var isError  = _isError(obj);
-
-				if ( isArray || isObject || isError )
+               
+                if (obj === undefined)
+                {
+                    result = '<span class="null">[undefined]</span>';
+                }
+                else if (obj === null)
+                {
+                    result = '<span class="null">[null]</span>';
+                }
+				else if ( isArray || isObject || isError )
 				{
 					result += _indent(indentIndex);
 
@@ -134,10 +142,6 @@ var _common = (function ()
 				else if ( objectType === '[object Boolean]')
 				{
 					result = '<span class="boolean">'+ obj + '</span>';
-				}
-				else if ( obj === null )
-				{
-					result = '<span class="null">null</span>';
 				}
 				else
 				{

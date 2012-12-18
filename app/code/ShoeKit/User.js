@@ -15,22 +15,22 @@ var Class = exports;
 
 Class.User = User;
 
-function User(  fbAccess 
-            ,   success_f   /* (user) */
-            ,   error_f     /* (err)  */    )
+function User(    fbAccess
+              ,   success_f   /* (user) */
+              ,   error_f     /* (err)  */    )
 {
     if (fbAccess    == undefined &&
-        success_f   == undefined && 
+        success_f   == undefined &&
         error_f     == undefined) {  // Clone scenario
         return this;
     }
-
+    
     FacebookAccess.assert(fbAccess);
     a.assert_f(success_f);
     a.assert_f(error_f);
-
+    
     this._facebookAccess = fbAccess;
-
+    
     return this._init(success_f, error_f);
 }
 

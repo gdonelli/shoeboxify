@@ -34,6 +34,12 @@ Class.PhotoManager.assert =
         a.assert_def(pm._user);
     }
 
+Class.PhotoManager.fromRequest =
+	function(quest)
+    {
+        var user = User.fromRequest(quest);
+        return new PhotoManager(user);
+    }
 
 PhotoManager.prototype.addPhotoWithFacebookId = 
     function(fbId, success_f, error_f)
@@ -298,7 +304,7 @@ PhotoManager.prototype.removePhoto =
 
 
 PhotoManager.prototype.getPhotos = 
-    function(success_f, error_f)
+    function(success_f /* (photos) */, error_f)
     {
         var userId  = this._user.getFacebookId();
 
