@@ -108,7 +108,7 @@ User.prototype._init =
         q.add( 
             function InitPhotoDatabaseOperation(doneOp)
             {
-                photodb.init(  
+                photodb.setup(  
                         that.getFacebookId()
                     ,   function success()
                         {

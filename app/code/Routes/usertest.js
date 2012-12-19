@@ -55,6 +55,16 @@ usertest.route.me =
         ponse.end('</body></html>');
     }
 
+// permissions
+
+usertest.path.permissions = basePath + '/permissions';
+
+usertest.route.permissions =
+    function(quest, ponse)
+    {
+        _respondWithGraphInfoPage(quest, ponse, '/me/permissions');
+    };
+
 // session
 
 usertest.path.session = basePath + '/session';
@@ -253,8 +263,6 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
     	,	graphURL
         ,	function success(fbObject)
             {
-                console.log('_ponsepondWithGraphInfoPage - sucess');
-
                 if ( !authentication.sanitizeObject(quest, ponse, fbObject) )
                     return;
 

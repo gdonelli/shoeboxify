@@ -71,19 +71,10 @@ httpx.HEAD =
                 ,   'HEAD'
                 ,   function(read_s, ponse)
                     {
-                        /*                      
-                        console.log('read_s:');
-                        console.log(read_s);
-
-                        console.log('ponse:');
-                        console.log(ponse);
-                        */
-
                         if (success_f)
                             success_f(ponse);
                     }
-                ,   error_f
-                ,   false);         
+                ,   error_f );
 
     };
 
@@ -93,9 +84,14 @@ httpx.GET =
             ,   _200OK_f    /*  (read_s, ponse) */
             ,   other_f     /*  (ponse)     */
             ,   error_f     /*  (error)     */
-            ,   traverse
+            ,   traverseOpz
             )
     {
+        a.assert_http_url(theURL);
+        a.assert_f(_200OK_f);
+        a.assert_f(other_f);
+        a.assert_f(error_f);
+    
         return _makeHTTPRequest(
                     theURL
                 ,   'GET'
@@ -107,11 +103,11 @@ httpx.GET =
                             if (_200OK_f)
                                 _200OK_f(read_s, ponse);
                         }
-                        else if (traverse == true && ponse.statusCode == 302)
+                        else if (traverseOpz == true && ponse.statusCode == 302)
                         {
                             a.assert_def(ponse.headers.location, 'ponse.headers.location');
 
-                            httpx.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverse);
+                            httpx.GET(ponse.headers.location, _200OK_f, other_f, error_f, traverseOpz);
                         }
                         else
                         {   
@@ -121,8 +117,7 @@ httpx.GET =
                                 other_f(ponse);         
                         }
                     }
-                ,   error_f
-                ,   traverse);          
+                ,   error_f );          
     };
 
 
@@ -144,6 +139,9 @@ httpx.requestURL =
 
         var methodAgent = theURLElements['protocol'] == 'https:' ? https : http;
 
+//        console.log('protocol: ');
+//        console.log( theURLElements['protocol'] );
+        
         var quest = methodAgent.request(questOptions, requestHandler);
 
         return quest;
@@ -154,7 +152,6 @@ function _makeHTTPRequest(  theURL
                         ,   httpMethod
                         ,   success_f   /*  (read_s, ponse) */
                         ,   error_f     /*  (error)     */
-                        ,   traverse
                         )
     {
         var quest = httpx.requestURL(

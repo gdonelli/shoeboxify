@@ -15,7 +15,7 @@ describe('httpx.js',
                 _test_GET_site(httpApple, done);
             } );
 
-        var httpsWells = 'https://www.wellsfargo.com';
+        var httpsWells = 'https://www.apple.com';
 
         it( 'httpx.GET(https...) ' + httpsWells,
             function(done) 
@@ -60,20 +60,20 @@ describe('httpx.js',
         function _test_GET_site( theURL, done )
         {
             httpx.GET(  theURL
-                    ,   function success(string) {
-
-                            // console.log( 'html index: ' + string.indexOf('<html') );
-
-                            assert(string.indexOf('<html') >= 0, 'Cannot find <html> tag');
-                            assert(string.indexOf('<head') >= 0, 'Cannot find <head> tag');
-                            assert(string.indexOf('<body') >= 0, 'Cannot find <head> tag');
-
+            		,	function OK_200(read_s, ponse) {
+                            assert(read_s.indexOf('<html') >= 0, 'Cannot find <html> tag');
+                            assert(read_s.indexOf('<head') >= 0, 'Cannot find <head> tag');
+                            assert(read_s.indexOf('<body') >= 0, 'Cannot find <head> tag');
                             done();
                         }
-                    ,   function error(e) {
+                    ,   function other(ponse) {
+                            console.error('otherResponse: ponse.statusCode');
+                            console.error(ponse.statusCode);
                             throw new Error('Cannot fetch ' + theURL);
                         }
-                    );
+                    ,   function error(e) {
+                            throw e;
+                        });
         }
 
 

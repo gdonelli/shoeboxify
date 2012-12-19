@@ -100,7 +100,7 @@ authentication.route.loginResponse =
         q.on('abort',
             function(e) {
                 handy.logErrorStacktrace(e);
-                RespondWithError(quest, ponse, 'Login Error', e);
+                _respondWithError(quest, ponse, 'Login Error', e);
             });
 
         // Read URL query
@@ -240,113 +240,116 @@ authentication.route.loginResponse =
                 if (q.context.source)
                     ponse.redirect(q.context.source);
                 else
-                    RespondWithLoginSuccess(quest, ponse);
+                    _respondWithLoginSuccess(quest, ponse);
 
                 doneOp();
             });
     };
 
 
-
-function IsShoeboxifyTool(quest)
+function _isShoeboxifyTool(quest)
 {
     return (quest.headers['user-agent'] == 'com.shoeboxify.tool');
 }
 
-function RespondWithLoginSuccess(quest, ponse)
+function _respondWithLoginSuccess(quest, ponse)
 {
-    if ( IsShoeboxifyTool(quest) )
-        return RespondWithJSONSuccess(quest, ponse);
+    if ( _isShoeboxifyTool(quest) )
+        return _respondWithJSONSuccess(quest, ponse);
     else
-        return RespondWithHTMLSuccess(quest, ponse);
-}
-
-function RespondWithJSONSuccess(quest, ponse)
-{
-    ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+        return _respondWithHTMLSuccess(quest, ponse);
     
-    var fbAcccess = quest.session.user.getFacebookAccess();
-
-    var object = {  'accessToken'   : fbAcccess.getToken(),
-                    'expires'       : fbAcccess.getExpires()   };
-
-    ponse.end( JSON.stringify(object) );    
-}
-
-function RespondWithHTMLSuccess(quest, ponse)
-{
-    var title = /* quest.session.me.name + */'Login Successful';
-
-    ponse.writeHead(200, {'Content-Type': 'text/html'});
-
-    ponse.write('<html>');
-
-    ponse.write('<head>');
-    ponse.write('<title>' + title + '</title>');
-    ponse.write('</head>');
-
-    ponse.write('<body>');
-    ponse.write('<h1>' + title + '</h1>');
-
-    var fbAcccess = quest.session.user.getFacebookAccess();
-
-    ponse.write('<p><strong>accessToken: </strong>' + fbAcccess.getToken() + '</p>');
-    ponse.write('<p><strong>expires: </strong>'     + fbAcccess.getExpires() + 
-                ' seconds (' + Math.round( fbAcccess.getExpires()/(60*60*24) ) + ' days)</p>');
-
-    ponse.write('</body>');
+    /* aux ==== */
     
-    ponse.end('</html>');
+    function _respondWithJSONSuccess(quest, ponse)
+    {
+        ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+        
+        var fbAcccess = quest.session.user.getFacebookAccess();
+
+        var object = {  'accessToken'   : fbAcccess.getToken(),
+                        'expires'       : fbAcccess.getExpires()   };
+
+        ponse.end( JSON.stringify(object) );    
+    }
+
+    function _respondWithHTMLSuccess(quest, ponse)
+    {
+        var title = /* quest.session.me.name + */'Login Successful';
+
+        ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+        ponse.write('<html>');
+
+        ponse.write('<head>');
+        ponse.write('<title>' + title + '</title>');
+        ponse.write('</head>');
+
+        ponse.write('<body>');
+        ponse.write('<h1>' + title + '</h1>');
+
+        var fbAcccess = quest.session.user.getFacebookAccess();
+
+        ponse.write('<p><strong>accessToken: </strong>' + fbAcccess.getToken() + '</p>');
+        ponse.write('<p><strong>expires: </strong>'     + fbAcccess.getExpires() + 
+                    ' seconds (' + Math.round( fbAcccess.getExpires()/(60*60*24) ) + ' days)</p>');
+
+        ponse.write('</body>');
+        
+        ponse.end('</html>');
+    }
 }
 
-function RespondWithError(quest, ponse, title, e)
+
+function _respondWithError(quest, ponse, title, e)
 {
-    if ( IsShoeboxifyTool(quest) )
-        return RespondWithJSONError(quest, ponse, title, e);
+    if ( _isShoeboxifyTool(quest) )
+        return _respondWithJSONError(quest, ponse, title, e);
     else
-        return RespondWithHTMLError(quest, ponse, title, e);
-}
-
-function RespondWithJSONError(quest, ponse, title, e)
-{
-    console.error('Login: ' + e);
-
-    ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
-
-    var responseObject = {};
-
-    responseObject.message = title;
-    responseObject.error = e;
+        return _respondWithHTMLError(quest, ponse, title, e);
     
-    ponse.end( JSON.stringify(responseObject) );
-}
-
-function RespondWithHTMLError(quest, ponse, title, e)
-{
-    console.error('Login: ' + e);
-
-    ponse.writeHead(200, {'Content-Type': 'text/html'});
-
-    ponse.write('<html>');
-
-    ponse.write('<head>');
-    ponse.write('<title>' + title + '</title>');
-    ponse.write('</head>');
-
-    ponse.write('<body>');
-    ponse.write('<h1>' + title + '</h1>');
-    ponse.write('<p>' + e + '</p>');
-
-    ponse.write('<code>');
-    handy.writeErrorStacktraceToHTMLStream(ponse, e);
-    ponse.write('</code>');
+    /* aux ==== */
     
-    ponse.write('<p style="color:red">Please report this error at error[at]shoeboxify.com</p>');
-    ponse.write('</body>');
-    
-    ponse.end('</html>');
-}
+    function _respondWithJSONError(quest, ponse, title, e)
+    {
+        console.error('Login: ' + e);
 
+        ponse.writeHead( 200, { 'Content-Type': 'application/json' } );
+
+        var responseObject = {};
+
+        responseObject.message = title;
+        responseObject.error = e;
+        
+        ponse.end( JSON.stringify(responseObject) );
+    }
+
+    function _respondWithHTMLError(quest, ponse, title, e)
+    {
+        console.error('Login: ' + e);
+
+        ponse.writeHead(200, {'Content-Type': 'text/html'});
+
+        ponse.write('<html>');
+
+        ponse.write('<head>');
+        ponse.write('<title>' + title + '</title>');
+        ponse.write('</head>');
+
+        ponse.write('<body>');
+        ponse.write('<h1>' + title + '</h1>');
+        ponse.write('<p>' + e + '</p>');
+
+        ponse.write('<code>');
+        handy.writeErrorStacktraceToHTMLStream(ponse, e);
+        ponse.write('</code>');
+        
+        ponse.write('<p style="color:red">Please report this error at error[at]shoeboxify.com</p>');
+        ponse.write('</body>');
+        
+        ponse.end('</html>');
+    }
+}
 
 function _dialogRedirectURL(quest)
 {
@@ -497,7 +500,7 @@ authentication.sanitizeObject =
     {
         if (!object) 
         {
-            return RespondWithErrorPage('facebook object is undefined');
+            return _respondWithErrorPage('facebook object is undefined');
         }
 
         var graphError = object['error'];
@@ -515,7 +518,7 @@ authentication.sanitizeObject =
         
         return true;
 
-        function RespondWithErrorPage(error)
+        function _respondWithErrorPage(error)
         {
             ponse.writeHead(200, {'Content-Type': 'text/html'} );
             ponse.write('<html><body>');

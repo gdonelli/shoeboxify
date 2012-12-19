@@ -18,10 +18,10 @@ describe('photodb.js',
         describe('photodb (basics)',
             function()
             {
-                it( 'photodb.init',
+                it( 'photodb.setup',
                     function(done)
                     {
-                        photodb.init(test_resources.kTestUserId
+                        photodb.setup(test_resources.kTestUserId
                             ,   function success() {
                                     done();
                                 }
@@ -63,32 +63,18 @@ describe('photodb.js',
                                 });
                     });
 
-                it( 'photodb._setupCollection',
-                    function(done)
-                    {
-                        photodb._setupCollection(
-                                test_resources.kTestUserId
-                            ,   function success(c) {
-                                    a.assert_def(c);
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                });
-                    });
-
-                it( 'photodb.init ' + userid1,
+                it( 'photodb.setup ' + userid1,
                     function(done) 
                     {   
-                        photodb.init( userid1
+                        photodb.setup( userid1
                             ,   function success(r) { done(); }
                             ,   function error(e) { throw e; } );
                     } );
 
-                it( 'photodb.init ' + userid2,
+                it( 'photodb.setup ' + userid2,
                     function(done) 
                     {   
-                        photodb.init( userid2
+                        photodb.setup( userid2
                             ,   function success(r) { done(); }
                             ,   function error(e) { throw e; } );
                     } );

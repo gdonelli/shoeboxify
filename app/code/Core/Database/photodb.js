@@ -21,50 +21,41 @@ var     assert  = require('assert')
 var photodb = exports;
 
 
-// API
-
-photodb.init = 
+photodb.setup = 
     function(userId, success_f, error_f)
     {
         a.assert_uid(userId);
         a.assert_f(success_f);
         a.assert_f(error_f);
-
-        var q = new OperationQueue(1);
-
-        q.on('abort',
-            function(e) {
-                error_f(e);
-            } );
-
-        // Establish main connection to Mongo DB if needed
-        if (mongo.db == undefined) {
-            q.add(
-                function MongoInitOperation(doneOp)
-                {
-                    mongo.init( function success() { doneOp();      }
-                            ,   function error(e)  { q.abort(e);    } );
-                } );
-        }
-
-        // Init User photodb
-        q.add(  
-            function UserPhotoDBInitOperation(doneOp)
-            {              
-                _setupCollection(
-                            userId
-                        ,   function success() { doneOp();      }
-                        ,   function error(e)  { q.abort(e);    } );
-            } );
-
+        
+        var q = _newCollectionOperationQueue(userId, error_f);
+        
         q.add(
-            function End(doneOp)
+            function SetupOperation(doneOp)
             {
-                success_f();
-                doneOp();
-            } );
-    };
+                var collection = a.assert_def(q.context.collection);
+              
+                var propertyIndex = {};
+                propertyIndex[Photo.FacebookIdKey] = 1;
+    
+                collection.ensureIndex(
+                        propertyIndex
+                    ,   { unique: true }
+                    ,   function(err, indexName)
+                        {
+                            if (err) {
+                                console.error('collection.ensureIndex for Photo.FacebookIdKey failed err:' + err);
+                                q.abort(err);
+                            }
+                            else {
+                                success_f();
+                                doneOp();
+                            }
+                        } );
+            });
 
+        
+    };
 
 photodb.addPhoto =
     function(userId, photo, success_f /* (photo) */, error_f /* (e) */)
@@ -79,7 +70,6 @@ photodb.addPhoto =
         _add(userId, photo, success_f, error_f);
     };
 
-
 photodb.removePhoto =
     function(userId, photo, success_f /*()*/, error_f /* (e) */)
     {
@@ -90,33 +80,17 @@ photodb.removePhoto =
 
         var findOptions = _findOptionsWithPhotoId( photo.getId() );
 
-        _remove(userId, findOptions, success_f, error_f);
+        _remove(userId
+        	,	findOptions
+            ,	function success(numOfEntries)
+                {
+                    if (numOfEntries == 1)
+                        success_f();
+                    else
+                        error_f( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );
+                }
+            ,	error_f);
     }
-
-// photodb.removeFacebookPhoto =
-//     function(userId, fbId, success_f, error_f)
-//     {
-//         a.assert_def(userId);
-//         a.assert_fbId(fbId);
-//         a.assert_f(success_f);
-//         a.assert_f(error_f);
-        
-//         var findOptions = _findOptionsWithFacebookId(fbId);
-        
-//         _remove(
-//                 userId
-//             ,   findOptions 
-//             ,   function success(numOfEntries)
-//                 {
-//                     if (numOfEntries == 1)
-//                         success_f();
-//                     else
-//                         error_f( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );                 
-//                 }
-//             ,   error_f );
-//     };
-
-
 
 photodb.getPhotoWithId =
     function(userId, photoId, success_f /* (photo) */, error_f)
@@ -191,7 +165,6 @@ photodb.removePhotoWithId =
 
 
 photodb._getCollection   = _getCollection;
-photodb._setupCollection = _setupCollection;
 photodb._add        = _add;
 photodb._findOne    = _findOne;
 photodb._findAll    = _findAll;
@@ -218,27 +191,35 @@ function _getCollection(userId, success_f, error_f)
             ,   error_f );
 }
 
-function _setupCollection(userId, success_f, error_f)
-{    
-    _getCollection( 
-            userId
-        ,   function success(c) {
-                var propertyIndex= {};
-                propertyIndex[Photo.FacebookIdKey] = 1;
-
-                c.ensureIndex( propertyIndex, { unique: true },
-                    function(err, indexName)
-                    {
-                        if (err) {
-                            console.error('collection.ensureIndex for Photo.FacebookIdKey failed err:' + err);
-                            error_f(err);
-                        }
-                        else
-                            success_f(c);
-                    } );             
-            }
-        ,   error_f );
+// Returns a queue to build upon to manipulare collection
+//              --> q.context.collection
+//
+function _newCollectionOperationQueue(userId, error_f)
+{
+    var result = new OperationQueue(1);
+    
+    result.context = {};
+    
+    result.on('abort',
+        function(e) {
+            error_f(e);
+        });
+    
+    result.add(
+        function GetCollectionOperation(doneOp){
+            _getCollection( userId
+                ,   function success(c) {
+                        result.context.collection = c;
+                        doneOp();
+                    }
+                ,   function error(e) {
+                        result.abort(e);
+                    });
+        });
+    
+    return result;
 }
+
 
 function _add(userId, object, success_f /* (new_entity) */, error_f)
 {
@@ -319,7 +300,6 @@ function _findOptionsWithFacebookId(fbId)
     result[Photo.kFacebookIdKey] = mongo.LongFromString(fbId);
     return result;
 }
-
 
 function _findOptionsWithPhotoId( photoIdOrString )
 {
