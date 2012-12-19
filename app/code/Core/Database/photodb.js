@@ -36,7 +36,7 @@ photodb.setup =
                 var collection = a.assert_def(q.context.collection);
               
                 var propertyIndex = {};
-                propertyIndex[Photo.FacebookIdKey] = 1;
+                propertyIndex[Photo.k('FacebookIdKey')] = 1;
     
                 collection.ensureIndex(
                         propertyIndex
@@ -44,7 +44,7 @@ photodb.setup =
                     ,   function(err, indexName)
                         {
                             if (err) {
-                                console.error('collection.ensureIndex for Photo.FacebookIdKey failed err:' + err);
+                                console.error('collection.ensureIndex for `FacebookIdKey` failed err:' + err);
                                 q.abort(err);
                             }
                             else {
@@ -163,13 +163,12 @@ photodb.removePhotoWithId =
 /* ====================================================== */
 /* ====================================================== */
 
-
-photodb._getCollection   = _getCollection;
-photodb._add        = _add;
-photodb._findOne    = _findOne;
-photodb._findAll    = _findAll;
-photodb._remove     = _remove;
-photodb._drop       = _drop;
+photodb._getCollection  = _getCollection;
+photodb._add            = _add;
+photodb._findOne        = _findOne;
+photodb._findAll        = _findAll;
+photodb._remove         = _remove;
+photodb._drop           = _drop;
 
 function _collectionName(userId)
 {
@@ -297,7 +296,7 @@ function _drop(userId, success_f, error_f)
 function _findOptionsWithFacebookId(fbId)
 {
     var result = {};
-    result[Photo.kFacebookIdKey] = mongo.LongFromString(fbId);
+    result[ Photo.k('FacebookIdKey') ] = mongo.LongFromString(fbId);
     return result;
 }
 
@@ -307,13 +306,13 @@ function _findOptionsWithPhotoId( photoIdOrString )
 
     if ( _.isString(photoIdOrString) )
     {
-        result[Photo.kIdKey] = new ObjectID(photoIdOrString);
+        result[ Photo.k('IdKey') ] = new ObjectID(photoIdOrString);
     }
     else
     {
         Photo.assertId(photoIdOrString);
 
-        result[Photo.kIdKey] = photoIdOrString;
+        result[ Photo.k('IdKey') ] = photoIdOrString;
     }
 
     return result;

@@ -8,6 +8,9 @@ var use = exports;
 
 var MODULE_FILE_EXTENSION = '.js';
 
+/*
+ * Project setup
+ */
 use.setup =
     function( source /* path or array of paths */ )
     {
@@ -16,67 +19,40 @@ use.setup =
         global.use.lib = use;
     }
 
-use.use = function(name)
+/*
+ *  Import either a module or Class.
+ *
+ * It follows the following naming convention:
+ *      modules have lowercase names
+ *      Classes's name are capitalized
+ */
+use.use =
+    function(name)
     {
         assert( name && name.length>0 , 'invalid name');
 
         var isClassName = name[0].toUpperCase() == name[0];
-
-        if (isClassName)
-            return use.class(name);
-        else
-            return use.module(name);
+        
+        return isClassName ? _useClass(name) : _useModule(name);
     };
 
-use.module =
-    function(name)
+
+/*
+ * konstants util
+ */
+use.k =
+    function(module, constantName)
     {
-        var modules = use.modules();
-
-        var modulePath = modules[name];
-
-        if (modulePath)
-        {
-            var moduleId = modulePath.substring(0, modulePath.length - MODULE_FILE_EXTENSION.length);
-            return require(moduleId);
-        }
-        else
-            throw new Error('Cannot find module: `'+ name +'`');
+        assert(module.constants != undefined, 'module has no constants (' + module.filename + ')');
+        var result = module.constants[constantName];
+        assert(result != undefined, 'Constant `' + constantName + '` is undefined');
+        return result;
     };
-
-use.class =
-    function(name)
-    {
-        var module = use.module(name);
-        var classInModule = module[name];
-
-        if (classInModule == undefined)
-        {
-            if ( Object.keys(module).length == 0 )
-            {
-                var circularErrString = 'Module: `' + name + '` appears to be empty - Is there circular dependency?';
-                console.error(circularErrString);
-                console.error('Circular dependency are not supported by the `use` directive');
-                throw new Error(circularErrString);
-            }
-            else
-            {
-                console.error('Error finding main class in module: `' + name + '`');
-                console.error('Module:');
-                console.error(module);                
-                throw new Error(name + '.' + name + ' is undefined');
-            }
-        }
-        else if (typeof classInModule == 'function')
-            return classInModule;
-        else
-            throw new Error(name + '.' + name + ' is not a function');       
-    }
 
 
 var _modules;
 
-use.modules = 
+use.modules =
     function(source /* path or array of paths */)
     {
         if (!_modules) {
@@ -95,6 +71,57 @@ use.modules =
         
         return _modules;
     }
+
+// Private
+function ___PRIVATE___(){}
+
+use._module = _useModule;
+
+function _useModule(name)
+{
+    var modules = use.modules();
+
+    var modulePath = modules[name];
+
+    if (modulePath)
+    {
+        var moduleId = modulePath.substring(0, modulePath.length - MODULE_FILE_EXTENSION.length);
+        return require(moduleId);
+    }
+    else
+        throw new Error('Cannot find module: `'+ name +'`');
+};
+
+use._class = _useClass;
+
+function _useClass(name)
+{
+    var module = _useModule(name);
+    var classInModule = module[name];
+
+    if (classInModule == undefined)
+    {
+        if ( Object.keys(module).length == 0 )
+        {
+            var circularErrString = 'Module: `' + name + '` appears to be empty - Is there circular dependency?';
+            console.error(circularErrString);
+            console.error('Circular dependency are not supported by the `use` directive');
+            throw new Error(circularErrString);
+        }
+        else
+        {
+            console.error('Error finding main class in module: `' + name + '`');
+            console.error('Module:');
+            console.error(module);                
+            throw new Error(name + '.' + name + ' is undefined');
+        }
+    }
+    else if (typeof classInModule == 'function')
+        return classInModule;
+    else
+        throw new Error(name + '.' + name + ' is not a function');       
+}
+
 
 /* aux ==================================================== */
 

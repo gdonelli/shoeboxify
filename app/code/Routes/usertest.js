@@ -18,6 +18,7 @@ var     assert  = require('assert')
 
 	,	User			= use('User')
 	,	PhotoManager	= use('PhotoManager')
+    ,   OperationQueue  = use('OperationQueue')
 
     ;
 
@@ -222,24 +223,52 @@ usertest.path.shoeboxified = basePath + '/shoeboxified';
 usertest.route.shoeboxified =
     function(quest, ponse)
     {
-        var photoManager = PhotoManager.fromRequest(quest);
-        
         ponse.writeHead(200, {'Content-Type': 'text/html'});
         ponse.write('<html><body>');
+
+        var photoManager = PhotoManager.fromRequest(quest);
         
-        photoManager.getPhotos(
-                function success(photos)
-                {
-                    ponse.write(common.objectToHTML(photos, 'photoManager.getPhotos'));
-                    ponse.end('</body></html>');
-                }
-            ,	function error(e)
-                {
-                    ponse.write(common.objectToHTML(e, graphURL));
-                    ponse.end('</body></html>');
-                } );
+        var q = new OperationQueue(1);
         
-    }
+        q.debug=true;
+        
+        q.context = {};
+        
+        q.add(
+            function FetchPhotosOperation(doneOp){
+                photoManager.getPhotos(
+                        function success(photos)
+                        {
+                            q.context.photos = photos;
+                            doneOp();
+                        }
+                    ,	function error(e)
+                        {
+                            ponse.write(common.objectToHTML(e, graphURL));
+                            ponse.end('</body></html>');
+                            q.abort(e);
+                        } );
+            });
+
+        q.add(
+            function ComposePageOperation(doneOp){
+              
+                q.context.photos.forEach(
+                	function(photo)
+                    {
+                        var cpObject =  photo.getCopyObject();
+                        ponse.write('<img src="' + cpObject.picture + '" ' +
+                                    's:photoid="' + photo.getId() + '"></img>');
+                    });
+
+                ponse.end('</body></html>');
+                doneOp();
+            });
+        
+        
+        
+
+    };
 
 
 

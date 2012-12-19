@@ -1,14 +1,16 @@
+require('nodefly').profile(
+                '3b396f6249a7eae1e93b3d6ec81163bf'
+            ,   ['Shoeboxify', process.env.SUBDOMAIN, process.env.NODE_ENV ] );
+
 var     express = require('express')
-    ,   assert  = require('assert')
     ,   http    = require('http')
     ,   path    = require('path')
-    ,   _       = require('underscore')
+
 
 require('./code/global'); // Setup 'use' command
 
-var     handy           = use('handy')
-    ,   identity        = use('identity')
-    ,   authentication  = use('authentication')
+var     identity    = use('identity')
+    ,   routeutil   = use('routeutil')
     ;
 
 
@@ -62,54 +64,17 @@ identity.validateEnviroment();
 
 
 // Public
-_setupRoutesForModule( 'index');
-_setupRoutesForModule( 'authentication');
+routeutil.addRoutesFromModule(app, 'index');
+routeutil.addRoutesFromModule(app, 'authentication');
 
 // Admin
-_setupRoutesForModule( 'admin',     { admin: true } );
+routeutil.addRoutesFromModule(app, 'admin',     { admin: true } );
 
 // User
-_setupRoutesForModule( 'view',      { user:  true } );
-_setupRoutesForModule( 'usertest',  { user:  true } );
+routeutil.addRoutesFromModule(app, 'view',      { user:  true } );
+routeutil.addRoutesFromModule(app, 'usertest',  { user:  true } );
+routeutil.addRoutesFromModule(app, 'service',   { user:  true } );
 
-_setupRoutesForModule( 'service',  { user:  true } );
-
-
-
-/*
-_setupRoutesForModule( view,    { name: 'view',     user: true  } );
-_setupRoutesForModule( service, { name: 'service'   } );
-*/
-
-
-/**************************/
-/*   Development Routes   */
-/**************************/
-
-/*
-    app.get('/dev/me',              fb.requiresAuthentication, dev.me);
-    app.get('/dev/permissions', fb.requiresAuthentication, dev.permissions);
-    app.get('/dev/drop',        fb.requiresAuthentication, dev.drop);
- 
-app.get('/dev/session',     dev.session);
-app.get('/dev/rmsession',   dev.rmsession);
- 
-    app.get('/dev/exploreGraph',    fb.requiresAuthentication, dev.exploreGraph);
-
-app.get('/dev/checkfriends',    fb.requiresAuthentication, dev.checkfriends);
-app.get('/dev/test-email',      fb.requiresAuthentication, dev.testEmail);
-
-app.get('/dev/whoami',      fb.requiresAuthentication, dev.whoami);
-app.get('/dev/myphotos',    fb.requiresAuthentication, dev.myphotos);
-
- 
-
-app.get('/dev/s3test',  dev.s3test);
-
-app.get('/dev/shoeboxified', fb.requiresAuthentication, dev.shoeboxified);
-
-
-*/
 
 /*******************/
 /*   HTTP Server   */
@@ -121,13 +86,13 @@ http.createServer(app).listen(app.get('port'), function(){
 
 
 /* aux ==== */
-
+/*
 function _setupRoutesForModule(moduleName, options)
 {
     assert(moduleName != undefined,     'moduleName is undefined');
     console.log(moduleName);
  
-    var module = use.lib.module(moduleName);
+    var module = use(moduleName);
 
     assert(module != undefined,         'module is undefined');
     assert(module.path != undefined,    'module.path is undefined');
@@ -186,4 +151,4 @@ function _setupRoutesForModule(moduleName, options)
         console.log('   |=> ' + path_i + opt);
     }
 
-}
+}*/

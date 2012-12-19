@@ -30,12 +30,9 @@ describe(	'Photo.js',
 			{	
 				var object = { casa: 'italy' };
 				var photo = Photo.fromEntry(object);
-
 				a.assert_def( photo.getId );
-
-				console.log(photo);
+//				console.log(photo);
 			});
-
 
 		it('getters',
 			function()

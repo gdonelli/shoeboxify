@@ -28,7 +28,7 @@ describe('PhotoManager.js',
                         PhotoManager.assert(photoManager);
                     });
 
-                it( 'PhotoManager.addPhotoWithFacebookId',
+                it( 'PhotoManager.addPhotoWithFacebookId one',
                     function(done)
                     {
                         photoManager.addPhotoWithFacebookId( 
@@ -50,13 +50,53 @@ describe('PhotoManager.js',
                                 } );
                     });
 
+                it( 'PhotoManager.addPhotoWithFacebookId same',
+                    function(done)
+                    {
+                        photoManager.addPhotoWithFacebookId( 
+                                test_resources.kSteveJobsPhotoId
+                            ,   function success(newPhoto)
+                                {
+                                    Photo.assert(newPhoto);
+
+                                    var photoId = newPhoto.getFacebookId();
+                                    assert( photoId == test_resources.kSteveJobsPhotoId
+                                        ,   'photoId dont match');
+
+                                    done();
+                                }
+                            ,   function error(e) {
+                                    throw e;
+                                } );
+                    });
+
+                it( 'PhotoManager.addPhotoWithFacebookId other',
+                    function(done)
+                    {
+                        photoManager.addPhotoWithFacebookId( 
+                                test_resources.kProfilePhotoId
+                            ,   function success(newPhoto)
+                                {
+                                    Photo.assert(newPhoto);
+
+                                    var photoId = newPhoto.getFacebookId();
+                                    assert( photoId == test_resources.kProfilePhotoId
+                                        ,   'photoId dont match');
+
+                                    done();
+                                }
+                            ,   function error(e) {
+                                    throw e;
+                                } );
+                    });
+
                 it( 'PhotoManager.getPhotos',
                     function(done)
                     {
                         photoManager.getPhotos(
                                 function success(array) {
                                     a.assert_def(array);
-                                    assert(array.length == 1, 'array.length is expected to be #1 is: #' + array.length );
+                                    assert(array.length == 2, 'array.length is expected to be #2 is: #' + array.length );
                                     done();
                                 }
                             ,   function error(e) {

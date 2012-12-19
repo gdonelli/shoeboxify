@@ -57,12 +57,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         var q = new OperationQueue(1);
 
         q.context = {};
-        // q.debug = true;
-
-        q.on('abort', 
-            function(e) {
-                error_f(e);
-            });
+//        q.debug = true;
 
         //
         // Make sure it is not a duplicate, if so we just return it. 
@@ -154,10 +149,12 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             function InsertPhotoInDatabaseOperation(doneOp)
             {
                 Photo.assert(q.context.photo);
-
                 var photo = q.context.photo;
+              
                 photo.setSourceObject(q.context.facebookObject);
                 photo.setCopyObject(q.context.copyObject);
+
+//                console.log(photo);
 
                 photodb.addPhoto(   userId
                                 ,   photo
@@ -168,6 +165,8 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                                     }
                                 ,   function error(e)
                                     {
+                                        console.error(e);
+                                 
                                         if (e.code == 11000)
                                             _abort('photodb.addPhoto failed because of a duplicate of ' + fbId, e);
                                         else
@@ -198,6 +197,27 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 
             q.abort(error);
         }
+        
+        q.on('abort',
+            function(abortErr) {
+                if (q.context.copyObject) // Remove copyObject
+                {
+                    storage.deleteFilesInCopyObject(
+                            userId
+                        ,	q.context.copyObject
+                        ,	function success() {
+                                console.error('Storage roll back success');
+                                error_f(abortErr);
+                            }
+                        ,	function error(rollbackErr){
+                                console.error('Storage roll back failed with error:');
+                                console.error(rollbackErr.stack);
+                                error_f(abortErr);
+                            } );
+                }
+
+        });
+
     };
 
 /* types of photos:
@@ -217,7 +237,7 @@ PhotoManager.prototype.addPhotoFromURL =
 
         if (fbid) // it is a Facebook object...
         {
-//            console.log('addPhotoFromURL fbid:' + fbid);
+//          console.log('addPhotoFromURL fbid:' + fbid);
             return this.addPhotoWithFacebookId(fbid, success_f, error_f);
         }
         else
@@ -328,12 +348,20 @@ PhotoManager.prototype.removePhoto =
             });
     };
 
+PhotoManager.prototype.getPhotoWithId =
+    function(photoId, success_f /* (photo) */, error_f)
+    {
+        var userId  = this._user.getFacebookId();
+
+        return photodb.getPhotoWithId(userId, photoId, success_f, error_f)
+    };
+
 
 PhotoManager.prototype.getPhotos = 
     function(success_f /* (photos) */, error_f)
     {
         var userId  = this._user.getFacebookId();
 
-        photodb.getAllPhotos(userId, success_f, error_f);
+        return photodb.getAllPhotos(userId, success_f, error_f);
     };
 

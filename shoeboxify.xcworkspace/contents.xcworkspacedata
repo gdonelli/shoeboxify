@@ -2,12 +2,21 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:app/code/Routes/routeutil.js">
+   </FileRef>
+   <FileRef
       location = "group:app/app.js">
+   </FileRef>
+   <FileRef
+      location = "group:app/package.json">
    </FileRef>
    <FileRef
       location = "group:app/code">
    </FileRef>
    <FileRef
       location = "group:app/public">
+   </FileRef>
+   <FileRef
+      location = "group:app/views">
    </FileRef>
 </Workspace>

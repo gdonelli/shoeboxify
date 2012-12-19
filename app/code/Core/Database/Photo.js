@@ -13,29 +13,28 @@ Class.Photo = Photo;
 //
 // Konstants
 //
+Class.Photo.constants = {
+    
+    /* ===  KEYS  === */
+    
+            IdKey:              '_id'
+        ,   FacebookIdKey:      'fb_id'
+        ,   SourceObjectKey:    'source'
+        ,   CopyObjectKey:      'copy'
+        ,   CreatedDateKey:     'created'
+        ,   PhotoTypeKey:       'type'
+    
+    /* ===  TYPES  === */
+    
+        ,   FacebookReplicaType:        1
+        ,   FacebookPlaceholderType:    2
+        ,   GenericImageType:           3
 
-var kIdKey         		= '_id';
-var kFacebookIdKey      = 'fb_id';
-var kFacebookUserIdKey  = 'fb_userid';
-var kSourceObjectKey    = 'source';
-var kCopyObjectKey      = 'copy';
-var kCreatedDateKey      = 'created';
-var kPhotoTypeKey       = 'type';
-var kPhotoType          = 1;
+	};
 
-Class.Photo.kIdKey       		= kIdKey;
-Class.Photo.kFacebookIdKey    	= kFacebookIdKey;
-Class.Photo.kFacebookUserIdKey	= kFacebookUserIdKey;
-Class.Photo.kSourceObjectKey  	= kSourceObjectKey;
-Class.Photo.kCopyObjectKey     	= kCopyObjectKey;
-Class.Photo.kCreatedDateKey     = kCreatedDateKey;
-Class.Photo.kPhotoTypeKey      	= kPhotoTypeKey;
-Class.Photo.kPhotoType         	= kPhotoType;
-
-Class.Photo.kFacebookReplicaType		= 1;
-Class.Photo.kFacebookPlaceholderType	= 2;
-Class.Photo.kGenericImageType			= 3;
-
+Class.Photo.k = function(constantName) {
+        return use.lib.k(Class.Photo, constantName);
+    }
 
 function Photo(photoId, fbObject, copyObject)
 {
@@ -66,7 +65,7 @@ Class.Photo.assert =
 	function(photo)
 	{
 		a.assert_def(photo, 'photo undefined' );
-		a.assert_def(photo[kIdKey], 'photo is not valid Photo object (_id method missing)'  );
+		a.assert_def(photo[ Photo.k('IdKey') ], 'photo is not valid Photo object (_id method missing)'  );
 		assert(typeof photo.getId == 'function', 'photo is not valid Photo object (getId method missing)' );
 	};
 
@@ -102,7 +101,7 @@ Class.Photo.fromEntry =
 Photo.prototype.getId =
 	function()
 	{
-		return this[kIdKey];
+		return this[ Photo.k('IdKey') ];
 	};
 
 Photo.prototype.setId =
@@ -110,32 +109,32 @@ Photo.prototype.setId =
 	{
 		exports.Photo.assertId(value);
 
-		this[kIdKey] = value;
+		this[ Photo.k('IdKey') ] = value;
 	};
 
 // SourceObject
 
-Photo.prototype.getFacebookId =
-	function()
-	{
-		return this[kFacebookIdKey];
-	};
-
 Photo.prototype.getSourceObject =
 	function()
 	{
-		return this[kSourceObjectKey];
+		return this[ Photo.k('SourceObjectKey') ];
 	};
 
 Photo.prototype.setSourceObject =
 	function(value)
 	{
-		this[kSourceObjectKey]	= value;
+		this[ Photo.k('SourceObjectKey') ]	= value;
 
 		var fbId = value.id;
         a.assert_fbId(fbId);
 
-		this[kFacebookIdKey] = mongo.LongFromString(fbId);
+		this[ Photo.k('FacebookIdKey') ] = mongo.LongFromString(fbId);
+	};
+
+Photo.prototype.getFacebookId =
+	function()
+	{
+		return this[ Photo.k('FacebookIdKey') ];
 	};
 
 // CopyObject
@@ -143,19 +142,20 @@ Photo.prototype.setSourceObject =
 Photo.prototype.getCopyObject =
 	function()
 	{
-		return this[kCopyObjectKey];
+		return this[ Photo.k('CopyObjectKey') ];
 	};
 
 Photo.prototype.setCopyObject =
 	function(value)
 	{
-		this[kCopyObjectKey] = value;
+		this[ Photo.k('CopyObjectKey') ] = value;
 	};
 
+// CreatedDate
 
 Photo.prototype.getCreatedDate =
 	function()
 	{
-		return this[kCreatedDateKey];
+		return this[ Photo.k('CreatedDateKey') ];
 	};
 

@@ -108,49 +108,6 @@ describe('service.js',
         describe( 'copyObject',
             function()
             {
-
-                it( 'Init MongoDB',
-                    function(done)
-                    {
-                        mongo.init(
-                                function success(c)
-                                {
-                                    assert(c != undefined, 'collection is undefined');
-                                    done();
-                                }
-                            ,   function error(e)
-                                {
-                                    throw new Error(e);
-                                }
-                            );
-                    } );
-
-                it( 'Basic copy',
-                    function(done)
-                    {
-                        var fbid = '10152170979900707';
-                        service.shoeboxifyFacebookObject(
-                                authenticationTest.getFacebookAccess()
-                            ,   testUser
-                            ,   fbid
-                            ,   function success(r, opz)
-                                {
-                                    assert(r != undefined, 'r is undefined');
-                                    var entityFbId = mongo.memento.entity.getFacebookId(r);
-
-                                    assert(entityFbId == fbid, 'fbid doesnt match -  entityFbId:' + entityFbId + ' expected: ' +  fbid);
-                                    assert(mongo.memento.entity.getFacebookUserId(r)!= undefined, 'mongo.memento.entity.getFacebookUserId(r) is undefined');
-                                    assert(mongo.memento.entity.getSourceObject(r)  != undefined, 'mongo.memento.entity.getSourceObject(r) is undefined');
-                                    assert(mongo.memento.entity.getCopyObject(r)    != undefined, 'mongo.memento.entity.getCopyObject(r) is undefined');
-
-                                    done();
-                                }
-                            ,   function error(e)
-                                {
-                                    throw new Error('copy expected to work');
-                                } );
-                    } );
-            
             } );
 
 

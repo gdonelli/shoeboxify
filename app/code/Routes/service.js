@@ -25,7 +25,6 @@ var     assert  = require('assert')
     ,   fb      = use('fb')
     ,   fbutil  = use('fbutil')
     ,   handy   = use('handy')
-    ,   memento = use('memento')
 
     ,	authentication = use('authentication')
 
@@ -224,80 +223,6 @@ service.shoeboxifyURL =
                 } );
     };
 
-
-// TODO...
-// service.path.shoeboxifyFile = '/service/shoeboxifyFile';
-
-
-/*  API:    Copy Object
- *  URL:    /cp
- *  args:   ?u=<url>
- *
- *  example: /cp?u=https://www.facebook...
- *
- *  returns json:
- *      {
- *          status:   0 -> success
- *      }
- */
-
-service.path.shoeboxifyFacebookObject = '/service/shoeboxifyFB';
-
-service.route.shoeboxifyFacebookObject =
-    function(quest, ponse)
-    {
-        _sevice_processInputURL(quest, ponse, 
-            function(input, exit_f)
-            {
-                var fbId =  memento.facebookIdForURL(input);
-
-                if (fbId)
-                {
-                    var user = User.fromRequest(quest);
-
-                    service.shoeboxifyFacebookObject(
-                            user.getFacebookAccess()
-                        ,   user.getFacebookId()
-                        ,   fbId
-                        ,   function success(r, options)
-                            {
-                                exit_f({    status: 0
-                                        ,   source: input
-                                        ,     data: r });
-                            }
-                        ,   function error(e)
-                            {
-                                exit_f({    status: 1
-                                        ,   source: input
-                                        ,    error: 'copyObject failed ' + e });                
-                            } );
-                }
-                else
-                    exit_f('Cannot copy Facebook object from URL');
-            } );
-    };
-
-
-service.shoeboxifyFacebookObject =
-    function(fbAccess, userId, fbId, success_f /* (entry, meta) */, error_f  /* (error) */ )
-    {
-        FacebookAccess.assert(fbAccess);
-        a.assert_uid(userId);
-        a.assert_fbId(fbId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
-
-        memento.addFacebookObject(  fbAccess
-                                ,   userId
-                                ,   fbId
-                                ,   function success(r, options) {
-                                        success_f(r, options);
-                                    }
-                                ,   function error(e) {
-                                        error_f(e);
-                                    } );
-
-    }
 
 /*
     process_f (input, exit_f)

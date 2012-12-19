@@ -8,9 +8,8 @@ var     https   = require('https')
     ,   path    = require('path')
 
     ,   mongo   = use('mongo')
-    ,   memento = use('memento')
     ,   common  = use('common')
-    ,   User    = use('User')
+    ,   PhotoManager	= use('PhotoManager')
     ;
 
 var view = exports;
@@ -33,36 +32,32 @@ view.route.shoeboxified =
         ponse.write('<body>');
         ponse.write('<h1>' + 'Shoeboxified' + '</h1><div>');
 
-        var user = User.fromRequest(quest);
-
-        mongo.memento.findAllFacebookObjects( 
-                user.getFacebookId()
-            ,   function success(r)
+        var photoManager = PhotoManager.fromRequest(quest);
+        
+        photoManager.getPhotos(
+                function success(photos)
                 {
-                    for (var i in r)
-                    {
-                        var object_i = r[i];
+                    photos.forEach(
+                        function(photo)
+                        {
+                            var cpObject = photo.getCopyObject();
+                                
+                            ponse.write('<img src="' + cpObject.picture + '" ');
+
+                            ponse.write('onclick="view(\'' + photo.getId() + '\')" ');
+
+                            ponse.write('></img>\n');
+
+                        });
                         
-                        var sourcePict  = object_i.source.picture;
-                        var copyPict    = object_i.copy.picture;
-
-                        var oId = mongo.entity.getId(object_i);
-
-                        ponse.write('<img src="' + copyPict + '" ');
-
-                        ponse.write('onclick="view(\'' + oId + '\')" ');
-
-                        ponse.write('></img>\n');
-                    }
-
                     ponse.end('</div></body></html>');
-
                 }
-            ,   function error(e){
-                    console.log('find returned error:');
-                    console.log(e);
-                });     
-
+            ,	function error(err)
+                {
+                    ponse.write( common.objectToHTML(err, 'photoManager.getPhotos error') );
+                    ponse.end('</div></body></html>');
+                } );
+        
     };
 
 
@@ -80,6 +75,7 @@ view.route.shoeboxified_id =
 
         ponse.write('<h1>' + quest.params.oid + '</h1>');
 
+/*
         memento.findId(
                 fb.me(quest, 'id')
             ,   quest.params.oid
@@ -92,6 +88,7 @@ view.route.shoeboxified_id =
                     ponse.write( common.objectToHTML(e, quest.params.oid) );
                     _theEnd();
                 } );
+*/
 
         function _theEnd()
         {
