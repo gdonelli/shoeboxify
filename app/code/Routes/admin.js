@@ -299,7 +299,7 @@ admin.route.intense =
         for ( var i=0; i<maxCount; i++ )
         {
             imageshop.safeResample( iphoneImagePath
-                                ,   imageshop.k.defaultResampleOptions
+                                ,   imageshop.k.DefaultResampleOptions
                                 ,   function success(path, size)
                                     {
                                         assert(size.width == 2048, 'image width expected to be 2048');                                  

@@ -72,6 +72,7 @@ _setupRoutesForModule( 'admin',     { admin: true } );
 _setupRoutesForModule( 'view',      { user:  true } );
 _setupRoutesForModule( 'usertest',  { user:  true } );
 
+_setupRoutesForModule( 'service',  { user:  true } );
 
 
 

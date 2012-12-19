@@ -66,6 +66,11 @@ fb.batch =
         outQuest.end();
     }
 
+
+
+
+/* aux === */
+
 function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /* (error) */)
 {
     FacebookAccess.assert(fbAccess);

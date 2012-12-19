@@ -32,6 +32,10 @@ Class.Photo.kCreatedDateKey     = kCreatedDateKey;
 Class.Photo.kPhotoTypeKey      	= kPhotoTypeKey;
 Class.Photo.kPhotoType         	= kPhotoType;
 
+Class.Photo.kFacebookReplicaType		= 1;
+Class.Photo.kFacebookPlaceholderType	= 2;
+Class.Photo.kGenericImageType			= 3;
+
 
 function Photo(photoId, fbObject, copyObject)
 {

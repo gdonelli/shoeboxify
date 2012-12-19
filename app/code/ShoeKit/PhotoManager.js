@@ -4,6 +4,7 @@ var     assert  = require("assert")
     ,   a   = use("a")
 
     ,   fb      = use('fb')
+    ,   fbutil  = use('fbutil')
     ,   photodb = use('photodb')
     ,   storage = use('storage')
 
@@ -127,7 +128,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             {
                 a.assert_def(q.context.facebookObject);
 
-                var photo = new Photo(true);
+                var photo = new Photo(true); // we need the id to for the storage
                 q.context.photo = photo;
 
                 assert( q.context.facebookObject.id == fbId,    
@@ -178,7 +179,6 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             function Finish(doneOp)
             {
                 Photo.assert(q.context.insertedPhoto);
-              
                 success_f( q.context.insertedPhoto );
                 doneOp();
             });
@@ -200,6 +200,32 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         }
     };
 
+/* types of photos:
+ *		1: FacebookReplica, exact copy of a facebook photo
+ *		2: FacebookPlaceholder, reference to a facebook photo we have no permission to get to yet
+ *		3: GenericImage, any image data
+ */
+
+PhotoManager.prototype.addPhotoFromURL =
+    function(theURL, success_f, error_f)
+    {
+        a.assert_http_url(theURL);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
+        
+        var fbid = fbutil.facebookIdForURL(theURL);
+
+        if (fbid) // it is a Facebook object...
+        {
+//            console.log('addPhotoFromURL fbid:' + fbid);
+            return this.addPhotoWithFacebookId(fbid, success_f, error_f);
+        }
+        else
+        {
+            error_f( new Error('Not supported yet') );
+        }
+
+    }
 
 Class.PhotoManager.kNoEntryFoundCode = 'NO-ENTRY-FOUND';
 

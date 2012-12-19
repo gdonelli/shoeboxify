@@ -7,6 +7,6 @@ if [ "$#" -gt 0 ]; then
 	node ../app/app.js
 else
 	echo "Run supervisor"
-	supervisor --watch ../app/  --poll-interval 10000 ../app/app.js
+	supervisor --watch ../app/  --poll-interval 1000 ../app/app.js
 fi
 

@@ -445,6 +445,11 @@ function _returnResponseWithMessage(ponse, message)
 /* ======================================================== */
 /* ======================================================== */
 
+authentication.isUserRequest =
+    function(quest)
+    {
+        return quest.session.hasOwnProperty('user');
+    };
 
 authentication.validateUserSession = 
     function(quest, ponse, next)
@@ -457,8 +462,7 @@ authentication.validateUserSession =
         {
             authentication.redirectToLogin(quest, ponse);
         }
-    }
-
+    };
 
 authentication.validateAdminSession = 
     function(quest, ponse, next)
@@ -480,8 +484,7 @@ authentication.validateAdminSession =
             ponse.write('</body></html>');
             ponse.end();
         }
-    }
-
+    };
 
 authentication.redirectToLogin =
     function(quest, ponse)

@@ -213,6 +213,8 @@ function _hasResampleOperationQueueCapacityFor(numOfOps, error_f)
 imageshop.safeResample = 
     function(filePath, options, success_f /* (outpath, size) */, error_f)
     {
+        a.assert_string(filePath, 'filePath');
+        a.assert_obj(options, 'options');
         a.assert_f(success_f);
         a.assert_f(error_f);
 

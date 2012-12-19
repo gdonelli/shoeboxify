@@ -23,11 +23,16 @@ var     assert  = require('assert')
     
     ,   a       = use('a')
     ,   fb      = use('fb')
+    ,   fbutil  = use('fbutil')
     ,   handy   = use('handy')
     ,   memento = use('memento')
 
-    ,   FacebookAccess = use('FacebookAccess')
-    
+    ,	authentication = use('authentication')
+
+    ,   User = use('User')
+    ,   FacebookAccess	= use('FacebookAccess')
+    ,   PhotoManager 	= use('PhotoManager')
+
     ;
 
 var service = exports;
@@ -116,7 +121,7 @@ service.facebookObjectForURL =
         a.assert_f(placeholder_f);
         a.assert_f(error_f);
 
-        var fbId =  memento.facebookIdForURL(inputURL);
+        var fbId =  fbutil.facebookIdForURL(inputURL);
 
         if (!fbId)
             return error_f( new Error('Cannot find facebook object from URL') );
@@ -182,8 +187,7 @@ service.route.shoeboxifyURL =
                 var user = User.fromRequest(quest);
 
                 service.shoeboxifyURL(
-                        user.getFacebookAccess()
-                    ,   user.getFacebookId()
+						user
                     ,   inputURL
                     ,   function success(r, options)
                         {
@@ -202,23 +206,22 @@ service.route.shoeboxifyURL =
 
 
 service.shoeboxifyURL =
-    function(fbAccess, userId, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
+    function(user, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
     {
-        FacebookAccess.assert(fbAccess);
-        a.assert_uid(userId);
-        a.assert_def(theURL);
+        a.assert_http_url(theURL);
         a.assert_f(success_f);
         a.assert_f(error_f);
-
-        memento.addFromURL( fbAccess
-                        ,   userId
-                        ,   theURL
-                        ,   function success(r, options) {
-                                success_f(r, options); 
-                            }
-                        ,   function error(e) { 
-                                error_f(e); 
-                            } );
+        
+        var photoManager = new PhotoManager(user);
+        
+        photoManager.addPhotoFromURL(
+                theURL
+            ,   function success(r, options) {
+                    success_f(r, options); 
+                }
+            ,   function error(e) { 
+                    error_f(e); 
+                } );
     };
 
 
@@ -341,7 +344,7 @@ function _sevice_processInputURL(   quest
 
     var input = urlQuery['u'];
 
-    if ( !fb.isAuthenticated(quest) )
+    if ( !authentication.isUserRequest(quest) )
     {
         _exit({ status: 403
             ,   source: input
