@@ -117,7 +117,7 @@ storage.copyFacebookPhoto =
                 else
                 {
                     var copyObject = _getCopyObject();
-                    // console.log(copyObject);
+
                     callback(null, copyObject);
                 }
 

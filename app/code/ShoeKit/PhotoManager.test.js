@@ -44,7 +44,10 @@ describe('PhotoManager.js',
                                     ,   'photoId dont match');
 
                                 photo = newPhoto;
-
+                                
+                                a.assert_def( photo.getCopyObject(),    'photo.getCopyObject()' );
+                                a.assert_def( photo.getSourceObject(),  'photo.getSourceObject()' );
+                                
                                 done();
                             });
                     });
@@ -104,6 +107,8 @@ describe('PhotoManager.js',
                 it( 'PhotoManager.removePhoto',
                     function(done)
                     {
+//                        console.log(photo);
+                   
                         photoManager.removePhoto(photo,
                             function(err) {
                                 if (err)

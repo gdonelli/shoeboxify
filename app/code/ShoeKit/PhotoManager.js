@@ -124,16 +124,16 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                 assert( q.context.facebookObject.id == fbId,    
                        'q.context.facebookObject.id:' + q.context.facebookObject.id + ' != fbId:' + fbId );
 
-                storage.copyFacebookPhoto(  userId
-                                        ,   photo.getId()
-                                        ,   q.context.facebookObject
-                                        ,   function success(theCopy) {
-                                                q.context.copyObject = theCopy;
-                                                doneOp();
-                                            } 
-                                        ,   function error(e){
-                                                _abort('storage.copyFacebookPhoto failed for ' + fbId, e);
-                                            } );
+                storage.copyFacebookPhoto( userId
+                    ,	photo.getId()
+                    ,   q.context.facebookObject
+                    ,   function(err, theCopy) {
+                            if (err)
+                                return _abort('storage.copyFacebookPhoto failed for ' + fbId, err);
+                                                        
+                            q.context.copyObject = theCopy;
+                            doneOp();
+                        });
             });
 
         //
@@ -296,7 +296,9 @@ PhotoManager.prototype.removePhoto =
             function DeleteFromStorageOperation(doneOp)
             {
                 var copyObject = q.context.photo.getCopyObject();
-
+              
+                a.assert_obj(copyObject);
+              
                 storage.deleteFilesInCopyObject( userId, copyObject,
                     function(err)
                     {
