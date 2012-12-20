@@ -94,21 +94,20 @@ describe('PhotoManager.js',
                     function(done)
                     {
                         photoManager.getPhotos(
-                                function success(array) {
-                                    a.assert_def(array);
-                                    assert(array.length == 2, 'array.length is expected to be #2 is: #' + array.length );
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                } );
+                            function(err, array) {
+                                if (err)
+                                    throw err;
+                                    
+                                a.assert_def(array);
+                                assert(array.length == 2, 'array.length is expected to be #2 is: #' + array.length );
+                                done();
+                            });
                     });
 
                 it( 'PhotoManager.removePhoto',
                     function(done)
                     {
-                        photoManager.removePhoto(
-                                photo
+                        photoManager.removePhoto( photo
                             ,   function success() {
                                     done();
                                 }

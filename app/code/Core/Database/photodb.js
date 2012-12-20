@@ -72,19 +72,24 @@ photodb.removePhoto =
 
         var findOptions = _findOptionsWithPhotoId( photo.getId() );
 
-        _remove(userId
-        	,	findOptions
-            ,	function(err, numOfEntries)
-                {
-                    if (err)
-                        return callback(err);
-                
-                    if (numOfEntries == 1)
-                        callback(null);
-                    else
-                        callback( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );
-                } );
-    }
+        _getPhotoCollection( userId,
+            function(err, collection) {
+                if (err)
+                    return callback(err);
+                            
+                mongo.remove(collection, findOptions,
+                    function(err, numOfEntries)
+                    {
+                        if (err)
+                            return callback(err);
+                    
+                        if (numOfEntries == 1)
+                            callback(null);
+                        else
+                            callback( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );
+                    });
+            });
+    };
 
 photodb.getPhotoWithId =
     function(userId, photoId, callback /* (err, photo) */)
@@ -92,7 +97,7 @@ photodb.getPhotoWithId =
         var findOptions = _findOptionsWithPhotoId(photoId);
 
         _findOne(userId, findOptions, callback);
-    }
+    };
 
 photodb.getPhotoWithFacebookId =
     function(userId, fbId, callback /* (err, photo) */)

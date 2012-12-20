@@ -66,26 +66,22 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         q.add(
             function CheckForDuplicateOperation(doneOp)
             {
-                photodb.getPhotoWithFacebookId(
-                            userId
-                        ,   fbId
-                        ,   function success(entry) 
-                            {
-                                if (entry != null)
-                                {
-                                    // We have the picture in the db already
-                                    var photo = Photo.fromEntry(entry);
-                                    success_f(photo);
-                                    q.purge();                                  
-                                }
+                photodb.getPhotoWithFacebookId(userId, fbId,
+                    function(err, entry)
+                    {
+                        if (err)
+                            return _abort('photodb.getPhotoWithFacebookId failed for ' + fbId, err);
+                        
+                        if (entry != null)
+                        {
+                            // We have the picture in the db already
+                            var photo = Photo.fromEntry(entry);
+                            success_f(photo);
+                            q.purge();                                  
+                        }
 
-                                doneOp();
-                            }
-                        ,   function error(e) {
-                                _abort('photodb.getPhotoWithFacebookId failed for ' + fbId, e);
-                            } );
-
-
+                        doneOp();
+                    } );
             });
 
         //
@@ -154,24 +150,23 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                 photo.setSourceObject(q.context.facebookObject);
                 photo.setCopyObject(q.context.copyObject);
 
-//                console.log(photo);
-
-                photodb.addPhoto(   userId
-                                ,   photo
-                                ,   function success(insertedPhoto)
-                                    {
-                                        q.context.insertedPhoto = insertedPhoto;
-                                        doneOp();
-                                    }
-                                ,   function error(e)
-                                    {
-                                        console.error(e);
-                                 
-                                        if (e.code == 11000)
-                                            _abort('photodb.addPhoto failed because of a duplicate of ' + fbId, e);
-                                        else
-                                            _abort('photodb.addPhoto failed for ' + fbId, e);
-                                    });
+                photodb.addPhoto(userId, photo,
+                    function success(err, insertedPhoto)
+                    {
+                        if (err) {
+                            console.error(err);
+                         
+                            if (err.code == 11000)
+                                _abort('photodb.addPhoto failed because of a duplicate of ' + fbId, err);
+                            else
+                                _abort('photodb.addPhoto failed for ' + fbId, err);
+                 
+                            return;
+                        }
+                 
+                        q.context.insertedPhoto = insertedPhoto;
+                        doneOp();
+                    } );
             });
 
         q.add(
@@ -278,23 +273,22 @@ PhotoManager.prototype.removePhoto =
             {
                 var photoId = photo.getId();
 
-                photodb.getPhotoWithId(
-                        userId
-                    ,   photoId
-                    ,   function success(photo)
-                        {
-                            if (photo == null) {
-                                var err = new Error('Cannot find photo with Id: ' + photo.getId() );
-                                err.code = Class.PhotoManager.kNoEntryFoundCode;
-                                q.abort(err);
-                            }
-                            else {
-                                q.context.photo = photo;
-                                doneOp();
-                            }
+                photodb.getPhotoWithId(userId, photoId,
+                    function success(err, photo)
+                    {
+                        if (err)
+                            return q.abort(err);
+                            
+                        if (photo == null) {
+                            var err = new Error('Cannot find photo with Id: ' + photo.getId() );
+                            err.code = Class.PhotoManager.kNoEntryFoundCode;
+                            q.abort(err);
                         }
-                    ,   function error(e) { q.abort(e); }
-                    );
+                        else {
+                            q.context.photo = photo;
+                            doneOp();
+                        }
+                    });
             });
 
         //
@@ -324,17 +318,15 @@ PhotoManager.prototype.removePhoto =
         q.add(
             function DeleteFromDatabaseOperation(doneOp)
             {
-                photodb.removePhoto(
-                        userId
-                    ,   q.context.photo
-                    ,   function success()
-                        {
+                photodb.removePhoto(userId, q.context.photo,
+                    function(err)
+                    {
+                        if (err)
+                            return q.abort(err);
+                        else
                             doneOp();
-                        }
-                    ,   function error(e) { q.abort(e); }
-                    );
+                    });
 
-                
             });
 
         //
@@ -349,24 +341,24 @@ PhotoManager.prototype.removePhoto =
     };
 
 PhotoManager.prototype.getPhotoWithId =
-    function(photoId, success_f /* (photo) */, error_f)
+    function(photoId, callback /* (err, photo) */)
     {
         var userId  = this._user.getId();
 
-        return photodb.getPhotoWithId(userId, photoId, success_f, error_f)
+        return photodb.getPhotoWithId(userId, photoId, callback)
     };
 
 
 PhotoManager.prototype.getPhotos = 
-    function(success_f /* (photos) */, error_f)
+    function(callback /* (err, photos) */)
     {
         var userId  = this._user.getId();
 
-        return photodb.getAllPhotos(userId, success_f, error_f);
+        return photodb.getAllPhotos(userId, callback);
     };
 
-PhotoManager.prototype.deleteUser =
-    function(success_f /* (photos) */, error_f)
+PhotoManager.prototype.deleteAll =
+    function(callback /* (err) */)
     {
         
     };
