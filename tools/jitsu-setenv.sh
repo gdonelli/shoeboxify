@@ -2,6 +2,8 @@
 
 source ../secret/setenv.sh
 
+cd ../app
+
 ####################
 ### Facebook App ###
 ####################

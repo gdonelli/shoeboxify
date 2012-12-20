@@ -144,3 +144,9 @@ User.prototype.getFacebookId =
         return this._me.id;
     };
 
+User.prototype.getId =
+    function()
+    {
+        return this._me.id;
+    };
+

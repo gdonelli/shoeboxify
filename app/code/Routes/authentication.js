@@ -451,10 +451,24 @@ authentication.isUserRequest =
         return quest.session.hasOwnProperty('user');
     };
 
+authentication.isAdminRequest =
+    function(quest)
+    {
+        if ( quest.session.hasOwnProperty('user') )
+        {
+            var user = User.fromRequest(quest);
+            
+            return user.getId() == identity.adminId();
+        }
+        
+        return false;
+    };
+
+
 authentication.validateUserSession = 
     function(quest, ponse, next)
     {
-        if ( quest.session.hasOwnProperty('user') )
+        if ( authentication.isUserRequest(quest) )
         {
             next();
         }
@@ -467,11 +481,7 @@ authentication.validateUserSession =
 authentication.validateAdminSession = 
     function(quest, ponse, next)
     {
-        var user = User.fromRequest(quest);
-
-        // console.log(user);
-
-        if ( user.getFacebookId() == identity.adminId() )
+        if ( authentication.isAdminRequest(quest) )
         {
             next();
         }

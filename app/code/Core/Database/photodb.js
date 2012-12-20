@@ -141,21 +141,30 @@ photodb.getAllPhotos =
 
 photodb.removePhotoWithId =
     function(userId, photoId, success_f /* () */, error_f /* (err) */)
-{
-    a.assert_def(photoId, 'photoId');
-    a.assert_f(success_f);
+    {
+        a.assert_uid(userId);
+        a.assert_def(photoId, 'photoId');
+        a.assert_f(success_f);
 
-    var findOptions = _findOptionsWithPhotoId(photoId);
+        var findOptions = _findOptionsWithPhotoId(photoId);
 
-    _remove(userId
-        ,   findOptions
-        ,   function(num)
-            {
-                assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
-                success_f();
-            } 
-        ,   error_f );  
-};
+        _remove(userId
+            ,   findOptions
+            ,   function(num)
+                {
+                    assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
+                    success_f();
+                } 
+            ,   error_f );  
+    };
+
+
+photodb.drop =
+    function(userId, success_f /* () */, error_f /* (err) */)
+    {
+    
+        _drop(userId, success_f, error_f);
+    }
 
 /* ====================================================== */
 /* ====================================================== */

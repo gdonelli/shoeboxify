@@ -49,7 +49,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         a.assert_f(success_f);
         a.assert_f(error_f);
 
-        var userId  = this._user.getFacebookId();
+        var userId  = this._user.getId();
         var fbAccess= this._user.getFacebookAccess();
         
         var that = this;
@@ -250,13 +250,13 @@ PhotoManager.prototype.addPhotoFromURL =
 Class.PhotoManager.kNoEntryFoundCode = 'NO-ENTRY-FOUND';
 
 PhotoManager.prototype.removePhoto = 
-    function(photo, succcess_f, error_f)
+    function(photo, success_f, error_f)
     {
         Photo.assert(photo);
-        a.assert_f(succcess_f);
+        a.assert_f(success_f);
         a.assert_f(error_f);
 
-        var userId  = this._user.getFacebookId();
+        var userId  = this._user.getId();
         var fbAccess= this._user.getFacebookAccess();
         
         var that = this;
@@ -343,7 +343,7 @@ PhotoManager.prototype.removePhoto =
         q.add(
             function EndOperation(doneOp)
             {
-                succcess_f();
+                success_f();
                 doneOp();
             });
     };
@@ -351,7 +351,7 @@ PhotoManager.prototype.removePhoto =
 PhotoManager.prototype.getPhotoWithId =
     function(photoId, success_f /* (photo) */, error_f)
     {
-        var userId  = this._user.getFacebookId();
+        var userId  = this._user.getId();
 
         return photodb.getPhotoWithId(userId, photoId, success_f, error_f)
     };
@@ -360,8 +360,13 @@ PhotoManager.prototype.getPhotoWithId =
 PhotoManager.prototype.getPhotos = 
     function(success_f /* (photos) */, error_f)
     {
-        var userId  = this._user.getFacebookId();
+        var userId  = this._user.getId();
 
         return photodb.getAllPhotos(userId, success_f, error_f);
     };
 
+PhotoManager.prototype.deleteUser =
+    function(success_f /* (photos) */, error_f)
+    {
+        
+    };

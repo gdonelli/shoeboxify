@@ -66,6 +66,8 @@ a.assert_uid =
         assert( value != undefined,         'uid is undefined' );
         assert( typeof value == 'string',   'uid is not a string' );
         assert( value.length > 0,           'invalid uid, len == 0' );
+        assert ( value.isNumber() || ( value[0] == 'T'), 'uid is not valid' );
+        
         return value;
     };
 

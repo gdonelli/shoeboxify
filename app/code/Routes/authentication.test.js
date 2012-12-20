@@ -104,7 +104,10 @@ describe('authentication.test.js',
                         ,   function success(user)
                             {
                                 User.assert(user);
+                         
+                                user.getId = function(){ return 'T1' };
                                 context.user = user;
+                         
                                 done();
                             }
                         ,   function error(e)
