@@ -8,17 +8,12 @@ use('string-extension');
 var a = exports;
 
 a.assert_f = 
-	function( candidate_f, canBeUndefined )
+	function( value, name_opz )
     {
-        if (canBeUndefined != undefined) 
-        {
-            if (canBeUndefined && candidate_f == undefined)
-                return; 
-        }
+        assert( value != undefined, ( name_opz ? name_opz : 'callback function' ) + ' is undefined' );
+        assert( (typeof value == 'function'), 'expected function, given: ' + value );
 
-        assert( (typeof candidate_f == 'function'), 'expected function, given: ' + candidate_f );
-
-        return candidate_f;
+        return value;
     };
 
 function _assert_valid_string(value, name)

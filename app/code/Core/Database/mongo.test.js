@@ -1,6 +1,8 @@
 
 var     assert  = require('assert')
     ,   mongodb = require('mongodb')
+
+    ,   a       = use('a')
     ,   mongo   = use('mongo')
     ;
 
@@ -9,20 +11,21 @@ describe('mongo.js',
     function()
     {    
         var testCollection;
-
+        
+        mongo.errorLog = false;
+        
         it( 'mongo.getCollection',
             function(done) 
             {   
-                mongo.getCollection('test' 
-                    ,   function success(c)
-                        {
-                            testCollection = c;
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw new Error('mongo.getCollection failed ' + e);
-                        } );
+                mongo.getCollection('test',
+                    function(err, c)
+                    {
+                        if (err)
+                            throw err;
+                            
+                        testCollection = c;
+                        done();
+                    } );
             } );
 
         var sampleId = Math.random() * 100000;
@@ -36,19 +39,18 @@ describe('mongo.js',
 
         function _addSampleObject(done)
         {
-            mongo.add(testCollection, sampleObject
-                    ,   function success(entry)
-                        {
-                            assert(entry != undefined, 'addObject expected to return result');
-                            assert(entry._id != undefined, 'entry._id is undefined');
-                            sampleObjectMongoId = entry._id;
+            mongo.add(testCollection, sampleObject,
+                function(err, entry)
+                {
+                    if (err)
+                        throw e;
+              
+                    a.assert_def(entry, 	'addObject expected to return result');
+                    a.assert_def(entry._id, 'entry._id is undefined');
+                    sampleObjectMongoId = entry._id;
 
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw e;
-                        } );
+                    done();
+                } );
         }
 
         it( 'mongo.add',
@@ -68,94 +70,88 @@ describe('mongo.js',
         it( 'mongo.findOne',
             function(done) 
             {
-                mongo.findOne(testCollection, { id : sampleIdLong }
-                    ,   function success(r)
-                        {
-                            assert(r != undefined, 'r is undefined');
-                            assert(r.payload != undefined, 'r.payload is undefined');
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw e;
-                        } );
+                mongo.findOne(testCollection, { id : sampleIdLong },
+                    function(err, r)
+                    {
+                        if (err)
+                            throw err;
+                            
+                        assert(r != undefined, 'r is undefined');
+                        assert(r.payload != undefined, 'r.payload is undefined');
+                        done();
+                    });
             } );
 
         it( 'mongo.findAll',
             function(done) 
             {
-                mongo.findAll(testCollection, { id : sampleIdLong }
-                    ,   function success(r)
-                        {   
-                            assert( r.length == 2, 'findAll expected to find only #2 result, found #'+ r.length);                   
-                            assert(r[0] != undefined, 'r is undefined');
-                            assert(r[0].payload != undefined, 'r.payload is undefined');
+                mongo.findAll(testCollection, { id : sampleIdLong },
+                    function(err, r)
+                    {
+                        if (err)
+                            throw err;
+                          
+                        assert(r.length == 2, 'findAll expected to find only #2 result, found #'+ r.length);
+                        assert(r[0] != undefined, 'r is undefined');
+                        assert(r[0].payload != undefined, 'r.payload is undefined');
 
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw e;
-                        } );
+                        done();
+                    });
             } );
 
         it( 'mongo.remove {} - expected to fail with no force option',
             function(done) 
             {
-                mongo.remove(testCollection, {}
-                    ,   function success(r)
-                        {   
-                            throw new Error('remove should fail with findOptions {} and no force option');
-                        }
-                    ,   function error(e)
-                        {
+                mongo.remove(testCollection, {},
+                    function(err, r)
+                    {
+                        if (err)
                             done();
+                        else
+                            throw new Error('remove should fail with findOptions {} and no force option');
                     } );
             } );
 
         it( 'mongo.remove {} force=true',
             function(done) 
             {
-                mongo.remove(testCollection, {}
-                    ,   function success(r) 
-                        {   
+                mongo.remove(testCollection, {},
+                    function(err, r)
+                    {
+                        if (err)
+                            throw err;
+                        else
                             done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw e;
-                        }
-                    ,   {   force: true } );
+                    }
+                ,   {   force: true } );
             } );
 
 
         it( 'mongo.drop - success',
             function(done) 
             {
-                mongo.drop(testCollection
-                    ,   function success(r) 
-                        {   
-                            assert(r == true, 'r expected to be true');
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            throw e;
-                        } );
+                mongo.drop(testCollection,
+                    function success(err, r)
+                    {
+                        if (err)
+                            throw err;
+
+                        assert(r == true, 'r expected to be true');
+                        done();
+                    } );
             } );
 
         it( 'mongo.drop - fail',
             function(done) 
             {
-                mongo.drop(testCollection
-                    ,   function success(r) 
-                        {   
-                            throw e;
-                        }
-                    ,   function error(e)
-                        {
-                            done();                     
-                        } );
+                mongo.drop(testCollection,
+                   function(err, r)
+                    {
+                        if (err)
+                            done();
+                        else
+                            throw new Error('not supposed to work');
+                    } );
             } );
 
     } );

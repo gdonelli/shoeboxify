@@ -162,6 +162,9 @@ photodb.removePhotoWithId =
 photodb.drop =
     function(userId, success_f /* () */, error_f /* (err) */)
     {
+        a.assert_uid(userId);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
     
         _drop(userId, success_f, error_f);
     }
@@ -171,6 +174,9 @@ photodb.drop =
 /* ======================= PRIVATE ====================== */
 /* ====================================================== */
 /* ====================================================== */
+
+function ___PRIVATE___(){}
+
 
 photodb._getCollection  = _getCollection;
 photodb._add            = _add;
@@ -186,17 +192,14 @@ function _collectionName(userId)
     return 'fbuser_' + userId + '_photo';
 }
 
-function _getCollection(userId, success_f, error_f)
+function _getCollection(userId, callback_f /* (err, collection) */)
 {
     a.assert_uid(userId);
-    a.assert_f(success_f);
-    a.assert_f(error_f);
+    a.assert_f(callback_f);
    
     var collectionName = _collectionName(userId);
 
-    mongo.getCollection(collectionName
-            ,   function success(c) { success_f(c); }
-            ,   error_f );
+    mongo.getCollection(collectionName, callback_f);
 }
 
 // Returns a queue to build upon to manipulare collection
@@ -215,71 +218,77 @@ function _newCollectionOperationQueue(userId, error_f)
     
     result.add(
         function GetCollectionOperation(doneOp){
-            _getCollection( userId
-                ,   function success(c) {
-                        result.context.collection = c;
-                        doneOp();
-                    }
-                ,   function error(e) {
-                        result.abort(e);
-                    });
+            _getCollection( userId,
+               function(err, collection) {
+                    if (err)
+                        return result.abort(err);
+                       
+                    result.context.collection = collection;
+                    doneOp();
+                } );
         });
     
     return result;
 }
 
 
-function _add(userId, object, success_f /* (new_entity) */, error_f)
+function _add(userId, object, callback_f /* (err, new_entity) */)
 {
     a.assert_obj(object, 'object');
 
-    _getCollection( 
-            userId
-        ,   function success(c) {
-                mongo.add(c, object, success_f, error_f);
-            }
-        ,   error_f );
+    _getCollection( userId,
+        function(err, c) {
+            if (err)
+                callback_f(err);
+                
+            mongo.add(c, object, callback_f);
+        } );
 }
 
-function _findOne(userId, findProperties, success_f /* (photo) */, error_f)
+function _findOne(userId, findProperties, callback_f /* (err, photo) */)
 {
+    a.assert_uid(userId);
     a.assert_obj(findProperties, 'findProperties');
-    a.assert_f(success_f);
-    a.assert_f(error_f);
+    a.assert_f(callback_f);
 
-    _getCollection(
-            userId
-        ,   function success(c) 
-            {
-                mongo.findOne(
-                        c
-                    ,   findProperties
-                    ,   function success(entry)
-                        {   
-                            var photo;
+    _getCollection( userId,
+        function(err, c)
+        {
+            if (err)
+                return callback_f(err);
+                
+            mongo.findOne( c
+                ,   findProperties
+                ,   function(err, entry)
+                    {
+                        if (err)
+                            return callback_f(err);
+                        
+                        var photo;
 
-                            if (entry)
-                                photo = Photo.fromEntry(entry);
-                            else
-                                photo = null;
+                        if (entry)
+                            photo = Photo.fromEntry(entry);
+                        else
+                            photo = null;
 
-                            success_f(photo);
-                        }
-                    ,   error_f );
-            }
-        ,   error_f );
+                        callback_f(null, photo);
+                    } );
+        } );
 }
 
-function _findAll(userId, findProperties, success_f, error_f)
+function _findAll(userId, findProperties, callback_f /* (err, photos) */)
 {
+    a.assert_uid(userId);
     a.assert_obj(findProperties, 'findProperties');
-    a.assert_f(success_f);
-    a.assert_f(error_f);
-
-    _getCollection( 
-            userId
-        ,   function success(c) { mongo.findAll(c, findProperties, success_f, error_f); }
-        ,   error_f);
+    a.assert_f(callback_f);
+    
+    //FIXME: do the map to photos here
+    
+    _getCollection( userId,
+        function(err, collection) {
+            mongo.findAll(c, findProperties, callback_f);
+        });
+    
 }
 
 function _remove(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)

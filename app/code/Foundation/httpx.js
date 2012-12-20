@@ -63,8 +63,8 @@ httpx.HEAD =
             )
     {
         a.assert_http_url(theURL);
-        a.assert_f(success_f,   true);
-        a.assert_f(error_f,     true);
+        a.assert_f(success_f);
+        a.assert_f(error_f);
 
         return _makeHTTPRequest(
                     theURL
