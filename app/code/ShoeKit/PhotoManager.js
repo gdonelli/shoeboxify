@@ -43,11 +43,10 @@ Class.PhotoManager.fromRequest =
     }
 
 PhotoManager.prototype.addPhotoWithFacebookId = 
-    function(fbId, success_f, error_f)
+    function(fbId, callback /* (err, photo) */)
     {
         a.assert_fbId(fbId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var userId  = this._user.getId();
         var fbAccess= this._user.getFacebookAccess();
@@ -76,7 +75,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         {
                             // We have the picture in the db already
                             var photo = Photo.fromEntry(entry);
-                            success_f(photo);
+                            callback(null, photo);
                             q.purge();                                  
                         }
 
@@ -151,7 +150,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                 photo.setCopyObject(q.context.copyObject);
 
                 photodb.addPhoto(userId, photo,
-                    function success(err, insertedPhoto)
+                    function(err, insertedPhoto)
                     {
                         if (err) {
                             console.error(err);
@@ -173,7 +172,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             function Finish(doneOp)
             {
                 Photo.assert(q.context.insertedPhoto);
-                success_f( q.context.insertedPhoto );
+                callback(null, q.context.insertedPhoto );
                 doneOp();
             });
 
@@ -197,22 +196,23 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             function(abortErr) {
                 if (q.context.copyObject) // Remove copyObject
                 {
-                    storage.deleteFilesInCopyObject(
-                            userId
-                        ,	q.context.copyObject
-                        ,	function success() {
-                                console.error('Storage roll back success');
-                                error_f(abortErr);
-                            }
-                        ,	function error(rollbackErr){
+                    storage.deleteFilesInCopyObject(userId, q.context.copyObject,
+                        function(rollbackErr)
+                        {
+                            if (rollbackErr)
+                            {
                                 console.error('Storage roll back failed with error:');
                                 console.error(rollbackErr.stack);
-                                error_f(abortErr);
-                            } );
+                            }
+                            else
+                                console.error('Storage roll back success');
+                                
+                            callback(abortErr);
+                        });
                 }
-
-        });
-
+            });
+        
+        return q;
     };
 
 /* types of photos:
@@ -222,22 +222,21 @@ PhotoManager.prototype.addPhotoWithFacebookId =
  */
 
 PhotoManager.prototype.addPhotoFromURL =
-    function(theURL, success_f, error_f)
+    function(theURL, callback)
     {
         a.assert_http_url(theURL);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
         
         var fbid = fbutil.facebookIdForURL(theURL);
 
         if (fbid) // it is a Facebook object...
         {
 //          console.log('addPhotoFromURL fbid:' + fbid);
-            return this.addPhotoWithFacebookId(fbid, success_f, error_f);
+            return this.addPhotoWithFacebookId(fbid, callback);
         }
         else
         {
-            error_f( new Error('Not supported yet') );
+            callback( new Error('Not supported yet') );
         }
 
     }
@@ -245,11 +244,10 @@ PhotoManager.prototype.addPhotoFromURL =
 Class.PhotoManager.kNoEntryFoundCode = 'NO-ENTRY-FOUND';
 
 PhotoManager.prototype.removePhoto = 
-    function(photo, success_f, error_f)
+    function(photo, callback)
     {
         Photo.assert(photo);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var userId  = this._user.getId();
         var fbAccess= this._user.getFacebookAccess();
@@ -262,7 +260,7 @@ PhotoManager.prototype.removePhoto =
 
         q.on('abort', 
             function(e) {
-                error_f(e);
+                callback(e);
             });
 
         //
@@ -274,7 +272,7 @@ PhotoManager.prototype.removePhoto =
                 var photoId = photo.getId();
 
                 photodb.getPhotoWithId(userId, photoId,
-                    function success(err, photo)
+                    function(err, photo)
                     {
                         if (err)
                             return q.abort(err);
@@ -299,17 +297,14 @@ PhotoManager.prototype.removePhoto =
             {
                 var copyObject = q.context.photo.getCopyObject();
 
-                storage.deleteFilesInCopyObject(
-                        userId
-                    ,   copyObject
-                    ,   function success()
-                        {
+                storage.deleteFilesInCopyObject( userId, copyObject,
+                    function(err)
+                    {
+                        if (err)
+                            q.abort(e);
+                        else
                             doneOp();
-                        }
-                    ,   function error(e) { q.abort(e); }
-                    );
-
-                
+                    } );
             });
 
         //
@@ -335,7 +330,7 @@ PhotoManager.prototype.removePhoto =
         q.add(
             function EndOperation(doneOp)
             {
-                success_f();
+                callback();
                 doneOp();
             });
     };

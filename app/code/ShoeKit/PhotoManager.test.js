@@ -31,63 +31,60 @@ describe('PhotoManager.js',
                 it( 'PhotoManager.addPhotoWithFacebookId one',
                     function(done)
                     {
-                        photoManager.addPhotoWithFacebookId( 
-                                test_resources.kSteveJobsPhotoId
-                            ,   function success(newPhoto)
-                                {
-                                    Photo.assert(newPhoto);
+                        photoManager.addPhotoWithFacebookId(test_resources.kSteveJobsPhotoId,
+                            function(err, newPhoto)
+                            {
+                                if (err)
+                                    throw err;
+                                    
+                                Photo.assert(newPhoto);
 
-                                    var photoId = newPhoto.getFacebookId();
-                                    assert( photoId == test_resources.kSteveJobsPhotoId
-                                        ,   'photoId dont match');
+                                var photoId = newPhoto.getFacebookId();
+                                assert( photoId == test_resources.kSteveJobsPhotoId
+                                    ,   'photoId dont match');
 
-                                    photo = newPhoto;
+                                photo = newPhoto;
 
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                } );
+                                done();
+                            });
                     });
 
                 it( 'PhotoManager.addPhotoWithFacebookId same',
                     function(done)
                     {
-                        photoManager.addPhotoWithFacebookId( 
-                                test_resources.kSteveJobsPhotoId
-                            ,   function success(newPhoto)
-                                {
-                                    Photo.assert(newPhoto);
+                        photoManager.addPhotoWithFacebookId(test_resources.kSteveJobsPhotoId,
+                            function(err, newPhoto)
+                            {
+                                if (err)
+                                    throw err;
+                                    
+                                Photo.assert(newPhoto);
 
-                                    var photoId = newPhoto.getFacebookId();
-                                    assert( photoId == test_resources.kSteveJobsPhotoId
-                                        ,   'photoId dont match');
+                                var photoId = newPhoto.getFacebookId();
+                                assert( photoId == test_resources.kSteveJobsPhotoId
+                                    ,   'photoId dont match');
 
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                } );
+                                done();
+                            } );
                     });
 
                 it( 'PhotoManager.addPhotoWithFacebookId other',
                     function(done)
                     {
-                        photoManager.addPhotoWithFacebookId( 
-                                test_resources.kProfilePhotoId
-                            ,   function success(newPhoto)
-                                {
-                                    Photo.assert(newPhoto);
+                        photoManager.addPhotoWithFacebookId( test_resources.kProfilePhotoId,
+                            function(err, newPhoto)
+                            {
+                                if (err)
+                                    throw err;
+                                    
+                                Photo.assert(newPhoto);
 
-                                    var photoId = newPhoto.getFacebookId();
-                                    assert( photoId == test_resources.kProfilePhotoId
-                                        ,   'photoId dont match');
+                                var photoId = newPhoto.getFacebookId();
+                                assert( photoId == test_resources.kProfilePhotoId
+                                    ,   'photoId dont match');
 
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                } );
+                                done();
+                            } );
                     });
 
                 it( 'PhotoManager.getPhotos',
@@ -107,16 +104,14 @@ describe('PhotoManager.js',
                 it( 'PhotoManager.removePhoto',
                     function(done)
                     {
-                        photoManager.removePhoto( photo
-                            ,   function success() {
+                        photoManager.removePhoto(photo,
+                            function(err) {
+                                if (err)
+                                    throw err;
+                                else
                                     done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                } );
+                            });
                     });
-
-
 
             } );
 

@@ -126,15 +126,13 @@ describe('storage.js',
 
                 it ('storage.deleteFilesInCopyObject',
                     function(done)  {
-                        storage.deleteFilesInCopyObject(
-                                test_resources.kTestUserId
-                            ,   copyObject
-                            ,   function success() {
+                        storage.deleteFilesInCopyObject(test_resources.kTestUserId, copyObject,
+                            function(err) {
+                                if (err)
+                                    throw err;
+                                else
                                     done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                });
+                            });
                     });
 
 
@@ -229,16 +227,13 @@ describe('storage.js',
                 it ('storage.deleteFilesInCopyObject',
                     function(done)
                     {
-                        storage.deleteFilesInCopyObject(
-                                                test_resources.kTestUserId
-                                            ,   genericURLCopy
-                                            ,   function success(){
-                                                    done();
-                                                }
-                                            ,   function error(e)
-                                                {
-                                                    throw e;
-                                                } );
+                        storage.deleteFilesInCopyObject( test_resources.kTestUserId, genericURLCopy,
+                            function(err){
+                                if (err)
+                                    throw err;
+                                else
+                                    done();
+                            });
                     });
 
             });

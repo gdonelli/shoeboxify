@@ -178,12 +178,11 @@ storage.copyFacebookPhoto =
     };
 
 storage.deleteFilesInCopyObject = 
-    function (userId, copyObject, success_f /* () */, error_f)
+    function (userId, copyObject, callback /* (err) */)
     {
         a.assert_uid(userId);
         a.assert_obj(copyObject);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var imageDict = _getImageDictionaryForFacebookPhoto(copyObject);
         var images = Object.keys(imageDict);
@@ -205,10 +204,9 @@ storage.deleteFilesInCopyObject =
                 ,   info.paths
                 ,   function(s3ponse)
                     {
-                        success_f();
+                        callback(null);
                     }
-                ,   error_f
-                );
+                ,   callback );
     };
 
 
