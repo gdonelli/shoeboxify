@@ -47,6 +47,12 @@ a.assert_def =
         return value;
     };
 
+a.assert_null =
+    function(value, name_opz)
+    {
+        assert( value == null, ( name_opz ? name_opz : 'value' ) + ' is expected to be null');
+    };
+
 a.assert_obj =
     function(value, name_opz)
     {

@@ -28,9 +28,9 @@ var mongo = exports;
 
 mongo.errorLog = true; // error logging
 
-function _initModule(callback_f /* (err) */)
+function _initModule(callback /* (err) */)
 {
-    a.assert_f(callback_f);
+    a.assert_f(callback);
 
     var host = identity.dbServerHost();
     var port = identity.dbServerPort();
@@ -46,17 +46,17 @@ function _initModule(callback_f /* (err) */)
         function (err, db_p)
         {
             if (err)
-                return callback_f(err);
+                return callback(err);
 
             db.authenticate(username, password, 
                 function (err, result)
                 {
                     if (err)
-                        return callback_f(err);
+                        return callback(err);
                     else
                     {
                         mongo._db =  db;
-                        callback_f(null);
+                        callback(null);
                     }
                });
         });
@@ -72,14 +72,14 @@ function _initModule(callback_f /* (err) */)
 
 
 mongo.getCollection =
-    function(collectionName, callback_f /* (err, collection) */ )
+    function(collectionName, callback /* (err, collection) */ )
     {
         a.assert_string(collectionName, 'collectionName');
-        a.assert_f(callback_f, 'callback_f');
+        a.assert_f(callback, 'callback');
         
         var q = new OperationQueue(1);
         
-        q.on('abort', callback_f);
+        q.on('abort', callback);
         
         // Lazy init if needed
         if (mongo._db == undefined)
@@ -99,17 +99,17 @@ mongo.getCollection =
         q.add(
             function GetCollectionOperation(doneOp)
             {
-                mongo._db.collection( collectionName, callback_f );
+                mongo._db.collection( collectionName, callback );
             });
     };
 
 
 mongo.add = 
-    function(collection, object, callback_f /* (err, entryObject) */ )
+    function(collection, object, callback /* (err, entryObject) */ )
     {
         a.assert_def(collection, 'collection');
         a.assert_obj(object,     'object');
-        a.assert_f(callback_f,   'callback_f');
+        a.assert_f(callback,   'callback');
         
         var objectToAdd = _.clone(object); // make a copy because it will change the source object...
 
@@ -117,21 +117,21 @@ mongo.add =
             function(err, result)
             {
                 if (err)
-                    return callback_f(err);
+                    return callback(err);
                     
                 assert(result.length == 1, 'insert expected to return array of length #1, is instead: #' + result.length);
 
-                callback_f(null, result[0]);                   
+                callback(null, result[0]);                   
             });
     };
 
 
 mongo.findOne =
-    function(collection, findProperties, callback_f  /* (err, item) */)
+    function(collection, findProperties, callback  /* (err, item) */)
     {
         a.assert_def(collection,		'collection');
         a.assert_obj(findProperties,	'findProperties');
-        a.assert_f(callback_f,   		'callback_f');
+        a.assert_f(callback,   		'callback');
 
         collection.findOne(findProperties,
             function(err, item) {
@@ -140,17 +140,17 @@ mongo.findOne =
                     console.error(err.stack);
                 }
                 
-                callback_f(err, item);
+                callback(err, item);
             } );
     };
 
 
 mongo.findAll =
-    function(collection, findProperties, callback_f /* (err, item) */)
+    function(collection, findProperties, callback /* (err, item) */)
     {
         a.assert_def(collection,		'collection');
         a.assert_obj(findProperties,	'findProperties');
-        a.assert_f(callback_f,   		'callback_f');
+        a.assert_f(callback,   		'callback');
 
         collection.find(findProperties).toArray(
             function(err, item) {
@@ -159,17 +159,17 @@ mongo.findAll =
                     console.error(err.stack);
                 }
                 
-                callback_f(err, item);
+                callback(err, item);
             } );
     };
 
 
 mongo.remove =
-    function(collection, findProperties, callback_f /* (err, num_of_removed_entries) */, options)
+    function(collection, findProperties, callback /* (err, num_of_removed_entries) */, options)
     {
         a.assert_def(collection,		'collection');
         a.assert_obj(findProperties,	'findProperties');
-        a.assert_f(callback_f,   		'callback_f');
+        a.assert_f(callback,   		'callback');
 
         // console.log( 'findProperties.length: ' + Object.keys(findProperties).length );
 
@@ -181,7 +181,7 @@ mongo.remove =
                 force = options.force;
 
             if (force != true) {
-                callback_f( new Error('Denied. it will remove all entries. Use force option') );
+                callback( new Error('Denied. it will remove all entries. Use force option') );
                 return;
             }
         }
@@ -193,16 +193,16 @@ mongo.remove =
                         console.error(err.stack);
                     }
 
-                    callback_f(err, removeCount);
+                    callback(err, removeCount);
                 } );
     };
 
 
 mongo.drop =
-    function(collection, callback_f /* (err, removed) */)
+    function(collection, callback /* (err, removed) */)
     {
         a.assert_def(collection, 'collection');
-        a.assert_f(callback_f);
+        a.assert_f(callback);
     
         collection.drop(
             function(err, removed)
@@ -212,7 +212,7 @@ mongo.drop =
                     console.error(err.stack);
                 }
 
-                callback_f(err, removed)
+                callback(err, removed)
             } );
     };
 

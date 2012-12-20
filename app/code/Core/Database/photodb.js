@@ -18,23 +18,20 @@ var     assert  = require('assert')
     ,   Photo           = use('Photo')
     ;
 
+
 var photodb = exports;
 
-
 photodb.setup = 
-    function(userId, success_f, error_f)
+    function(userId, callback /* (err) */ )
     {
         a.assert_uid(userId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
         
-        var q = _newCollectionOperationQueue(userId, error_f);
-        
-        q.add(
-            function SetupOperation(doneOp)
-            {
-                var collection = a.assert_def(q.context.collection);
-              
+        _getPhotoCollection( userId,
+           function(err, collection) {
+                if (err)
+                    return callback(err);
+                
                 var propertyIndex = {};
                 propertyIndex[Photo.k('FacebookIdKey')] = 1;
     
@@ -43,130 +40,136 @@ photodb.setup =
                     ,   { unique: true }
                     ,   function(err, indexName)
                         {
-                            if (err) {
-                                console.error('collection.ensureIndex for `FacebookIdKey` failed err:' + err);
-                                q.abort(err);
-                            }
-                            else {
-                                success_f();
-                                doneOp();
-                            }
-                        } );
+                            callback(err);
+                        });
             });
-
-        
     };
 
 photodb.addPhoto =
-    function(userId, photo, success_f /* (photo) */, error_f /* (e) */)
+    function(userId, photo, callback /* (err, photo) */ )
     {
         a.assert_uid(userId);
         Photo.assert(photo);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
-        photo[Photo.kCreatedDateKey] = new Date();
-
-        _add(userId, photo, success_f, error_f);
+        _getPhotoCollection( userId,
+            function(err, collection) {
+                if (err)
+                    return callback(err);
+                
+                photo[Photo.k('CreatedDateKey')] = new Date();
+       
+                mongo.add(collection, photo, callback);
+            } );
     };
 
 photodb.removePhoto =
-    function(userId, photo, success_f /*()*/, error_f /* (e) */)
+    function(userId, photo, callback /* (err) */ )
     {
         a.assert_uid(userId);
         Photo.assert(photo);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var findOptions = _findOptionsWithPhotoId( photo.getId() );
 
         _remove(userId
         	,	findOptions
-            ,	function success(numOfEntries)
+            ,	function(err, numOfEntries)
                 {
+                    if (err)
+                        return callback(err);
+                
                     if (numOfEntries == 1)
-                        success_f();
+                        callback(null);
                     else
-                        error_f( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );
-                }
-            ,	error_f);
+                        callback( new Error('numOfEntries expected to be #1 is #' + numOfEntries) );
+                } );
     }
 
 photodb.getPhotoWithId =
-    function(userId, photoId, success_f /* (photo) */, error_f)
+    function(userId, photoId, callback /* (err, photo) */)
     {
-        a.assert_uid(userId);
-        a.assert_def(photoId, 'photoId');
-        a.assert_f(success_f);
-        a.assert_f(error_f);
-
         var findOptions = _findOptionsWithPhotoId(photoId);
 
-        _findOne(userId, findOptions, success_f, error_f);
+        _findOne(userId, findOptions, callback);
     }
 
 photodb.getPhotoWithFacebookId =
-    function(userId, fbId, success_f /* (photo) */, error_f)
+    function(userId, fbId, callback /* (err, photo) */)
     {
-        a.assert_uid(userId);
-        a.assert_fbId(fbId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
-
         var findOptions = _findOptionsWithFacebookId(fbId);
 
-        _findOne(userId, findOptions, success_f, error_f);    
+        _findOne(userId, findOptions, callback);
     };
 
 photodb.getAllPhotos =
-    function(userId, success_f /* (photos) */, error_f)
+    function(userId, callback /* (err, photos) */)
     {
         a.assert_uid(userId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
+        
+        _getPhotoCollection( userId,
+            function(err, collection) {
+                if (err)
+                    return callback(err);
 
-        _findAll(userId, {}
-            ,   function success(array) {
-                    a.assert_array(array);
-                    
-                    var photos = _.map( array, 
-                        function(entry) {
-                            return Photo.fromEntry(entry);
-                        } );
+                mongo.findAll(collection, {},
+                    function(err, items){
+                        if (err)
+                            return callback(err);
+            
+                        a.assert_array(items);
+                        
+                        var photos = _.map( items,
+                            function(entry) {
+                                return Photo.fromEntry(entry);
+                            } );
 
-                    success_f(photos);
-                }
-            ,   error_f );
+                        callback(null, photos);
+                    });
+            });
     };
 
 photodb.removePhotoWithId =
-    function(userId, photoId, success_f /* () */, error_f /* (err) */)
+    function(userId, photoId, callback /* (err) */ )
     {
         a.assert_uid(userId);
         a.assert_def(photoId, 'photoId');
         a.assert_f(success_f);
 
         var findOptions = _findOptionsWithPhotoId(photoId);
+        
+        _getPhotoCollection( userId,
+            function(err, collection) {
+                if (err)
+                    return callback(err);
+        
+                mongo.remove(c, findProperties,
+                    function(err, num) {
+                        if (err)
+                            return callback(err);
 
-        _remove(userId
-            ,   findOptions
-            ,   function(num)
-                {
-                    assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
-                    success_f();
-                } 
-            ,   error_f );  
+                        assert(num == 1, 'num of removed entries is #' + num + 'expected #1');
+                        callback(null);
+                    }
+                    ,   options);
+            });
     };
 
 
 photodb.drop =
-    function(userId, success_f /* () */, error_f /* (err) */)
+    function(userId, callback /* (err) */ )
     {
         a.assert_uid(userId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
     
-        _drop(userId, success_f, error_f);
+        _getPhotoCollection( userId,
+            function(err, collection) {
+                if (err)
+                    return callback(err);
+            
+                mongo.drop(collection, callback);
+            });
     }
 
 /* ====================================================== */
@@ -177,13 +180,8 @@ photodb.drop =
 
 function ___PRIVATE___(){}
 
-
-photodb._getCollection  = _getCollection;
-photodb._add            = _add;
-photodb._findOne        = _findOne;
-photodb._findAll        = _findAll;
-photodb._remove         = _remove;
-photodb._drop           = _drop;
+photodb._getPhotoCollection = _getPhotoCollection;
+photodb._findOne        	= _findOne;
 
 function _collectionName(userId)
 {
@@ -192,77 +190,33 @@ function _collectionName(userId)
     return 'fbuser_' + userId + '_photo';
 }
 
-function _getCollection(userId, callback_f /* (err, collection) */)
+function _getPhotoCollection(userId, callback /* (err, collection) */)
 {
     a.assert_uid(userId);
-    a.assert_f(callback_f);
+    a.assert_f(callback);
    
     var collectionName = _collectionName(userId);
 
-    mongo.getCollection(collectionName, callback_f);
+    mongo.getCollection(collectionName, callback);
 }
 
-// Returns a queue to build upon to manipulare collection
-//              --> q.context.collection
-//
-function _newCollectionOperationQueue(userId, error_f)
-{
-    var result = new OperationQueue(1);
-    
-    result.context = {};
-    
-    result.on('abort',
-        function(e) {
-            error_f(e);
-        });
-    
-    result.add(
-        function GetCollectionOperation(doneOp){
-            _getCollection( userId,
-               function(err, collection) {
-                    if (err)
-                        return result.abort(err);
-                       
-                    result.context.collection = collection;
-                    doneOp();
-                } );
-        });
-    
-    return result;
-}
-
-
-function _add(userId, object, callback_f /* (err, new_entity) */)
-{
-    a.assert_obj(object, 'object');
-
-    _getCollection( userId,
-        function(err, c) {
-            if (err)
-                callback_f(err);
-                
-            mongo.add(c, object, callback_f);
-        } );
-}
-
-function _findOne(userId, findProperties, callback_f /* (err, photo) */)
+function _findOne(userId, findProperties, callback /* (err, photo) */)
 {
     a.assert_uid(userId);
     a.assert_obj(findProperties, 'findProperties');
-    a.assert_f(callback_f);
+    a.assert_f(callback);
 
-    _getCollection( userId,
+    _getPhotoCollection( userId,
         function(err, c)
         {
             if (err)
-                return callback_f(err);
+                return callback(err);
                 
             mongo.findOne( c
                 ,   findProperties
-                ,   function(err, entry)
-                    {
+                ,   function(err, entry) {
                         if (err)
-                            return callback_f(err);
+                            return callback(err);
                         
                         var photo;
 
@@ -271,44 +225,9 @@ function _findOne(userId, findProperties, callback_f /* (err, photo) */)
                         else
                             photo = null;
 
-                        callback_f(null, photo);
+                        callback(null, photo);
                     } );
         } );
-}
-
-function _findAll(userId, findProperties, callback_f /* (err, photos) */)
-{
-    a.assert_uid(userId);
-    a.assert_obj(findProperties, 'findProperties');
-    a.assert_f(callback_f);
-    
-    //FIXME: do the map to photos here
-    
-    _getCollection( userId,
-        function(err, collection) {
-            mongo.findAll(c, findProperties, callback_f);
-        });
-    
-}
-
-function _remove(userId, findProperties, success_f /* (num_of_removed_entries) */, error_f, options)
-{
-    a.assert_obj(findProperties, 'findProperties');
-    a.assert_f(success_f);
-    a.assert_f(error_f);
-
-    _getCollection( 
-            userId
-        ,   function success(c) { mongo.remove(c, findProperties, success_f, error_f, options); }
-        ,   error_f);
-} 
-
-function _drop(userId, success_f, error_f)
-{
-    _getCollection( 
-            userId
-        ,   function success(c) { mongo.drop(c, success_f, error_f); }
-        ,   error_f);
 }
 
 function _findOptionsWithFacebookId(fbId)

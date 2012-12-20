@@ -2,7 +2,7 @@
 var     assert  = require("assert")
 
     ,   a       = use("a")
-    ,   mongo   = use("mongo")      // FIXME: get rid of it
+    ,   mongo   = use("mongo")      // FIXME: get rid of it???
     ,   fbTest  = use("fb.test")
 
     ,   photodb         = use("photodb")
@@ -15,25 +15,6 @@ var     assert  = require("assert")
 describe('photodb.js',
     function()
     {
-        describe('photodb (basics)',
-            function()
-            {
-                it( 'photodb.setup',
-                    function(done)
-                    {
-                        photodb.setup(test_resources.kTestUserId
-                            ,   function success() {
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                });
-                    } );
-            } );
-
-
-
-
         var userid1 = 'T1'; 
         var userid2 = 'T2';
 
@@ -43,194 +24,45 @@ describe('photodb.js',
             return '1' + sampleId + '1' 
         }
 
-        describe('photodb (private)',
+
+        describe('photodb (basics)',
             function()
             {
-                var testCollection;
-
-                it( 'photodb._getCollection',
+                it( 'photodb.setup',
                     function(done)
-                    {                       
-                        photodb._getCollection(
-                                test_resources.kTestUserId
-                            ,   function success(c) {
-                                    a.assert_def(c);
-                                    testCollection = c;
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;
-                                });
+                    {
+                        photodb.setup(test_resources.kTestUserId,
+                            function(err) {
+                                if (err)
+                                    throw err;
+                                  
+                                done();
+                            });
                     });
-
+                 
                 it( 'photodb.setup ' + userid1,
                     function(done) 
                     {   
-                        photodb.setup( userid1
-                            ,   function success(r) { done(); }
-                            ,   function error(e) { throw e; } );
+                        photodb.setup( userid1,
+                            function(err) {
+                                if (err)
+                                    throw err;
+                                done();
+                            });
                     } );
 
                 it( 'photodb.setup ' + userid2,
                     function(done) 
                     {   
-                        photodb.setup( userid2
-                            ,   function success(r) { done(); }
-                            ,   function error(e) { throw e; } );
+                        photodb.setup( userid2,
+                            function(err) {
+                                 if (err)
+                                    throw err;
+                                done();
+                            });
                     } );
 
-                var sampleIdLong    = mongo.LongFromString( _generateId() );
-                var sampleObjectId  = mongo.newObjectId();
-
-                var sampleObject = {
-                            _id:        sampleObjectId,
-                            longId:     sampleIdLong
-                        ,   payload:    'M’illumino\nd’immenso'
-                        };
-
-                it( 'photodb._add sampleObject to ' + userid1,
-                    function(done) 
-                    {   
-                        photodb._add( userid1, sampleObject
-                            ,   function success(r){ 
-                                    a.assert_def(r);
-                                    assert(sampleObjectId == r._id, 'sampleObjectId == r._id' );
-                                    done();    
-                                }
-                            ,   function error(e){   throw e;   } );
-                    } );
-
-                it( 'photodb.getPhotoWithId sampleObjectId from ' + userid1,
-                    function(done) 
-                    {   
-                        photodb.getPhotoWithId( 
-                                userid1
-                            ,   sampleObjectId
-                            ,   function success(r) {
-                                    a.assert_def(r);
-                                    done();    
-                                }
-                            ,   function error(e){   throw e;   } );
-                    } );
-
-                it( 'photodb._add sampleObject to ' + userid1 + ' - again',
-                    function(done) 
-                    {   
-                        photodb._add( userid1, sampleObject
-                            ,   function success(r){ throw new Error('not expected to work');   }
-                            ,   function error(e){   done();    } );
-                    } );
-
-
-                it( 'photodb._add sampleObject to ' + userid2,
-                    function(done) 
-                    {   
-                        photodb._add( userid2, sampleObject
-                            ,   function success(r){ done();    }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._remove from ' + userid2,
-                    function(done) 
-                    {   
-                        photodb._remove( userid2, { longId: sampleIdLong } 
-                            ,   function success(r){ 
-                                    assert(r == 1, 'r expected to be 1');
-                                    done(); 
-                                }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._remove from ' + userid1,
-                    function(done) 
-                    {   
-                        photodb._remove( userid1, {} 
-                            ,   function success(r){ 
-                                    assert(r == 1, 'r expected to be 1, is ' + r);
-                                    done(); 
-                                }
-                            ,   function error(e){   throw e;   }
-                            ,   { force: true });
-                    } );
-
-                it( 'photodb._findAll {} from ' + userid1,
-                    function(done) 
-                    {   
-                        photodb._findAll( userid1, {} 
-                            ,   function success(r){ 
-                                    assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
-                                    done(); 
-                                }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._findAll {} from ' + userid2,
-                    function(done) 
-                    {   
-                        photodb._findAll( userid2, {} 
-                            ,   function success(r){ 
-                                    assert(r.length == 0, 'r.length expected to be 0, is: ' + r.length);
-                                    done(); 
-                                }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._add sampleObject to ' + userid2,
-                    function(done) 
-                    {   
-                        photodb._add( userid2, sampleObject
-                            ,   function success(r){ done();    }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._findAll from ' + userid2,
-                    function(done) 
-                    {   
-                        photodb._findAll( userid2, {} 
-                            ,   function success(r){ 
-                                    assert(r.length == 1, 'r.length expected to be 1, is: ' + r.length);
-                                    done(); 
-                                }
-                            ,   function error(e){   throw e;   });
-                    } );
-
-                it( 'photodb._add removePhotoWithId getPhotoWithId',
-                    function(done) 
-                    {   
-                        photodb._add( userid1, sampleObject
-                            ,   function success(entry) 
-                                {
-                                    var newObjectId = entry._id;
-
-                                    a.assert_def( newObjectId, 'newObjectId');
-
-                                    photodb.removePhotoWithId(
-                                            userid1
-                                        ,   newObjectId 
-                                        ,   function success()
-                                            {
-                                                photodb.getPhotoWithId(
-                                                        userid1
-                                                    ,   newObjectId
-                                                    ,   function success(entry) {
-                                                            assert(entry == null, 'entry expected to be null');
-                                                            done();
-                                                        }
-                                                    ,   function error(e) {
-                                                            throw e;
-                                                        });
-
-                                            }
-                                        ,   function error(error)
-                                            {
-                                                throw e;                
-                                            } );
-                                }
-                            ,   function error(e){   throw e;   } );
-                    } );
             });
-
-
 
         describe('photodb (Photo API)',
             function()
@@ -238,87 +70,76 @@ describe('photodb.js',
                 it( 'photodb.addPhoto',
                     function(done)
                     {
-                        fbTest.processFacebookObject( 
-                                test_resources.kSteveJobsPhotoId
-                            ,   function(fbObject) {
-                                    var photo = new Photo( true, fbObject );
+                        fbTest.processFacebookObject( test_resources.kSteveJobsPhotoId,
+                            function(fbObject) {
+                                var photo = new Photo( true, fbObject );
 
-                                    photodb.addPhoto(  
-                                            test_resources.kTestUserId
-                                        ,   photo
-                                        ,   function success(addedPhoto) 
-                                            {
-                                                a.assert_def( addedPhoto );
-                                                a.assert_def( addedPhoto.getFacebookId() );
-                                                a.assert_def( addedPhoto.getId() );
+                                photodb.addPhoto(test_resources.kTestUserId, photo,
+                                    function(err, addedPhoto)
+                                    {
+                                        if (err)
+                                            throw err;
+                                            
+                                        a.assert_def( addedPhoto );
+                                        a.assert_def( addedPhoto.getFacebookId() );
+                                        a.assert_def( addedPhoto.getId() );
 
-                                                // console.log(addedPhoto);
-                                                done();
-                                            }
-                                        ,   function error(e) 
-                                            {
-                                                throw e;
-                                            });
-                                });
+                                        // console.log(addedPhoto);
+                                        done();
+                                    });
+                            });
                     });
                 
                 it ('photodb.getPhotoWithFacebookId', 
                     function(done) 
                     {    
-                        photodb.getPhotoWithFacebookId(
-                                    test_resources.kTestUserId
-                                ,   test_resources.kSteveJobsPhotoId
-                                ,   function success(photo) 
-                                    {
-                                        Photo.assert(photo);
-                                        assert(photo.getFacebookId() == test_resources.kSteveJobsPhotoId, 'fbId do not match');
-                                        done();
-                                    }
-                                ,   function error(e) {
-                                        throw e;
-                                    } );
+                        photodb.getPhotoWithFacebookId( test_resources.kTestUserId, test_resources.kSteveJobsPhotoId,
+                            function(err, photo)
+                            {
+                                if (err)
+                                    throw err;
+
+                                Photo.assert(photo);
+                                assert(photo.getFacebookId() == test_resources.kSteveJobsPhotoId, 'fbId do not match');
+                                done();
+                            });
                     });
 
                 it ('photodb.getPhotoWithFacebookId - undefined entry', 
                     function(done) 
                     {    
-                        photodb.getPhotoWithFacebookId(
-                                    test_resources.kTestUserId
-                                ,   test_resources.kPublicPhotoId
-                                ,   function success(entry) 
-                                    {
-                                        if (entry)
-                                            console.error(entry);
+                        photodb.getPhotoWithFacebookId( test_resources.kTestUserId, test_resources.kPublicPhotoId,
+                            function(err, entry)
+                            {
+                                if (err)
+                                    throw err;
 
-                                        assert(entry == null, 'expected to have undefined entry');
+                                if (entry)
+                                    console.error(entry);
 
-                                        done();
-                                    }
-                                ,   function error(e) {
-                                        throw e;
-                                    } );
+                                assert(entry == null, 'expected to have undefined entry');
+
+                                done();
+                            });
                     });
 
 
                 it( 'photodb.getAllPhotos',
                     function(done)
                     {
-                        photodb.getAllPhotos(   
-                                    test_resources.kTestUserId
-                                ,   function success(arrayOfPhotos)
-                                    {
-                                        for (var i in arrayOfPhotos)
-                                        {
-                                            var photo_i = arrayOfPhotos[i];
-                                            
-                                            Photo.assert(photo_i);
-                                        }
-
-                                        done();
-                                    }
-                                ,   function error(e) {
-                                        throw e;
+                        photodb.getAllPhotos(test_resources.kTestUserId,
+                            function(err, photos)
+                            {
+                                if (err)
+                                    throw err;
+                                
+                                photos.forEach(
+                                    function(photo){
+                                            Photo.assert(photo);
                                     } );
+
+                                done();
+                            });
                     });
 
             });
@@ -326,30 +147,30 @@ describe('photodb.js',
         describe('photodb (cleanup)',
             function()
             {
-                it('photodb._drop ' + userid1,
+                it('photodb.drop ' + userid1,
                     function(done) 
                     {
-                        photodb._drop(  userid1
-                                    ,   function success() {
-                                            done();
-                                        }
-                                    ,   function error(e) {
-                                            throw e;
-                                        });
+                        photodb.drop(userid1,
+                            function(err) {
+                                if (err)
+                                  throw err;
+                          
+                                done();
+                            });
                     } );
 
-                it('photodb._drop ' + userid2,
+                it('photodb.drop ' + userid2,
                     function(done) 
                     {
-                        photodb._drop(  userid2
-                                    ,   function success() {
-                                            done();
-                                        }
-                                    ,   function error(e) {
-                                            throw e;
-                                        });
+                        photodb.drop(userid2,
+                            function(err) {
+                                if (err)
+                                  throw err;
+                          
+                                done();
+                            });
                     } );
-
+                 
             });
 
 
