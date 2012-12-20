@@ -47,10 +47,13 @@ describe('s3.js',
                         s3.getPathsWithPrefix( 
                                 s3.test.clientR()
                             ,   'test'
-                            ,   function success(files)
+                            ,   function(err, filepaths)
                                 {
+                                    if (err)
+                                        throw err;
+                                        
                                     var expected = [ 'test/test.json' ];
-                                    var filediff = _.difference(files, expected);
+                                    var filediff = _.difference(filepaths, expected);
 
                                     if (filediff.length > 0) {
                                         console.error('files list doesnt match diff:');
@@ -59,14 +62,10 @@ describe('s3.js',
                                     }
                                     
                                     done();
-                                }
-                            ,   function error(e)
-                                {
-                                    throw e;
-                                } );
+                                });
                     } );
 
-                it ( 's3.delete ' + jsonTestPath + ' from test-bucket', 
+                it ( 's3.remove ' + jsonTestPath + ' from test-bucket', 
                     function(done) {
                         _deleteFile( s3.test, jsonTestPath, done);
                     } );
@@ -89,7 +88,7 @@ describe('s3.js',
                         _s3URLCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath, done, _copyFailed );
                     } );
 
-                it ( 's3.delete ' + shoeboxPath + ' from test-bucket',
+                it ( 's3.remove ' + shoeboxPath + ' from test-bucket',
                     function(done) {
                         _deleteFile(s3.test, shoeboxPath, done);
                     } );
@@ -102,7 +101,7 @@ describe('s3.js',
                         _s3URLCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath, done, _copyFailed );
                     } );
 
-                it( 's3.delete ' + faviconPath, function(done) {
+                it( 's3.remove ' + faviconPath, function(done) {
                                                     _deleteFile(s3.test, faviconPath, done);
                                                 } );
 
@@ -116,7 +115,7 @@ describe('s3.js',
                             fbpict, done, _copyFailed );
                     } );
 
-                it( 's3.delete ' + fbpict,      function(done) {
+                it( 's3.remove ' + fbpict,      function(done) {
                                                 _deleteFile(s3.test, fbpict, done);
                                             } );
 
@@ -136,7 +135,7 @@ describe('s3.js',
                             );
                     } );
 
-                it ( 's3.delete ' + jsonTestPath + ' from test-bucket',
+                it ( 's3.remove ' + jsonTestPath + ' from test-bucket',
                     function(done) {
                         _deleteFile(s3.production, jsonTestPath, done);
                     } );
@@ -145,13 +144,13 @@ describe('s3.js',
                 // We have no way to determine whether the delete operation was succesful...
                 // Amazon returns 200 all the time...
 
-                it ( 's3.delete ' + jsonTestPath + ' from s3.test - again',
+                it ( 's3.remove ' + jsonTestPath + ' from s3.test - again',
                     function(done) {
                         _deleteFileNoInitialCheck(s3.object, jsonTestPath, done);
                     } );
 */
 
-                it( 's3.delete 2 files',
+                it( 's3.remove 2 files',
                     function(done) 
                     {
                         var path1 = '/test/item1.json';
@@ -182,13 +181,15 @@ describe('s3.js',
                         }
 
                         function _deleteTwo(done) {
-                            s3.delete( c, [path1, path2]
-                                ,   function success(ponse)
+                            s3.remove( c, [path1, path2]
+                                ,   function(err, ponse)
                                     {
+                                        if (err)
+                                            throw err;
+                                      
                                         assert(ponse != undefined, 'ponse is undefined');
                                         done();
-                                    }
-                                ,   function error(e) { assert(e != undefined, 'e is undefined' ); throw e;});                      
+                                    });
                         }
 
                         function _verify( shouldExits, done ) {
@@ -236,9 +237,13 @@ describe('s3.js',
 
                         q.add( 
                             function cleanUpOperation(doneOp) {
-                                s3.delete(clientS3, destinationPath
-                                    ,   function success()  {   doneOp();   }
-                                    ,   function error(e)   {   throw e;    } );
+                                s3.remove(clientS3, destinationPath,
+                                    function(err, ponse) {
+                                        if (err)
+                                            throw err;
+                                          
+                                        doneOp();
+                                    });
                             });
 
                         q.add(
@@ -403,14 +408,16 @@ function _deleteFile(destination, thePath, done)
     CheckFileExist(c.URLForPath(thePath), true, 
         function()
         {
-            s3.delete( c, thePath
-                ,   function success(ponse)
-                    {
-                        assert(ponse != undefined, 'ponse is undefined');
+            s3.remove( c, thePath,
+                function(err, ponse)
+                {
+                    if (err)
+                        throw err;
+                      
+                    assert(ponse != undefined, 'ponse is undefined');
 
-                        CheckFileExist(c.URLForPath(thePath), false, done);
-                    }
-                ,   function error(e) { assert(e != undefined, 'e is undefined' ); throw e;});                      
+                    CheckFileExist(c.URLForPath(thePath), false, done);
+                });
         } );
 } 
 
@@ -418,14 +425,16 @@ function _deleteFileNoInitialCheck(destination, thePath, done)
 {
     var c = destination.clientRW();
 
-    s3.delete( c, thePath
-        ,   function success(ponse)
-            {
-                assert(ponse != undefined, 'ponse is undefined');
+    s3.remove( c, thePath,
+        function(err, ponse)
+        {
+            if (err)
+                throw err;
 
-                console.log( 'ponse.statusCode: ' + ponse.statusCode );
+            assert(ponse != undefined, 'ponse is undefined');
 
-                CheckFileExist(c.URLForPath(thePath), false, done);
-            }
-        ,   function error(e) { assert(e != undefined, 'e is undefined' ); throw e;});  
-} 
+            console.log( 'ponse.statusCode: ' + ponse.statusCode );
+
+            CheckFileExist(c.URLForPath(thePath), false, done);
+        });  
+}

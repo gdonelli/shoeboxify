@@ -8,7 +8,7 @@ S3 Client:
             s3.production.clientRW()    defult client with RW permissions
 Operations:
             s3.writeJSON    write JSON file to s3
-            s3.delete       delete files from s3
+            s3.remove       delete files from s3
             s3.copyURL      copy content from any URL to s3
             s3.copyFile     copy local file to S3   
 Meta:
@@ -257,108 +257,21 @@ s3.writeJSON =
     };
 
 
-function _s3_delete_file(client, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
-{
-    _s3_assert_client(client);
-    assert(filePath != undefined, 'filePath is undefined' );
-    assert(_.isString(filePath), 'filePath is not a string');   
-    a.assert_f(success_f);
-    a.assert_f(error_f);
-
-    client.deleteFile(filePath,
-        function(err, ponse){
-            if (err)
-                error_f(err);
-            else if (ponse.statusCode >= 200 && ponse.statusCode < 300) 
-            {
-                success_f(ponse);   
-            }
-            else
-            {
-                var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-                e.response = ponse;
-                error_f(e);
-            }
-        } );
-}
-
 /*
- * s3.delete
- * deletes one file at the time
- *
- */
-
-s3.delete_one_by_one = 
-    function( client, filePath_or_arrayOfPaths, success_f /* (numOfFilesRemoved) */,  error_f /* (error) */ ) 
-    {
-        _s3_assert_client(client);
-        assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
-        assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');  
-        a.assert_f(success_f);
-        a.assert_f(error_f);
-
-        var filesToRemove;
-
-        if ( _.isString(filePath_or_arrayOfPaths) )
-            filesToRemove = [ filePath_or_arrayOfPaths ];
-        else if ( _.isArray(filePath_or_arrayOfPaths) )
-            filesToRemove = filePath_or_arrayOfPaths;
-        else
-            assert('filePath_or_arrayOfPaths is neither string or array');
-
-        assert(filesToRemove.length > 0, 'filesToRemove.length is not > 0');
-
-        var removeIndex = 0;
-        var successCount = 0;
-        var errorCount = 0;
-
-        _removeStep();
-
-        /* ============== */
-
-        function _removeStep()
-        {
-            if (successCount + errorCount == filesToRemove.length)
-                return _end();
-
-            var file_i = filesToRemove[removeIndex++];
-
-            _s3_delete_file(client, file_i
-                ,   function success(reponse)
-                    {
-                        successCount++;
-                        _removeStep();
-                    }
-                ,   function error(error)
-                    {
-                        errorCount++;
-                        _removeStep();
-                    } );
-        }
-
-        function _end()
-        {
-            if (success_f)
-                success_f(successCount)
-        }
-    };
-
-/*
- * s3.delete
+ * s3.remove
  * it will use 'deleteMultiple' when removing multiple files
  *
  */
 
  /* _using_deleteMultiple */
  
-s3.delete = 
-    function( client, filePath_or_arrayOfPaths, success_f /* (reponse) */,  error_f /* (error) */ ) 
+s3.remove =
+    function( client, filePath_or_arrayOfPaths, callback /* (err, reponse) */)
     {
         _s3_assert_client(client);
         assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
         assert(_.isString(filePath_or_arrayOfPaths) || _.isArray(filePath_or_arrayOfPaths), 'filePath_or_arrayOfPaths not a string or array');  
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         // console.log(typeof filePath_or_arrayOfPaths);
 
@@ -373,28 +286,22 @@ s3.delete =
 
         assert(deleteMethod != null, 'Couldnt find method to deal with input type');
 
-        client[deleteMethod](
-                    filePath_or_arrayOfPaths
-                ,   function(err, ponse) {
-                        if (err)
-                        {
-                            error_f(err);
-                        }
-                        else if (ponse && ponse.statusCode >= 200 && ponse.statusCode < 300) 
-                        {
-                            success_f(ponse);
-                        }
-                        else 
-                        {
-                            var err;
-                            if (!ponse)
-                                err = new Error('S3.delete response is undefined');
-                            else
-                                err = new Error('S3.delete response with statusCode: ' + ponse.statusCode);
+        client[deleteMethod](filePath_or_arrayOfPaths,
+            function(err, ponse)
+            {
+                if (err)
+                    return callback(err);
+                    
+                if (ponse && ponse.statusCode >= 200 && ponse.statusCode < 300)
+                    return callback(null, ponse);
 
-                            error_f(err);
-                        }
-                    } );
+                if (!ponse)
+                    err = new Error('s3.remove response is undefined');
+                else
+                    err = new Error('s3.remove response with statusCode: ' + ponse.statusCode);
+
+                return callback(err);
+            });
     };
 
 
@@ -513,37 +420,33 @@ s3.copyFile =
     }
 
 s3.getPathsWithPrefix =
-    function(client, prefix, success_f, error_f)
+    function(client, prefix, callback /* (err, paths) */)
     {
         _s3_assert_client(client);
-        
         a.assert_string(prefix, 'prefix');
         assert( prefix[0] != '/', 'leading / is not valid in path prefix');
+        a.assert_f(callback);
+        
+        client.list({ prefix: prefix },
+            function(err, data) {
+                if (err)
+                    return callback(err);
 
-        a.assert_f(success_f);
-        a.assert_f(error_f);
-           
-        client.list(
-                { prefix: prefix }
-            ,   function(err, data) {
-                    if (err)
-                        return error_f(err);
+                a.assert_obj(data);
+                var contents = a.assert_array(data.Contents);
 
-                    a.assert_obj(data);
-                    var contents = a.assert_array(data.Contents);
+                var result = [];
 
-                    var result = [];
+                for (var i in contents)
+                {
+                    var fileInfo_i = contents[i];
+                    var filepath_i = fileInfo_i.Key;
+                    
+                    result.push(filepath_i);
+                }
 
-                    for (var i in contents)
-                    {
-                        var fileInfo_i = contents[i];
-                        var filepath_i = fileInfo_i.Key;
-                        
-                        result.push(filepath_i);
-                    }
-
-                    success_f(result);
-                } );
+                callback(null, result);
+            } );
     }
 
 /* ============================================== */

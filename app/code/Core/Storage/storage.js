@@ -144,16 +144,15 @@ storage.copyFacebookPhoto =
             // console.log('S3 Copy - Attampting to rollback:');
             // console.log(allPathsCopied); 
 
-            s3.delete(  s3client
-                    ,   allPathsCopied
-                    ,   function success(ponse) {
-                            // console.log('S3 Copy - Rollback success');
-                            done();
-                        }
-                    ,   function error(err) {
-                            console.error('S3 Copy - Rollback Failed');
-                            done();
-                    } );
+            s3.remove(s3client, allPathsCopied,
+                function(err, ponse) {
+                    if (err)
+                        console.error('S3 Copy - Rollback Failed');
+                    else
+                        console.log('S3 Copy - Rollback success');
+              
+                    done();
+                } );
         }
 
         function _getCopyObject()
@@ -199,18 +198,12 @@ storage.deleteFilesInCopyObject =
 
         var s3client = s3.getClient(info.bucket, 'RW');
 
-        s3.delete(  s3client
-                ,   info.paths
-                ,   function(s3ponse)
-                    {
-                        callback(null);
-                    }
-                ,   callback );
+        s3.remove( s3client, info.paths, callback );
     };
 
 
-storage.copyImageURL = 
-    function(userId, photoId, theURL, callback /* (err) */)
+storage.copyImageURL =
+    function(userId, photoId, theURL, callback /* (err, copyObject) */)
     {
         a.assert_uid(userId);
         a.assert_obj(photoId);
@@ -424,31 +417,28 @@ storage.copyImageURL =
 
     };
 
-storage.getUserFiles = 
-    function (userId, callback /* (err, URLs) */)
+storage.getPaths = 
+    function (userId, callback /* (err, paths) */)
     {
         a.assert_uid(userId);
         a.assert_f(callback);
 
         var s3client = s3.production.clientR();
 
-        s3.getPathsWithPrefix(
-                s3client
-            ,   userId
-            ,   function(paths)
-                {
-                    var URLs = _.map(   paths
-                                    ,   function(path) {
-                                            return s3client.URLForPath(path);
-                                        });
-                              
-                    callback(null, URLs);
-                }
-            ,   callback
-            );
+        s3.getPathsWithPrefix(s3client, userId, callback);
     }
 
-
+storage.remove =
+    function (userId, callback /* (err) */)
+    {
+        storage.getPaths(userId,
+            function(err, paths)
+            {
+                var s3client = s3.production.clientRW();
+                
+                s3.remove(s3client, paths, callback);
+            });
+    }
 
 /* ========================================================== */
 /* ========================================================== */

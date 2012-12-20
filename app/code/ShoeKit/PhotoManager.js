@@ -354,8 +354,65 @@ PhotoManager.prototype.getPhotos =
         return photodb.getAllPhotos(userId, callback);
     };
 
-PhotoManager.prototype.deleteAll =
+PhotoManager.prototype.removeAllPhotos =
     function(callback /* (err) */)
     {
+        a.assert_f(callback);
+
+        var userId  = this._user.getId();
         
+        var q = new OperationQueue();
+        q.on('abort', callback);
+        q.context = {};
+        
+        q.add(
+            function DropDatabaseOperation(doneOp)
+            {
+                photodb.drop(userId,
+                    function(err)
+                    {
+                        if (err) {
+                            console.error('photodb.drop failed:');
+                            console.error(err.stack);
+                            q.context.photodbErr = err;
+                        }
+                        
+                        
+                        doneOp();
+                    });
+            });
+        
+        q.add(
+            function DeleteStorageOperation(doneOp)
+            {
+                storage.remove(userId,
+                    function(err)
+                    {
+                        if (err) {
+                            console.error('storage.remove:');
+                            console.error(err.stack);
+                            q.context.storageErr = err;
+                        }
+                        
+                        doneOp();
+                    });
+            });
+        
+        q.wait(
+            function EndOperation(doneOp)
+            {
+                if (q.context.photodbErr && q.context.storageErr) {
+                    var resultErr = new Error('photodb.drop and storage.remove failed');
+                    resultErr.photodbErr = q.context.photodbErr;
+                    resultErr.storageErr = q.context.storageErr;
+               
+                    return callback(resultErr);
+                }
+                else if (q.context.photodbErr)
+                    return callback(q.context.photodbErr);
+                else if (q.context.storageErr)
+                    return callback(q.context.storageErr);
+               
+                callback(null);
+            });
     };

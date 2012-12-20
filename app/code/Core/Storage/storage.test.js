@@ -23,9 +23,9 @@ describe('storage.js',
         describe('Save footprint',
             function()
             {
-                it( 'storage.getUserFiles - s3 snapshot',
+                it( 'storage.getPaths - s3 snapshot',
                     function(done) {
-                        storage.getUserFiles(test_resources.kTestUserId,
+                        storage.getPaths(test_resources.kTestUserId,
                             function(err, list) {
                                 if (err)
                                     throw err;
@@ -104,9 +104,9 @@ describe('storage.js',
 
                     });
 
-                it( 'storage.getUserFiles - midcheck - more s3 files',
+                it( 'storage.getPaths - midcheck - more s3 files',
                     function(done) {
-                        storage.getUserFiles(test_resources.kTestUserId,
+                        storage.getPaths(test_resources.kTestUserId,
                             function(err, list) {
                                 if (err)
                                     throw err;
@@ -255,9 +255,9 @@ describe('storage.js',
         describe('Check footprint',
             function()
             {
-                it( 'storage.getUserFiles - Zero footprint in S3',
+                it( 'storage.getPaths - Zero footprint in S3',
                     function(done) {
-                        storage.getUserFiles( test_resources.kTestUserId,
+                        storage.getPaths( test_resources.kTestUserId,
                             function(err, list) {
                                 if (err)
                                     throw err;
@@ -284,9 +284,38 @@ describe('storage.js',
                                     done();
                             });
                     });
-            
             });
+        
+        // TODO: Should test with a user with more than 1000+ files in storage
+        
+        describe('storage.remove',
+            function()
+            {
+                var userT1000 = 'T1000';
 
-
-
+                it( 'storage.remove',
+                    function(done) {
+                        storage.copyImageURL(userT1000, mongo.newObjectId(), test_resources.kSamplePhotoDirectURL,
+                            function(err, copyObject)
+                            {
+                                if (err) throw err;
+                                
+                                storage.remove(userT1000,
+                                    function(err)
+                                    {
+                                        if (err) throw err;
+                                        
+                                        storage.getPaths(userT1000,
+                                            function(err, paths)
+                                            {
+                                                assert(paths.length == 0, 'paths.length expected to be 0');
+                                                done();
+                                            });
+                                    });
+                            });
+                    });
+            });
+         
+         
+         
     } );

@@ -106,10 +106,20 @@ describe('PhotoManager.js',
 
                 it( 'PhotoManager.removePhoto',
                     function(done)
-                    {
-//                        console.log(photo);
-                   
+                    {                  
                         photoManager.removePhoto(photo,
+                            function(err) {
+                                if (err)
+                                    throw err;
+                                else
+                                    done();
+                            });
+                    });
+
+                it( 'PhotoManager.removeAllPhotos',
+                    function(done)
+                    {                  
+                        photoManager.removeAllPhotos(
                             function(err) {
                                 if (err)
                                     throw err;

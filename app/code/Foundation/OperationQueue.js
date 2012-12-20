@@ -27,7 +27,8 @@ exports.OperationQueue = OperationQueue;
 
 function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context)
 {
-    assert( opt_maxConcurrent && _.isNumber(opt_maxConcurrent), 'expected number as 1st argument' );
+    if (opt_maxConcurrent)
+        assert( _.isNumber(opt_maxConcurrent), 'expected number as 1st argument' );
 
     this._concurrent = 0;
     this._maxConcurrent = opt_maxConcurrent || null;
