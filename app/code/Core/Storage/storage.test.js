@@ -25,21 +25,21 @@ describe('storage.js',
             {
                 it( 'storage.getUserFiles - s3 snapshot',
                     function(done) {
-                        storage.getUserFiles(
-                                    test_resources.kTestUserId
-                                ,   function success(list) {
-                                        s3snapshot = list;
-                                        done();
-                                    }
-                                ,   function error(e) { throw e; }
-                            );
+                        storage.getUserFiles(test_resources.kTestUserId,
+                            function(err, list) {
+                                if (err)
+                                    throw err;
+                                s3snapshot = list;
+                                done();
+                            });
                     });
 
                 it ('tmp.getFileList - tmp snapshot', 
                     function(done) {
                         tmp.getFileList(
-                            function (err, files) {
-                                assert(err == null, 'cannot list /tmp');
+                            function(err, files) {
+                                if (err)
+                                    throw err;
                                 tmpSnapshot = files;
                                 done();
                             });
@@ -52,15 +52,12 @@ describe('storage.js',
             {
                 it( 'storage.copyFacebookObject - me',
                     function(done) {
-                        _copyFB('me'
-                            ,   function success() {
-                                    throw new Error('not supposed to work');
-                                }
-                            ,   function error(e) {
-                                    a.assert_def(e);
-                                    assert(e.code == storage.kInvalidObjectError, 'expected storage.kInvalidObjectError is:' + e.code );
-                                    done();
-                                });             
+                        _copyFB('me',
+                            function(err, object) {
+                                a.assert_def(err);
+                                assert(err.code == storage.kInvalidObjectError, 'expected storage.kInvalidObjectError is:' + err.code );
+                                done();
+                            });
                     });
 
                 // gdonelli my profile pict
@@ -79,48 +76,45 @@ describe('storage.js',
 
                 it( 'storage.copyFacebookObject - kOldPhotoId',
                     function(done) {
-                        _copyFB(test_resources.kOldPhotoId
-                            ,   function success(theCopy) {
-                                    a.assert_def(theCopy);
-                                    a.assert_def(theCopy.picture);
-                                    a.assert_def(theCopy.source);
-                                    a.assert_def(theCopy.images);
+                        _copyFB(test_resources.kOldPhotoId,
+                            function(err, theCopy) {
+                                if (err)
+                                    throw err;
+                                
+                                a.assert_def(theCopy);
+                                a.assert_def(theCopy.picture);
+                                a.assert_def(theCopy.source);
+                                a.assert_def(theCopy.images);
 
-                                    copyObject = theCopy;
+                                copyObject = theCopy;
 
-                                    // console.log(copyObject);
+                                // console.log(copyObject);
 
-                                    done();
-                                }
-                            ,   function error(e) {
-                                    throw e;                        
-                                });             
+                                done();
+                            });
                     });
 
                 it( 'storage.copyFacebookObject - kOldPhotoId - fail',
                     function(done) {
-                        _copyFB( test_resources.kOldPhotoId
-                            ,   function success(copy) {
-                                    throw new Error('not expected to work');
-                                }
-                            ,   function error(e) {
-                                    done();                     
-                                }
-                            ,   true );
+                        _copyFB( test_resources.kOldPhotoId,
+                            function(err, copy) {
+                                a.assert_def(err);
+                                done();
+                            }, true );
 
                     });
 
                 it( 'storage.getUserFiles - midcheck - more s3 files',
                     function(done) {
-                        storage.getUserFiles(
-                                    test_resources.kTestUserId
-                                ,   function success(list) {
-                                        var listDiff = _.difference(list, s3snapshot);
-                                        assert( listDiff.length > 0, 'no file has been added');
-                                        done();
-                                    }
-                                ,   function error(e) { throw e; }
-                            );
+                        storage.getUserFiles(test_resources.kTestUserId,
+                            function(err, list) {
+                                if (err)
+                                    throw err;
+                                    
+                                var listDiff = _.difference(list, s3snapshot);
+                                assert( listDiff.length > 0, 'no file has been added');
+                                done();
+                            });
                     });
 
 
@@ -183,7 +177,7 @@ describe('storage.js',
                             } );                
                 }
                 
-                function _copyFB( graphPath, success_f, error_f, forceFail)
+                function _copyFB( graphPath, callback, forceFail)
                 {
                     fbTest.processFacebookObject(
                                 graphPath
@@ -191,8 +185,7 @@ describe('storage.js',
                                     var q = storage.copyFacebookPhoto(  test_resources.kTestUserId
                                                                     ,   mongo.newObjectId()
                                                                     ,   fbObject
-                                                                    ,   success_f
-                                                                    ,   error_f );
+                                                                    ,   callback );
                                     if (forceFail)
                                         q.context.failure = true;
                                 });
@@ -211,16 +204,13 @@ describe('storage.js',
                         storage.copyImageURL(   test_resources.kTestUserId
                                             ,   mongo.newObjectId()
                                             ,   test_resources.kSamplePhotoDirectURL
-                                            ,   function success(copyObject){
+                                            ,   function(err, copyObject){
+                                                    if (err)
+                                                        throw err;
+                                             
                                                     genericURLCopy = copyObject;
 
-                                                    // console.log(copyObject);
-
                                                     done();
-                                                }
-                                            ,   function error(e)
-                                                {
-                                                    throw e;
                                                 } );
                     });
 
@@ -267,20 +257,15 @@ describe('storage.js',
             {
                 it( 'storage.getUserFiles - Zero footprint in S3',
                     function(done) {
-                        storage.getUserFiles(
-                                    test_resources.kTestUserId
-                                ,   function success(list) {
-                                        var listDiff = _.difference(list, s3snapshot);
-                                        if (listDiff.length == 0)
-                                            done();
-                                        else
-                                        {
-                                            throw new Error('');
-                                        }
-                                            
-                                    }
-                                ,   function error(e) { throw e; }
-                            );
+                        storage.getUserFiles( test_resources.kTestUserId,
+                            function(err, list) {
+                                if (err)
+                                    throw err;
+
+                                var listDiff = _.difference(list, s3snapshot);
+                                if (listDiff.length == 0)
+                                	done();
+                            });
                     });
 
                 it ('tmp.getFileList - No traces in tmp', 

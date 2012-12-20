@@ -30,18 +30,17 @@ var storage = exports;
 storage.kInvalidObjectError = 'INVALID_OBJ_ERR';
 
 storage.copyFacebookPhoto =
-    function( userId, photoId, fbPhotoObject, success_f /* (copyObject) */, error_f /* (e) */ )
+    function( userId, photoId, fbPhotoObject, callback /* (err, copyObject) */)
     {
         a.assert_uid(userId);
         a.assert_def(photoId,   'photoId');
         a.assert_obj(fbPhotoObject);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
         
         if ( !_isFacebookPhotoObject(fbPhotoObject) ) {
             var err = new Error('Object is not a valid Facebook Photo');
             err.code = storage.kInvalidObjectError;
-            return process.nextTick( function() { error_f(err) } );
+            return process.nextTick( function() { callback(err) } );
         }
 
         var imageDictionary = _getImageDictionaryForFacebookPhoto(fbPhotoObject);
@@ -112,14 +111,14 @@ storage.copyFacebookPhoto =
                     _rollback( 
                         function() { 
                             var error = new Error('Copy to S3 failed');
-                            error_f(error);
+                            callback(error);
                         } );
                 }
                 else
                 {
                     var copyObject = _getCopyObject();
                     // console.log(copyObject);
-                    success_f(copyObject);
+                    callback(null, copyObject);
                 }
 
             });
@@ -178,7 +177,7 @@ storage.copyFacebookPhoto =
     };
 
 storage.deleteFilesInCopyObject = 
-    function (userId, copyObject, callback /* (err) */)
+    function(userId, copyObject, callback /* (err) */)
     {
         a.assert_uid(userId);
         a.assert_obj(copyObject);
@@ -211,40 +210,34 @@ storage.deleteFilesInCopyObject =
 
 
 storage.copyImageURL = 
-    function(userId, photoId, theURL, success_f /* () */, error_f) 
+    function(userId, photoId, theURL, callback /* (err) */)
     {
         a.assert_uid(userId);
         a.assert_obj(photoId);
         a.assert_http_url(theURL);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var q = new OperationQueue(1);
 
-        // q.debug = true;
+//        q.debug = true;
 
         q.context = {};
 
-        q.on('abort',
-            function(e) {
-                if (error_f)
-                    error_f(e); 
-            });
+        q.on('abort', callback);
 
         //
         // Download image locally
         //      -> q.context.downloadedPath
         q.add( 
             function DownloadOperation(doneOp) {
-                _downloadImageURL( 
-                        theURL
-                    ,   function success(localPath) { 
-                            q.context.downloadedPath = localPath;
-                            // console.log('image downloaded: ' + localPath);
-                            doneOp();
-                        }
-                    ,   function error(e){  q.abort(e); }
-                    );
+                _downloadImageURL( theURL,
+                    function(err, localPath) {
+                        if (err)
+                            return q.abort(err);
+                            
+                        q.context.downloadedPath = localPath;
+                        doneOp();
+                    });
             });
         
         //
@@ -425,18 +418,17 @@ storage.copyImageURL =
         q.add(
             function SuccessOperation(doneOp)
             {
-                success_f(q.context.copyObject);
+                callback(null, q.context.copyObject);
                 doneOp();
             } );
 
     };
 
 storage.getUserFiles = 
-    function (userId, success_f /* () */, error_f)
+    function (userId, callback /* (err, URLs) */)
     {
         a.assert_uid(userId);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var s3client = s3.production.clientR();
 
@@ -449,9 +441,10 @@ storage.getUserFiles =
                                     ,   function(path) {
                                             return s3client.URLForPath(path);
                                         });
-                    success_f(URLs)
+                              
+                    callback(null, URLs);
                 }
-            ,   error_f
+            ,   callback
             );
     }
 
@@ -469,13 +462,10 @@ function ___PRIVATE___(){}
 
 storage.private = {};
 
+var MAX_IMAGE_BYTE_SIZE = 1024 * 1024 * 1; // 1 MB
 
-function _downloadImageURL( theURL
-                        ,   success_f /* (local_path) */
-                        ,   error_f )
+function _downloadImageURL( theURL, callback /* (err, local_path) */ )
 {
-    var MAX_IMAGE_BYTE_SIZE = 1024 * 1024 * 1; // 1 MB
-
     var quest = httpx.requestURL(theURL, {},
         function(ponse) {
 
@@ -496,7 +486,7 @@ function _downloadImageURL( theURL
 
             // Download file locally first...
             var resultFilePath = tmp.getFile(fileExtension);
-            var tmpFileStream = fs.createWriteStream(resultFilePath);
+            var tmpFileStream  = fs.createWriteStream(resultFilePath);
 
             ponse.pipe(tmpFileStream);
 
@@ -521,18 +511,15 @@ function _downloadImageURL( theURL
                 function(p) {
                     // console.log('httpx.requestURL -> done');
 
-                    if (success_f)
-                        success_f( resultFilePath );
+                    callback( null, resultFilePath );
                 });
         
             /* aux =============================== */
 
             function _abortTransfer(msg)
             {
-                if (error_f) {
-                    error_f( new Error(msg) );
-                    error_f = undefined; // makes sure this is the only invocation to error_f
-                }
+                callback( new Error(msg) );
+                callback = undefined; // makes sure this is the only invocation to callback
                     
                 ponse.destroy();
             }
@@ -543,46 +530,43 @@ function _downloadImageURL( theURL
         function(e) {
             // console.error(e);
 
-            if (error_f)
-                error_f(e);
+            if (callback)
+                callback(e);
         } );
 
     quest.end();
-
-    /* aux ======================= */
-
-    function _isImageResponse(ponse) // returns file extension...
-    {   
-        a.assert_def(ponse, 'ponse');
-
-        // console.log("statusCode: " + ponse.statusCode);
-        // console.log("headers: ");
-        // console.log(ponse.headers);
-
-        var contentLength = ponse.headers['content-length'];
-        
-        if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
-            return undefined;
-
-        var contentType = ponse.headers['content-type'];
-        
-        if ( contentType.startsWith('image/') )
-        {
-            var elements = contentType.split('/');
-
-            if (elements.length == 2);
-            {
-                var result = elements[1];
-
-                if (result.length <= 4)
-                    return result;
-            }
-        }
-            
-        return undefined;
-    };
 }
 
+function _isImageResponse(ponse) // returns file extension...
+{   
+    a.assert_def(ponse, 'ponse');
+
+    // console.log("statusCode: " + ponse.statusCode);
+    // console.log("headers: ");
+    // console.log(ponse.headers);
+
+    var contentLength = ponse.headers['content-length'];
+    
+    if (Math.round(contentLength) > MAX_IMAGE_BYTE_SIZE)
+        return undefined;
+
+    var contentType = ponse.headers['content-type'];
+    
+    if ( contentType.startsWith('image/') )
+    {
+        var elements = contentType.split('/');
+
+        if (elements.length == 2);
+        {
+            var result = elements[1];
+
+            if (result.length <= 4)
+                return result;
+        }
+    }
+        
+    return undefined;
+};
 
 /*  
 
