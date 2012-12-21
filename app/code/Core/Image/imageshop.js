@@ -63,6 +63,8 @@ imageshop.makeSize =
 
 var _resampleOperationQueue = new OperationQueue( imageshop.k.MaxConcurrentOperations );
 
+//_resampleOperationQueue.debug = true;
+
 _resampleOperationQueue.on('abort', 
     function(e){ 
         console.error('A resampleOperation in the shared queue failed:');
@@ -78,27 +80,26 @@ _resampleOperationQueue.on('abort',
 /* ======================================================== */
 
 imageshop.getSize =
-    function(filePath, success_f /* size{ width:XXX, height:XXX } */, error_f)
+    function(filePath, callback /* ( err, size{ width:XXX, height:XXX } ) */ )
     {
-        imagemagick.identify([ '-format', '%wx%h', filePath ]
-            ,   function(err, features) 
+        a.assert_f(callback, 'callback');
+        
+        imagemagick.identify([ '-format', '%wx%h', filePath ],
+            function(err, features)
+            {
+                if (err) 
+                    return _errorExit(err);
+                else
                 {
-                    if (err) 
-                    {
-                        return _errorExit(err);
-                    }   
-                    else
-                    {
-                        var elements = features.split('x');
-                        if (elements.length != 2)
-                            return _errorExit('features.split returned array with len:' + elements.length);
+                    var elements = features.split('x');
+                    if (elements.length != 2)
+                        return _errorExit('features.split returned array with len:' + elements.length);
 
-                        var size = _makeSafeSize(elements[0], elements[1]);
-                        
-                        if (success_f)
-                            success_f( size );
-                    }
-                } );
+                    var size = _makeSafeSize(elements[0], elements[1]);
+                    
+                    callback( null, size );
+                }
+            } );
         
         /* aux ========================== */
 
@@ -111,8 +112,7 @@ imageshop.getSize =
 
             err.filePath = filePath;
 
-            if (error_f)
-                error_f(err);
+            callback(err);
         }
 
         function _makeSafeSize(w, h)
@@ -152,57 +152,63 @@ imageshop.getSize =
 */
 
 imageshop.resample = 
-    function(filePath, options, success_f /* (outpath, size) */, error_f)
+    function(filePath, options, callback /* (err, outpath, size) */)
     {
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
-        imageshop.getSize(filePath
-            ,   function success(size)
+        imageshop.getSize(filePath,
+            function(err, size)
+            {
+                if (err)
+                    return callback(err);
+
+//                console.log('input size: ' + size);
+//                console.log(size);
+                
+                _assertSize(size);
+                
+                if  (   options         
+                    &&  options[imageshop.k.MaxSafeInputAreaKey]
+                    &&  (size.width * size.height) > options[imageshop.k.MaxSafeInputAreaKey] )
                 {
-                    _assertSize(size);
+                    var tooBigError = new Error('Source image is too large');
+                    tooBigError.code = 'TOOBIG';
 
-                    if  (   options         
-                        &&  options[imageshop.k.MaxSafeInputAreaKey]
-                        &&  (size.width * size.height) > options[imageshop.k.MaxSafeInputAreaKey] )
-                    {
-                        var tooBigError = new Error('Source image is too large');
-                        tooBigError.code = 'TOOBIG';
-
-                        error_f(tooBigError);
-                    }
-                    else if (   options
-                            &&  options[imageshop.k.MaxDimensionKey]
-                            &&  Math.max(size.width, size.height) > options[imageshop.k.MaxDimensionKey] )
-                    {
-                        // will need to resize the image...
-                        _resize(filePath, options[imageshop.k.MaxDimensionKey], success_f, error_f);
-                    }
-                    else
-                    {
-                        // only resample...
-                        var outPath = tmp.getFile('jpg');
-
-                        _convert( filePath, outPath, []
-                                ,   function success(outpath) {
-                                        success_f(outpath, size);
-                                    }
-                                ,   error_f );
-                    }
+                    callback(tooBigError);
+                    
+                    console.log('tooBigError');
                 }
-            ,   function error(e) {
-                    error_f(e);
-                } );
+                else if (   options
+                        &&  options[imageshop.k.MaxDimensionKey]
+                        &&  Math.max(size.width, size.height) > options[imageshop.k.MaxDimensionKey] )
+                {
+                    // will need to resize the image...
+                    _resize(filePath, options[imageshop.k.MaxDimensionKey], callback);
+                }
+                else
+                {
+                    // only resample...
+                    var outPath = tmp.getFile('jpg');
+
+                    _convert( filePath, outPath, [],
+                        function(err, outpath) {
+                            if (err)
+                                callback(err);
+                            else
+                                callback(null, outpath, size);
+                        });
+                }
+            });
     };
 
 
-function _hasResampleOperationQueueCapacityFor(numOfOps, error_f)
+function _hasResampleOperationQueueCapacityFor(numOfOps, callback)
 {
     if ( _resampleOperationQueue.waitCount() + numOfOps > imageshop.k.MaxNumOfWaitingOperations )
     {
         var tooBusy = new Error('_resampleOperationQueue is full');
         tooBusy.code = 'TOOBUSY';       
-        process.nextTick( function(){ error_f(tooBusy); } );
+        process.nextTick( function(){ callback(tooBusy); } );
 
         return false;
     }
@@ -211,42 +217,44 @@ function _hasResampleOperationQueueCapacityFor(numOfOps, error_f)
 }
 
 imageshop.safeResample = 
-    function(filePath, options, success_f /* (outpath, size) */, error_f)
+    function(filePath, options, callback /* (err, outpath, size) */ )
     {
         a.assert_string(filePath, 'filePath');
         a.assert_obj(options, 'options');
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
-        if ( !_hasResampleOperationQueueCapacityFor(1, error_f) ) {
+        if ( !_hasResampleOperationQueueCapacityFor(1, callback) ) {
             return;
         }
-
+               
         _resampleOperationQueue.add(
-            function resampleOperation(done) {
-                imageshop.resample(filePath, options
-                    ,   function success(outpath, size)
-                        {
-                            success_f(outpath, size);
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            error_f(e);
-                            done();
-                        } );
+            function resampleOperation(doneOp) {
+                
+//                console.log('filePath: ' + filePath);
+//                console.log('options: ');
+//                console.log(options);
+            
+                imageshop.resample(filePath, options,
+                    function(err, outpath, size)
+                    {
+                        if (err)
+                            callback(err);
+                        else
+                            callback(null, outpath, size);
+                            
+                        doneOp();
+                    });
             } );
     };
 
 
 imageshop.createThumbnails = 
-    function(sourcePath, sourceSize, success_f /*(array)*/, error_f )
+    function(sourcePath, sourceSize, callback /*(err, array)*/ )
     {
         assert(sourcePath != undefined, 'sourcePath is undefined');
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
         _assertSize(sourceSize);
-            
+        
         var sourceMaxDimension = Math.max(sourceSize.width, sourceSize.height);
 
         // console.log('sourceMaxDimension: ' + sourceMaxDimension);
@@ -257,7 +265,7 @@ imageshop.createThumbnails =
                 return num < sourceMaxDimension ;
             } );
 
-        if ( !_hasResampleOperationQueueCapacityFor(thumbToMake.length + 1, error_f) ) {
+        if ( !_hasResampleOperationQueueCapacityFor(thumbToMake.length + 1, callback) ) {
             return;
         }
 
@@ -276,25 +284,17 @@ imageshop.createThumbnails =
             function _performResize(dimension)
             {
                 _resampleOperationQueue.add(
-                    function makeThumbOperation(doneOp)
+                    function MakeThumbOperation(doneOp)
                     {
-                        // console.log(arguments.callee.name + '_resize ' + dimension);
-                
-                        _resize(sourcePath
-                            ,   dimension
-                            ,   function success(outPath, size) {
-                                    // console.log('_resize success_f');
-                                    
-                                    thumbResult.push( { path:outPath, size:size } );
+                        _resize(sourcePath, dimension,
+                            function(err, outPath, size) {
+                                    if (err)
+                                        error = err;
+                                    else
+                                        thumbResult.push( { path:outPath, size:size } );
+                                
                                     doneOp();
-                                }
-                            ,   function error(e) {
-                                    // console.log('_resize error');
-
-                                    if (!error)
-                                        error = e;
-                                    doneOp();
-                                } );
+                                });
 
                     } );                
             }
@@ -309,9 +309,9 @@ imageshop.createThumbnails =
                 // console.log('finish');
 
                 if (error)
-                    error_f(error);
+                    callback(error);
                 else
-                    success_f(thumbResult);
+                    callback(null, thumbResult);
 
                 doneOp();
             });
@@ -333,32 +333,36 @@ function _assertSize(size)
 }
 
 
-function _resize(filePath, dimension, success_f /* (outPath, size) */, error_f)
+function _resize(filePath, dimension, callback /* (err, outPath, size) */)
 {
-    a.assert_f(success_f);
-    a.assert_f(error_f);
+    a.assert_string(filePath);
+    a.assert_f(callback);
     assert( _.isNumber(dimension), 'dimension is expected to be a number');
 
     var outPath = tmp.getFile('jpg');
 
-    _convert( filePath, outPath, [ '-resize', dimension+'x'+dimension ]
-        ,   function success(resultPath)
+    _convert( filePath, outPath, [ '-resize', dimension+'x'+dimension ],
+            function(err, resultPath)
             {
-                imageshop.getSize(resultPath
-                    ,   function success(size)
-                        {
-                            success_f(resultPath, size);
-                        }
-                    ,   error_f );
-            }
-        ,   error_f );
+                if (err)
+                    callback(err);
+             
+                imageshop.getSize(resultPath,
+                    function(err, size)
+                    {
+                        if (err)
+                            callback(err);
+                        else
+                            callback(null, resultPath, size);
+                    });
+            } );
 }
 
 /*
  *  The single funnell:
  */
 
-function _convert( srcPath, outPath, otherArgs, success_f /* (outpath) */, error_f)
+function _convert( srcPath, outPath, otherArgs, callback /* (err, outpath) */ )
 {
     var args =  [   srcPath
                 ,   '-density',     '72'
@@ -376,7 +380,6 @@ function _convert( srcPath, outPath, otherArgs, success_f /* (outpath) */, error
     imagemagick.convert( args           
                     ,   function(err, stdout, stderr) 
                         {
-
                         /*
                             console.log('err:');
                             console.log(err);
@@ -385,11 +388,11 @@ function _convert( srcPath, outPath, otherArgs, success_f /* (outpath) */, error
                             console.log('stderr:');
                             console.log(stderr);
                         */
-
+                        
                             if (err)
-                                error_f(err);
-                            else if (success_f)
-                                success_f(outPath);
+                                callback(err);
+                            else
+                                callback(null, outPath);
                         } );
 }
 

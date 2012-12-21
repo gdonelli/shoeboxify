@@ -299,21 +299,20 @@ admin.route.intense =
 
         for ( var i=0; i<maxCount; i++ )
         {
-            imageshop.safeResample( iphoneImagePath
-                                ,   imageshop.k.DefaultResampleOptions
-                                ,   function success(path, size)
-                                    {
-                                        assert(size.width == 2048, 'image width expected to be 2048');                                  
-                                        ponse.write(path + '<br>');
-                                        fs.unlink(path);
-                                        isDone();
-                                    }
-                                ,   function error(e)
-                                    { 
-                                        ponse.write( e.message + ' code: '+ e.code + '<br>' );
-                                        isDone();
-                                    } );            
-        }   
+            imageshop.safeResample( iphoneImagePath, imageshop.k.DefaultResampleOptions,
+                function success(err, path, size)
+                {
+                    if (err) {
+                        ponse.write( err.message + ' code: '+ err.code + '<br>' );
+                        isDone();
+                    }
+               
+                    assert(size.width == 2048, 'image width expected to be 2048');                                  
+                    ponse.write(path + '<br>');
+                    fs.unlink(path);
+                    isDone();
+                });
+        }
 
         function isDone()
         {

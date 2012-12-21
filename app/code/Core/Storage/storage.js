@@ -244,18 +244,17 @@ storage.copyImageURL =
             function ResampleOperation(doneOp) {
                 a.assert_def(q.context.downloadedPath, 'q.context.downloadedPath');
 
-                imageshop.resample(
-                        q.context.downloadedPath
-                    ,   imageshop.k.DefaultResampleOptions
-                    ,   function success(outPath, outSize)
-                        {    
-                            q.context.original = {};
-                            q.context.original.path = outPath;
-                            q.context.original.size = outSize;
-                            doneOp();
-                        }   
-                    ,   function error(e){ q.abort(e); }
-                    );
+                imageshop.resample( q.context.downloadedPath, imageshop.k.DefaultResampleOptions,
+                    function(err, outPath, outSize)
+                    {
+                        if (err)
+                            return q.abort(e);
+                            
+                        q.context.original = {};
+                        q.context.original.path = outPath;
+                        q.context.original.size = outSize;
+                        doneOp();
+                    } );
             });
 
         //
@@ -266,17 +265,14 @@ storage.copyImageURL =
                 a.assert_def(q.context.original.path, 'q.context.original.path');
                 a.assert_def(q.context.original.size, 'q.context.original.size');
 
-                imageshop.createThumbnails(
-                        q.context.original.path
-                    ,   q.context.original.size
-                    ,   function success(array){
-                            q.context.thumbnails = array;
-                            // console.log('thumb array: ');
-                            // console.log(array);
-                            doneOp();
-                        }
-                    ,   function error(e){ q.abort(e); }
-                    );
+                imageshop.createThumbnails( q.context.original.path, q.context.original.size,
+                    function(err, array){
+                        if (err)
+                            return q.abort(e);
+                            
+                        q.context.thumbnails = array;
+                        doneOp();
+                    });
             });
 
         //

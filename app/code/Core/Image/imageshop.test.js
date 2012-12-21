@@ -32,15 +32,17 @@ describe('imageshop.js',
                 // console.log(googleImagePath);
                 // console.log(googleImageSize);
 
-                imageshop.getSize(  googleImagePath
-                            ,   function success(size) {
-                                    assert(size != undefined, 'size is undefined');
-                                    assert(size.width == googleImageSize.width, 'width expected to be '+googleImageSize.width+' is:' + size.width);
-                                    assert(size.height== googleImageSize.height, 'height expected to be '+googleImageSize.height+' is: ' + size.height);
+                imageshop.getSize(  googleImagePath,
+                    function success(err, size) {
+                        if (err)
+                            throw err;
 
-                                    done(); 
-                                }
-                            ,   function error(e){ throw e; } );
+                        assert(size != undefined, 'size is undefined');
+                        assert(size.width == googleImageSize.width, 'width expected to be '+googleImageSize.width+' is:' + size.width);
+                        assert(size.height== googleImageSize.height, 'height expected to be '+googleImageSize.height+' is: ' + size.height);
+
+                        done(); 
+                    });
             } );
 
         it( 'imageshop.getSize - nasa.jpg',
@@ -48,56 +50,57 @@ describe('imageshop.js',
             {
                 // console.log(googleImagePath);
 
-                imageshop.getSize(  nasaImagePath
-                            ,   function success(size) {
-                                    assert(size.width  == nasaImageSize.width,  'width expected to be '+nasaImageSize.width+' is:' + size.width);
-                                    assert(size.height == nasaImageSize.height, 'height expected to be '+nasaImageSize.height+' is: ' + size.height);
+                imageshop.getSize(  nasaImagePath,
+                    function(err, size) {
+                        if (err)
+                            throw err;
+                            
+                        assert(size.width  == nasaImageSize.width,  'width expected to be '+nasaImageSize.width+' is:' + size.width);
+                        assert(size.height == nasaImageSize.height, 'height expected to be '+nasaImageSize.height+' is: ' + size.height);
 
-                                    done(); 
-                                }
-                            ,   function error(e){ throw e; } );
+                        done(); 
+                    });
             } );
 
         it( 'imageshop.getSize - big.jpg',
             function(done)
             {
-                // console.log(googleImagePath);
+                imageshop.getSize( bigImagePath,
+                    function(err, size) {
+                        if (err)
+                            throw err;
+                        assert(size.width == bigImageSize.width,    'width expected to be ' + bigImageSize.width    + ' is:'    + size.width);
+                        assert(size.height == bigImageSize.height,  'height expected to be '+ bigImageSize.height   + ' is: '   + size.height);
 
-                imageshop.getSize(  bigImagePath
-                                ,   function success(size) {
-                                        assert(size.width == bigImageSize.width,    'width expected to be ' + bigImageSize.width    + ' is:'    + size.width);
-                                        assert(size.height == bigImageSize.height,  'height expected to be '+ bigImageSize.height   + ' is: '   + size.height);
-
-                                        done(); 
-                                    }
-                                ,   function error(e){ throw e; } );
+                        done(); 
+                    });
             } );
 
 
         it( 'imageshop.resample - face.jpg',
             function(done)
             {
-                imageshop.resample( faceImagePath
-                                ,   {}
-                                ,   function success(path, size) {
-                                        assert(size.width == faceImageSize.width, 'face width expected to be '      + faceImageSize.width+' is:'    + size.width);
-                                        assert(size.height == faceImageSize.height, 'face height expected to be '   + faceImageSize.height+' is:'   + size.height);
-                                        done(); 
-                                    }
-                                ,   function error(e){ throw e; } );
+                imageshop.resample( faceImagePath, {},
+                    function(err, path, size) {
+                        if (err)
+                            throw err;
+                        assert(size.width == faceImageSize.width, 'face width expected to be '      + faceImageSize.width+' is:'    + size.width);
+                        assert(size.height == faceImageSize.height, 'face height expected to be '   + faceImageSize.height+' is:'   + size.height);
+                        done(); 
+                    }  );
             } );
 
         it( 'imageshop.resample - google.png',
             function(done)
             {
-                imageshop.resample( googleImagePath
-                                ,   {}
-                                ,   function success(path, size) {
-                                        assert(size.width == googleImageSize.width,     'google width expected to be '  + googleImageSize.height);
-                                        assert(size.height == googleImageSize.height,   'google height expected to be ' + googleImageSize.height);
-                                        done(); 
-                                    }
-                                ,   function error(e){ throw e; } );
+                imageshop.resample( googleImagePath, {},
+                    function(err, path, size) {
+                        if (err)
+                            throw err;
+                        assert(size.width == googleImageSize.width,     'google width expected to be '  + googleImageSize.height);
+                        assert(size.height == googleImageSize.height,   'google height expected to be ' + googleImageSize.height);
+                        done(); 
+                    } );
             } );
 
         it( 'imageshop.resample - big',
@@ -105,58 +108,55 @@ describe('imageshop.js',
             {
                 var options = {};
 
-                imageshop.resample( bigImagePath
-                                ,   options
-                                ,   function success(path, size) {
-                                        assert(size.width  == bigImageSize.width,   'google width expected to be '  + bigImageSize.width);
-                                        assert(size.height == bigImageSize.height,  'google height expected to be ' + bigImageSize.height);
-                                        done(); 
-                                    }
-                                ,   function error(e){
-                                        throw e;
-                                    } );
+                imageshop.resample( bigImagePath, options,
+                    function(err, path, size) {
+                        if (err)
+                            throw err;
+                        assert(size.width  == bigImageSize.width,   'google width expected to be '  + bigImageSize.width);
+                        assert(size.height == bigImageSize.height,  'google height expected to be ' + bigImageSize.height);
+                        done(); 
+                    });
             } );
 
-        it( 'imageshop.resample - TOOBIG',
+        it( 'imageshop.safeResample - TOOBIG',
             function(done)
             {
                 var options = {};
                 options[imageshop.k.MaxSafeInputAreaKey] = identity.maxImageAreaToProcess();
                 var count=0;
 
-                imageshop.safeResample( bigImagePath
-                                ,   options
-                                ,   function success(path, size) {
-                                        throw new Error('it should fail because the image is too big'); 
-                                    }
-                                ,   function error(e){
-                                        assert(e.code == 'TOOBIG', 'e.code should be TOOBIG');
-                                        done();
-                                    } );
+                imageshop.safeResample(bigImagePath, options,
+                    function success(err, path, size) {
+                        if (err){
+                            assert(err.code == 'TOOBIG', 'e.code should be TOOBIG');
+                            return done();
+                        }
+                        throw new Error('it should fail because the image is too big');
+                    });
 
             } );
 
-        it( 'imageshop.resample - iPhone4S',
+        it( 'imageshop.safeResample - iPhone4S',
             function(done)
             {
                 var maxSize = identity.maxImageDimension();
                 var options = {};
                 options[imageshop.k.MaxDimensionKey] = maxSize;
 
-                imageshop.safeResample( iphoneImagePath
-                                ,   options
-                                ,   function success(path, size) {
-                                        assert( size.width == maxSize || 
-                                                size.height == maxSize, 
-                                                'resample size doesnt match size.width:' + size.width +
-                                                                            'size.height:' + size.height );
-                                        done();
-                                    }
-                                ,   function error(e){ throw e; } );
+                imageshop.safeResample(iphoneImagePath, options,
+                    function(err, path, size) {
+                        if (err)
+                            throw err;
+                        assert( size.width == maxSize || 
+                                size.height == maxSize, 
+                                'resample size doesnt match size.width:' + size.width +
+                                                            'size.height:' + size.height );
+                        done();
+                    });
             } );
         
 
-        it( 'imageshop.resample - TOOBUSY',
+        it( 'imageshop.safeResample - TOOBUSY',
             function(done)
             {
                 var maxSize = identity.maxImageDimension();
@@ -167,14 +167,13 @@ describe('imageshop.js',
 
                 for (var i=0; i<100; i++)
                 {
-                    imageshop.safeResample( iphoneImagePath
-                                    ,   options
-                                    ,   function success(path, size) {}
-                                    ,   function error(e){ 
-                                            tooBusyCount++;
-                                            // console.log(e.code);
-                                            assert(e.code == 'TOOBUSY', 'expected TOOBUSY');
-                                        } );
+                    imageshop.safeResample(iphoneImagePath, options,
+                        function(err, path, size) {
+                            if (err){
+                                tooBusyCount++;
+                                assert(err.code == 'TOOBUSY', 'expected TOOBUSY');
+                            }
+                        });
                 }
 
                 setTimeout(
@@ -191,33 +190,27 @@ describe('imageshop.js',
         it( 'imageshop.createThumbnails - face',
             function(done)
             {
-                imageshop.createThumbnails(
-                        faceImagePath
-                    ,   faceImageSize
-                    ,   function success(array) {
-                            // console.log(array);
-                            assert( array.length == imageshop.k.ThumbnailDimensions.length, 'thumbnail count doesnt match');
-                            done();
-                        }
-                    ,   function error(e) {
-                            console.log(e);
-                        } );
+                imageshop.createThumbnails(faceImagePath, faceImageSize,
+                    function(err, array) {
+                        if (err)
+                            throw err;
+                            
+                        assert( array.length == imageshop.k.ThumbnailDimensions.length, 'thumbnail count doesnt match');
+                        done();
+                    });
             } );
 
         it( 'imageshop.createThumbnails - google',
             function(done)
             {
-                imageshop.createThumbnails(
-                        googleImagePath
-                    ,   googleImageSize
-                    ,   function success(array) {
-                            // console.log(array);
-                            assert( array.length == 1, 'thumbnail count doesnt match');
-                            done();
-                        }
-                    ,   function error(e) {
-                            console.log(e);
-                        } );
+                imageshop.createThumbnails(googleImagePath, googleImageSize,
+                    function(err, array) {
+                        if (err)
+                            throw err;
+                            
+                        assert( array.length == 1, 'thumbnail count doesnt match');
+                        done();
+                    });
             } );
 
 
