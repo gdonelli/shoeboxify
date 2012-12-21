@@ -32,6 +32,7 @@ var     assert  = require('assert')
     ,   handy   = use('handy')
     ,   common  = use('common')
     ,   imageshop   = use('imageshop')
+    ,   routeutil   = use('routeutil')
     ,   test_resources  = use('test-resources')
 
     ,   User            = use('User')
@@ -58,7 +59,7 @@ admin.path.index = basePath;
 admin.route.index =
     function(quest, ponse)
     {
-        handy.routeDebugPage( ponse, admin, 'Admin Routes' );
+        routeutil.renderIndexPage(quest, ponse, admin, 'Admin Routes' );
     }
 
 

@@ -15,23 +15,18 @@ var Class = exports;
 
 Class.User = User;
 
-function User(    fbAccess
-              ,   success_f   /* (user) */
-              ,   error_f     /* (err)  */    )
+function User(fbAccess, callback /* (err, user) */ )
 {
-    if (fbAccess    == undefined &&
-        success_f   == undefined &&
-        error_f     == undefined) {  // Clone scenario
+    // Clone scenario
+    if (!fbAccess && !callback)
         return this;
-    }
     
     FacebookAccess.assert(fbAccess);
-    a.assert_f(success_f);
-    a.assert_f(error_f);
+    a.assert_f(callback);
     
     this._facebookAccess = fbAccess;
     
-    return this._init(success_f, error_f);
+    return this._init(callback);
 }
 
 //
@@ -71,60 +66,53 @@ exports.User.assert =
 //
 
 User.prototype._init =
-    function(   success_f   /* (user) */
-            ,   error_f     /* (err)  */    )
+    function( callback /* (err, user) */ )
     {
+        a.assert_f(callback);
+        
         var that = this;
 
         var q = new OperationQueue(1);
 
-        q.on('abort', 
-            function(e){
-                error_f(e);           
-            });
+        q.on('abort', callback);
 
         q.add( 
             function FetchMeOperation(doneOp)
             {
-                fb.graph(that.getFacebookAccess()
-                    ,   '/me'
-                    ,   function success(fbObject) {
-                            // console.log(fbObject);
-                            var meKeys = [      'id'            ,   'name'
-                                            ,   'first_name'    ,   'last_name'
-                                            ,   'link'          ,   'username'
-                                            ,   'gender'        ,   'email'
-                                            ,   'timezone'      ,   'locale'
-                                            ,   'updated_time'  ];
-                                            
-                            that._me = _.pick(fbObject, meKeys);
-                            doneOp();
-                        }
-                    ,   function error(e) {
-                            q.abort(e);
-                        } );
+                fb.graph(that.getFacebookAccess(), '/me',
+                    function(err, fbObject) {
+                        if (err)
+                            return q.abort(err);
+    
+                        var meKeys = [      'id'            ,   'name'
+                                        ,   'first_name'    ,   'last_name'
+                                        ,   'link'          ,   'username'
+                                        ,   'gender'        ,   'email'
+                                        ,   'timezone'      ,   'locale'
+                                        ,   'updated_time'  ];
+                                        
+                        that._me = _.pick(fbObject, meKeys);
+                        doneOp();
+                    });
             });
 
         q.add( 
             function InitPhotoDatabaseOperation(doneOp)
             {
-                photodb.setup(  
-                        that.getFacebookId()
-                    ,   function success()
-                        {
-                            doneOp();   
-                        }
-                    ,   function error(e)
-                        {
-                            q.abort(e);
-                        }
-                    );
+                photodb.setup(that.getId(),
+                    function(err)
+                    {
+                        if (err)
+                            q.abort(err);
+                        else
+                            doneOp();
+                    });
             });
 
         q.add( 
             function EndOperation(doneOp)
             {
-                if (success_f) success_f(that);
+                callback(null, that);
 
                 doneOp();   
             });

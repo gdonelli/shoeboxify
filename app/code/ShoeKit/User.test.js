@@ -13,14 +13,12 @@ describe('User.js',
             function(done) {
                 var fa = new FacebookAccess('XXXXX', '181');
 
-                var user = new User(fa 
-                    ,   function success(user) {
-                            throw new Error('not supposed to work');
-                        }
-                    ,   function error(e) {
-                            a.assert_def(e);
-                            // console.log(e);
-                            done();
-                        });
+                var user = new User(fa,
+                    function(err, user) {
+                        if (err)
+                            return done();
+                            
+                        throw new Error('not supposed to work');
+                    });
             });
     });

@@ -74,3 +74,30 @@ routeutil.addRoutesFromModule =
             });
 
     };
+
+
+routeutil.renderIndexPage =
+    function(quest, ponse, module, title )
+    {
+        a.assert_def(module,         'module is undefined');
+        a.assert_def(module.path,    'module.path is undefined');
+        a.assert_def(module.route,   'module.route is undefined');
+
+        ponse.writeHead( 200, { 'Content-Type': 'text/html' } );
+
+        ponse.write('<html><body>');
+        ponse.write('<h1>' + title + '</h1>');
+
+        for (var key in module.path)
+        {
+            var path_i  = module.path[key];
+            var route_i = module.route[key];
+
+            ponse.write('<p>');
+            ponse.write('&nbsp;&nbsp;&nbsp;&nbsp;');
+            ponse.write('<a href="' + path_i + '">' + key + '</a>');
+            ponse.write('</p>');
+        }
+        
+        ponse.end('</body></html>');
+    }

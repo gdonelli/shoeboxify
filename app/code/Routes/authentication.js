@@ -196,15 +196,14 @@ authentication.route.loginResponse =
 
                 var fbAcccess = new FacebookAccess(q.context.token, q.context.expires);
                 
-                new User(   fbAcccess
-                        ,   function success(user) {
-                                q.context.user = user;
-                                doneOp();
-                            }   
-                        ,   function error(err) {
-                                q.abort(err);
-                            }
-                        );
+                new User(fbAcccess,
+                    function(err, user) {
+                        if (err)
+                            return q.abort(err);
+                         
+                        q.context.user = user;
+                        doneOp();
+                    });
 
             });
 

@@ -125,20 +125,16 @@ service.facebookObjectForURL =
         if (!fbId)
             return error_f( new Error('Cannot find facebook object from URL') );
 
-        fb.graph(
-                fbAccess
-            ,   fbId
-            ,   function success(fbObject)
+        fb.graph(fbAccess, fbId,
+            function success(err, fbObject)
+            {
+                if(err)
                 {
-                    object_f(fbObject);
-                }
-            ,   function error(e)
-                {
-                    if (e.type == "OAuthException")
+                    if (err.type == "OAuthException")
                     {
-                        error_f(e);
+                        error_f(err);
                     }
-                    else if (e.type == "GraphMethodException")
+                    else if (err.type == "GraphMethodException")
                     {
                         // Assume we have a valid & legit facebook ID 
                         // but we don't have permission to access it
@@ -146,7 +142,7 @@ service.facebookObjectForURL =
                         var placeholder = {}; 
                         placeholder.id = fbId;
 
-                        placeholder.error = e;
+                        placeholder.error = err;
 
                         var extension = path.extname(inputURL);
                         if (extension == '.jpg' || 
@@ -160,9 +156,12 @@ service.facebookObjectForURL =
                     }
                     else
                     {
-                        error_f(e);
+                        error_f(err);
                     }
-                } );
+                }
+                else
+                    object_f(fbObject);
+            });
 
     };
 
@@ -213,14 +212,13 @@ service.shoeboxifyURL =
         
         var photoManager = new PhotoManager(user);
         
-        photoManager.addPhotoFromURL(
-                theURL
-            ,   function success(r, options) {
-                    success_f(r, options); 
-                }
-            ,   function error(e) { 
-                    error_f(e); 
-                } );
+        photoManager.addPhotoFromURL(theURL,
+            function(err, photo) {
+                if (err)
+                    error_f(err);
+        
+                success_f(photo, {});
+            });
     };
 
 

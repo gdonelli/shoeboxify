@@ -100,20 +100,19 @@ describe('authentication.test.js',
         it('new User',  //                  -> context.user
             function(done)
             {
-                new User(   context.fbAccess
-                        ,   function success(user)
-                            {
-                                User.assert(user);
-                         
-                                user.getId = function(){ return 'T1' };
-                                context.user = user;
-                         
-                                done();
-                            }
-                        ,   function error(e)
-                            {
-                                throw e;
-                            } );
+                new User(context.fbAccess,
+                    function(err, user)
+                    {
+                        if (err)
+                            throw err;
+                 
+                        User.assert(user);
+                 
+                        user.getId = function() { return 'T1' };
+                        context.user = user;
+                 
+                        done();
+                    });
             });
 
         it('Setup unit test API', 

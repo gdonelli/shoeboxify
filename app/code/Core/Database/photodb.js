@@ -140,7 +140,7 @@ photodb.removePhotoWithId =
     {
         a.assert_uid(userId);
         a.assert_def(photoId, 'photoId');
-        a.assert_f(success_f);
+        a.assert_f(callback);
 
         var findOptions = _findOptionsWithPhotoId(photoId);
         

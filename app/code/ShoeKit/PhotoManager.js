@@ -91,21 +91,19 @@ PhotoManager.prototype.addPhotoWithFacebookId =
             function FetchFacebookObjectOperation(doneOp)
             {
                 // console.log(arguments.callee.name);
-                fb.graph(   fbAccess
-                        ,   fbId
-                        ,   function success(fbObject) {
-                                if ( !fbObject.picture || !fbObject.images) // validate that is a photo
-                                    _abort('fbObject:' + fbId + ' is not an photo');    
-                                else 
-                                {
-                                    q.context.facebookObject = fbObject;                    
-                                    doneOp();
-                                }
-
-                            }
-                        ,   function error(e) {
-                                _abort('fb.graph failed for ' + fbId, e);
-                            } );
+                fb.graph(fbAccess, fbId,
+                    function(err, fbObject) {
+                        if (err)
+                            return _abort('fb.graph failed for ' + fbId, err);
+                        
+                        if ( !fbObject.picture || !fbObject.images) // validate that is a photo
+                            _abort('fbObject:' + fbId + ' is not an photo');    
+                        else 
+                        {
+                            q.context.facebookObject = fbObject;                    
+                            doneOp();
+                        }
+                    });
             });
 
         //
@@ -222,7 +220,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
  */
 
 PhotoManager.prototype.addPhotoFromURL =
-    function(theURL, callback)
+    function(theURL, callback /* (err, photo) */)
     {
         a.assert_http_url(theURL);
         a.assert_f(callback);

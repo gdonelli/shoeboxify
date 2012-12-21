@@ -4,7 +4,8 @@ var     assert  = require("assert")
 	,	child_process	= require('child_process')
 	;
 
-var GLOBAL_FILE = path.normalize( __dirname + '/../app/code/global.js' );
+var GLOBAL_FILE = path.normalize( __dirname + '/../app/first.js' );
+
 require(GLOBAL_FILE); // Setup out custom import module: use
 
 function main()
@@ -78,10 +79,12 @@ function main()
 		cmdString += ' ' + arg_i; 
 	}
 	
-	console.log(cmdString );
+	console.log(cmdString);
+    
+    process.exit(0);
 }
 
-
+/*
 function secret_env() // no used
 {
 	var value = fs.readFileSync( '../secret/setenv.sh', 'utf-8');
@@ -115,6 +118,7 @@ function secret_env() // no used
 
 	return result;
 }
+*/
 
 
 if (typeof String.prototype.startsWith != 'function') {

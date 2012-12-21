@@ -18,38 +18,33 @@ describe('fb.js',
             function(done) {
                 var fbAcccess = authenticationTest.getFacebookAccess();
 
-                fb.graph(   fbAcccess
-                        ,   '/me'
-                        ,   function success(meObject) {
-                                assert(meObject != undefined , 'fbObject is undefined');
-                                assert(meObject.id != undefined , 'meObject.id is undefined');
-                                assert(meObject.email != undefined , 'meObject.email is undefined');
-                                done();
-                            }
-                        ,   function error(e) {
-                                throw e;
-                            } 
-                        );
-            } );
+                fb.graph(fbAcccess, '/me',
+                    function(err, meObject) {
+                        if (err)
+                            throw err;
+                 
+                        assert(meObject != undefined , 'fbObject is undefined');
+                        assert(meObject.id != undefined , 'meObject.id is undefined');
+                        assert(meObject.email != undefined , 'meObject.email is undefined');
+                        done();
+                    });
+            });
 
 
          it( 'wrong credentials',
             function(done) {
                 var badAccess = new FacebookAccess('x', 'y');                
-                fb.graph(
-                        badAccess
-                    ,   '/me'
-                    ,   function success(meObject) {
-                            throw new Error('not expected to work');
+                fb.graph(badAccess, '/me',
+                    function(err, meObject) {
+                        if (err){
+                            a.assert_def(err.code);
+                            assert(err.code == 190, 'err.code is not 190');                        
+                            return done();
                         }
-                    ,   function error(e) {
-                            a.assert_def(e);
-                            a.assert_def(e.code);
-                            assert(e.code == 190, 'e.code is not 190');                        
-                            done();
-                        }
-                    );
-            } );
+                        
+                        throw new Error('no supposed to work');
+                    });
+            });
 
 
     } );
@@ -67,15 +62,14 @@ fbTest.processFacebookObject =
             function FetchMeOperation(doneOp) {
                 var fbAcccess = authenticationTest.getFacebookAccess();
 
-                fb.graph(   fbAcccess
-                        ,   graphPath
-                        ,   function success(meObject) {
-                                q.context.object = meObject;
-                                doneOp();
-                            }
-                        ,   function error(e) { throw e; } 
-                        );
-
+                fb.graph(fbAcccess, graphPath,
+                    function(err, meObject) {
+                        if (err)
+                            throw err;
+                 
+                        q.context.object = meObject;
+                        doneOp();
+                    });
             });
 
         // Process

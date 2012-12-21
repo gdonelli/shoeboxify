@@ -14,7 +14,7 @@ var     assert  = require('assert')
     ,   https   = require('https')
     ,   url     = require('url')   
 
-    ,   handy           = use('handy')
+    ,   a = use('a')
     ,   FacebookAccess  = use('FacebookAccess')
     ;
 
@@ -22,14 +22,15 @@ var     assert  = require('assert')
 var fb = exports;
 
 fb.graph = 
-    function( fbAccess, path, success_f /*(fbObject)*/, error_f /* (error) */)
+    function( fbAccess, path, callback /* (err, fbObject) */ )
     {
-        return _graphCall( fbAccess, 'GET', path, success_f, error_f );
+        return _graphCall( fbAccess, 'GET', path, callback );
     }
 
 fb.batch =
-    function( fbAccess, paths, success_f/* (fbObject) */, error_f/* (error) */)
+    function( fbAccess, paths, callback /* (err, fbObject) */ )
     {
+        a.assert_f(callback);
         FacebookAccess.assert(fbAccess);
 
         var options = {
@@ -53,8 +54,7 @@ fb.batch =
 
                 outPonse.on('end',
                     function () {
-                        if (success_f)
-                            success_f( JSON.parse(str) );
+                        callback(null, JSON.parse(str));
                     } );
             });
 
@@ -71,8 +71,9 @@ fb.batch =
 
 /* aux === */
 
-function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /* (error) */)
+function _graphCall(fbAccess, method, path, callback /* (err, fbObject) */ )
 {
+    a.assert_f(callback);
     FacebookAccess.assert(fbAccess);
 
     var questOptions = { method: method };
@@ -114,8 +115,7 @@ function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /*
             {
                 console.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
 
-                if (error_f)
-                    error_f(e);
+                callback(e);
             });         
     }
 
@@ -140,13 +140,11 @@ function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /*
                         e.type = jsonObject.error.type;
                         e.code = jsonObject.error.code;
 
-                        if (error_f)
-                            error_f(e);
+                        callback(e);
                     }
                     else
                     {
-                        if (success_f)
-                            success_f(jsonObject);                        
+                        callback(null, jsonObject);
                     }
                 }
                 catch(e)
@@ -155,15 +153,14 @@ function _graphCall(fbAccess, method, path, success_f /*(fbObject)*/, error_f /*
                     console.error('**** Exception:' + e);
 
                     console.error('**** Stacktrace:');
-                    handy.logErrorStacktrace(e);
+                    console.error(e.stack);
 
                     console.error('**** Buffer String:');
                     var bufferToShow = (bufferString.length > 256 ? bufferString.substring(0, 256) : bufferString );
 
                     console.error('**** ' + bufferToShow + '...');
-
-                    if (error_f)
-                        error_f(e);
+                    
+                    callback(e);
                 }
             } );
     }

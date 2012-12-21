@@ -19,7 +19,7 @@ view.route  = {};
 view.path   = {}; 
 
 
-view.path.shoeboxified = '/view/shoeboxified';
+view.path.shoeboxified = '/shoeboxified';
 
 view.route.shoeboxified =
     function(quest, ponse)
@@ -35,8 +35,13 @@ view.route.shoeboxified =
         var photoManager = PhotoManager.fromRequest(quest);
         
         photoManager.getPhotos(
-                function success(photos)
+                function(err, photos)
                 {
+                    if (err) {
+                        ponse.write( common.objectToHTML(err, 'photoManager.getPhotos error') );
+                        ponse.end('</div></body></html>');
+                    }
+                    
                     photos.forEach(
                         function(photo)
                         {
@@ -51,12 +56,7 @@ view.route.shoeboxified =
                         });
                         
                     ponse.end('</div></body></html>');
-                }
-            ,	function error(err)
-                {
-                    ponse.write( common.objectToHTML(err, 'photoManager.getPhotos error') );
-                    ponse.end('</div></body></html>');
-                } );
+                });
         
     };
 

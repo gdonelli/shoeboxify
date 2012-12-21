@@ -14,6 +14,7 @@ var     assert  = require('assert')
     ,   handy 	= use('handy')
 	,	common	= use('common')
 
+    ,   routeutil       = use('routeutil')
     ,	authentication	= use('authentication')
 
 	,	User			= use('User')
@@ -38,7 +39,7 @@ usertest.path.index = basePath;
 usertest.route.index =
     function(quest, ponse)
     {
-        handy.routeDebugPage( ponse, usertest, 'User test routes' );
+        routeutil.renderIndexPage(quest, ponse, usertest, 'User test routes');
     }
 
 // me
@@ -154,38 +155,29 @@ usertest.route.myphotos =
                 return endResponse();
             }
 
-            fb.graph(
-                fbAccess
-            ,   path
-            ,   function success(fbObject)
+            fb.graph(fbAccess, path,
+                function(err, fbObject)
                 {
-                    var data    = fbObject['data'];
-                    var paging  = fbObject['paging'];
-                    var next;
-
-                    if (paging)
-                        next = paging['next'];
-
-                    WriteIMGwithData(data);
-
-                    // ponse.write('<div>' + next + '</div>\n');
-                    if (next)
-                        LoadPhotos( next, maxDepth - 1);
+                    if (err)
+                        ponse.write('failed with error: ' + e);
                     else
-                        endResponse();
-                },
-                function error(e)
-                {
-                    ponse.write('failed with error: ' + e);
+                    {
+                        var data    = fbObject['data'];
+                        var paging  = fbObject['paging'];
+                        var next;
 
-                    endResponse();
-                }
-                );
+                        if (paging)
+                            next = paging['next'];
 
-            function endResponse()
-            {
-                ponse.end('</body></html>');
-            }
+                        WriteIMGwithData(data);
+
+                        // ponse.write('<div>' + next + '</div>\n');
+                        if (next)
+                            LoadPhotos( next, maxDepth - 1);
+                    }
+                    
+                    ponse.end('</body></html>');
+                });
 
         }
 
@@ -207,7 +199,7 @@ usertest.route.myphotos =
 
 // drop
 
-usertest.path.drop = basePath + '/drop';
+usertest.path.drop = /*basePath +*/ '/drop';
 
 usertest.route.drop =
     function(quest, ponse)
@@ -237,17 +229,17 @@ usertest.route.shoeboxified =
         q.add(
             function FetchPhotosOperation(doneOp){
                 photoManager.getPhotos(
-                        function success(photos)
-                        {
-                            q.context.photos = photos;
-                            doneOp();
-                        }
-                    ,	function error(e)
-                        {
-                            ponse.write(common.objectToHTML(e, graphURL));
+                    function(err, photos)
+                    {
+                        if(err) {
+                            ponse.write(common.objectToHTML(err, graphURL));
                             ponse.end('</body></html>');
-                            q.abort(e);
-                        } );
+                            q.abort(err);
+                        }
+                     
+                        q.context.photos = photos;
+                        doneOp();
+                    });
             });
 
         q.add(
@@ -287,24 +279,21 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
     var user = User.fromRequest(quest);
     var fbAccess = user.getFacebookAccess();
     
-    fb.graph(
-    		fbAccess
-    	,	graphURL
-        ,	function success(fbObject)
-            {
-                if ( !authentication.sanitizeObject(quest, ponse, fbObject) )
-                    return;
-
-                ponse.writeHead(200, {'Content-Type': 'text/html'});
-                ponse.write('<html><body>');
-                ponse.write(common.objectToHTML(fbObject, graphURL));
-                ponse.end('</body></html>');
-            }
-        ,	function fail(error)
-            {
+    fb.graph(fbAccess, graphURL,
+        function(err, fbObject)
+        {
+            if (err) {
                 console.log('_respondWithGraphInfoPage - error:' + error);
-
                 return;
-            } );
+            }
+         
+            if ( !authentication.sanitizeObject(quest, ponse, fbObject) )
+                return;
+
+            ponse.writeHead(200, {'Content-Type': 'text/html'});
+            ponse.write('<html><body>');
+            ponse.write(common.objectToHTML(fbObject, graphURL));
+            ponse.end('</body></html>');
+        } );
 }
 

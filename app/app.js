@@ -1,13 +1,11 @@
-require('nodefly').profile(
-                '3b396f6249a7eae1e93b3d6ec81163bf'
-            ,   ['Shoeboxify', process.env.SUBDOMAIN, process.env.NODE_ENV ] );
+
+require('./first'); // Setup 'use' command
 
 var     express = require('express')
     ,   http    = require('http')
     ,   path    = require('path')
-
-
-require('./code/global'); // Setup 'use' command
+    ,   socketio= require('socket.io')
+    ;
 
 var     identity    = use('identity')
     ,   routeutil   = use('routeutil')
@@ -50,18 +48,10 @@ app.configure('development',
 
 app.settings['x-powered-by'] = false;
 
-
-/*
- =========[   init   ]=========
- */
-
-
 identity.validateEnviroment();
 
-/*
- =========[   Routes   ]=========
- */
 
+// Routes =======
 
 // Public
 routeutil.addRoutesFromModule(app, 'index');
@@ -76,11 +66,23 @@ routeutil.addRoutesFromModule(app, 'usertest',  { user:  true } );
 routeutil.addRoutesFromModule(app, 'service',   { user:  true } );
 
 
-/*******************/
-/*   HTTP Server   */
-/*******************/
+// HTTP Server =======
 
-http.createServer(app).listen(app.get('port'), function(){
-    console.log("Shoeboxify Server listening on port " + app.get('port'));
-});
+var server = http.createServer(app);
 
+server.listen(app.get('port'),
+    function(){
+        console.log("Shoeboxify listening on port " + app.get('port'));
+    });
+
+// Socket.io
+var io = socketio.listen(server);
+
+io.sockets.on('connection',
+    function (socket) {
+        socket.emit('news', { hello: 'world' });
+        socket.on('my other event',
+            function (data) {
+                console.log(data);
+            });
+        });
