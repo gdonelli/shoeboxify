@@ -148,7 +148,7 @@ admin.route.unitTest =
                 q.context.files = [];
                 var allModules =  use.lib.modules();
 
-                var globalFile = allModules['global'];
+                var globalFile = __dirname + '/../../first.js';
                 a.assert_def(globalFile);
 
                 q.context.files.push(globalFile);

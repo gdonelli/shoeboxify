@@ -11,6 +11,8 @@ cd ../app
 jitsu env set APP_ID $APP_ID
 jitsu env set APP_SECRET $APP_SECRET
 
+jitsu env set NODEFLY_ID $NODEFLY_ID
+
 ###############
 ### Session ###
 ###############
