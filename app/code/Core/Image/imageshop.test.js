@@ -113,8 +113,7 @@ describe('imageshop.js',
                                         done(); 
                                     }
                                 ,   function error(e){
-                                        assert(e.code == 'TOOBIG', 'e.code should be TOOBIG, its:' + e.code);
-                                        done();
+                                        throw e;
                                     } );
             } );
 

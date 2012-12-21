@@ -6,10 +6,12 @@ var     assert  = require("assert")
     ,   fs      = require("fs")
     ,   _       = require("underscore")
 
-    ,   s3              = use('s3')
-    ,   mongo           = use('mongo')
-    ,   httpx           = use('httpx')
-    ,   test_resources   =   use('test-resources')
+    ,   a       = use('a')
+    ,   s3      = use('s3')
+    ,   mongo   = use('mongo')
+    ,   httpx   = use('httpx')
+
+    ,   test_resources  = use('test-resources')
     
     ,   OperationQueue  = use('OperationQueue')
     ;
@@ -55,9 +57,10 @@ describe('s3.js',
                                     var expected = [ 'test/test.json' ];
                                     var filediff = _.difference(filepaths, expected);
 
-                                    if (filediff.length > 0) {
+                                    if ( filediff.length >= filepaths.length ) {
                                         console.error('files list doesnt match diff:');
                                         console.error(filediff);
+                                        console.error(filepaths);
                                         throw new Error('files list doesnt match');
                                     }
                                     
@@ -65,7 +68,7 @@ describe('s3.js',
                                 });
                     } );
 
-                it ( 's3.remove ' + jsonTestPath + ' from test-bucket', 
+                it ( 's3.remove ' + jsonTestPath + ' from test-bucket',
                     function(done) {
                         _deleteFile( s3.test, jsonTestPath, done);
                     } );
@@ -85,7 +88,13 @@ describe('s3.js',
                 var shoeboxPath = '/test/shoebox.png';
                 it( 's3.copyURL shoebox.png',
                     function(done) {
-                        _s3URLCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath, done, _copyFailed );
+                        _s3URLCopy(s3.test, 'http://www.shoeboxify.com/images/shoebox.png', shoeboxPath,
+                            function(err, num) {
+                                if (err)
+                                    throw err;
+                                   
+                                done();
+                            }  );
                     } );
 
                 it ( 's3.remove ' + shoeboxPath + ' from test-bucket',
@@ -98,7 +107,13 @@ describe('s3.js',
                 var faviconPath = '/test/favicon.ico';
                 it( 's3.copyURL favicon.ico',
                     function(done) {
-                        _s3URLCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath, done, _copyFailed );
+                        _s3URLCopy(s3.test, 'http://www.shoeboxify.com/favicon.ico', faviconPath,
+                            function(err, num) {
+                                if (err)
+                                    throw err;
+                                   
+                                done();
+                            } );
                     } );
 
                 it( 's3.remove ' + faviconPath, function(done) {
@@ -112,7 +127,13 @@ describe('s3.js',
                     function(done) {
                         _s3URLCopy(s3.test, 
                             'https://sphotos-a.xx.fbcdn.net/hphotos-ash3/s320x320/524874_10152170979900707_270531713_n.jpg', 
-                            fbpict, done, _copyFailed );
+                            fbpict,
+                            function(err, num) {
+                                if (err)
+                                    throw err;
+                                   
+                                done();
+                            } );
                     } );
 
                 it( 's3.remove ' + fbpict,      function(done) {
@@ -122,17 +143,12 @@ describe('s3.js',
                 it( 's3.copyURL - fail',
                     function(done) {
                         _s3URLCopy(s3.test, 'http://www.shoeboxify.com/doDotExist', '/test/doDotExist'
-                            ,   function sucess(bytes){
+                            ,   function(err, bytes){
+                                    if (err)
+                                        return done();
+                                   
                                     throw new Error("Copy should not succeeed bytes written:" + bytes);
-                                }
-                            ,   function error(e){
-
-                                    // console.log(e);
-                                    // console.log(e.message);
-
-                                    done();
-                                }
-                            );
+                                });
                     } );
 
                 it ( 's3.remove ' + jsonTestPath + ' from test-bucket',
@@ -224,10 +240,13 @@ describe('s3.js',
 
                         q.add( 
                             function copyOperation(doneOp) {
-                                s3.copyFile(clientS3, localFile, destinationPath
-                                    ,   function success()  {   doneOp();       }
-                                    ,   function error(e)   {   throw e;    }
-                                    ,   _copy_progess);
+                                s3.copyFile(clientS3, localFile, destinationPath,
+                                    function(err, num)
+                                    {
+                                        if (err)
+                                            throw err;
+                                        doneOp();
+                                    });
                             } );
 
                         q.add(  
@@ -288,10 +307,6 @@ describe('s3.js',
 
                 /* ========================================================== */
 
-                function _copyFailed(e)
-                {
-                    throw new Error("Copy should succeeed " + e);
-                }
             } );
 
         describe('utils',
@@ -328,24 +343,14 @@ describe('s3.js',
 
 /* ============================================================================= */
 
-function _s3URLCopy(destination, url, path, done_f, error_f)
+function _s3URLCopy(destination, url, path, callback)
 {
     var clientS3 = destination.clientRW();
 
-    s3.copyURL(clientS3, url, path, 
-            function success(nbytes){
-                if (done_f)
-                    done_f();
-            }
-            
-        ,   function error(e){
-                if (error_f)
-                    error_f(e)
-            }
-        ,   _copy_progess );
+    s3.copyURL(clientS3, url, path, callback);
 }
 
-
+/*
 function _copy_progess(p)
 {
     assert(p != undefined, 'expected progress object');
@@ -353,7 +358,7 @@ function _copy_progess(p)
     assert(p.written!= undefined, 'expected progress.written');
     assert(p.percent != undefined, 'expected progress.percent');
 }
-
+*/
 
 function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
 {
@@ -372,7 +377,16 @@ function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
     // console.log('thePath: ' + thePath);
 
     var stringWritten = s3.writeJSON( clientS3, object, thePath,
-        function success(ponse) {
+        function(err, ponse) {
+            if (err) {
+                a.assert_def(err.response, 'error.response');
+
+                if (!shouldSucceed)
+                    return done();
+                else
+                    throw err;
+            }
+        
             assert.equal(ponse.statusCode, 200);
 
             // console.log('ponse.statusCode == 200: ' + thePath);
@@ -390,14 +404,7 @@ function _simpleJSONWrite(destination, thePath, done, shouldSucceed)
                     ,   function other(ponse) { throw new Error('other response') } 
                     ,   function error(e) { throw e } 
                     );
-        },
-        function error(e) {
-            assert(e != undefined, 'error passed is undefined');
-            assert(e.response != undefined, 'error.response is undefined');
-
-            if (!shouldSucceed)
-                done();
-        } );
+        });
 }
 
 

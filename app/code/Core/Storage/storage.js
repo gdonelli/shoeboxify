@@ -59,7 +59,9 @@ storage.copyFacebookPhoto =
         var copyQ = new OperationQueue(10); 
         copyQ.context = {};
         copyQ.context.failure = false;
-
+        
+//        copyQ.debug = true;
+        
         for ( var i=0; i<imageURLs.length; i++ )
         {
             var srcURL    = imageURLs[i];
@@ -72,27 +74,28 @@ storage.copyFacebookPhoto =
                         var options = { size:imageInfo.size, index:i }; 
                         var dstPath = _imageDestinationPath(userId, photoId, (imageInfo.original == true), options);
 
-                        s3.copyURL( s3client, srcURL, dstPath
-                                ,   function success(total) {
-                                        var s3copyURL = s3client.URLForPath(dstPath);
-                                        imageInfo.copyPath = dstPath;
-                                        imageInfo.copyURL = s3copyURL;
+                        s3.copyURL( s3client, srcURL, dstPath,
+                            function(err, total) {
+                            
+//                                console.log('s3.copyURL - callback');
+                                
+                                if (err) {
+                                    console.error('s3.copyURL failed');
+                                    console.error(e.stack);
+                                    copyQ.context.failure = true;
+                                }
+                                else
+                                {
+                                    var s3copyURL = s3client.URLForPath(dstPath);
+                                    imageInfo.copyPath = dstPath;
+                                    imageInfo.copyURL = s3copyURL;
 
-                                        totalBytesWrittenToS3 += total;
-
-                                        // console.log( srcURL + ' -> ' + dstPath);
-
-                                        doneOp();
-                                    }
-                                ,   function error(e) {
-                                        console.error('s3.copyURL failed');
-                                        console.error(e.stack);
-
-                                        copyQ.context.failure = true;
-                                        doneOp();
-                                    } 
-                                );                  
-                    } );
+                                    totalBytesWrittenToS3 += total;
+                                }
+                                
+                                doneOp();
+                            });
+                    });
             }) (srcURL, imageInfo, i);
         }
 
@@ -105,7 +108,8 @@ storage.copyFacebookPhoto =
         // Once all the copy operations complete
         copyQ.wait( 
             function() {
-
+//              console.log('copyQ done');
+                
                 if (copyQ.context.failure)
                 {
                     _rollback( 
@@ -316,20 +320,20 @@ storage.copyImageURL =
 
                 function _copyFileInfo(theFileInfo, s3path)
                 {
-                    s3.copyFile( s3client, theFileInfo.path, s3path
-                        ,   function success(byteLen)
-                            {
-                                theFileInfo.s3path = s3path;
-                                theFileInfo.URL = s3client.URLForPath(s3path);
-                                successCount++;
-                                _checkDone();
-                            }
-                        ,   function error(e)
-                            {
-                                theFileInfo.error = e;  
+                    s3.copyFile( s3client, theFileInfo.path, s3path,
+                        function(err, byteLen)
+                        {
+                            if (err) {
+                                theFileInfo.error = err;
                                 errorCount++;
-                                _checkDone();
-                            } );
+                                return _checkDone();
+                            }
+                            
+                            theFileInfo.s3path = s3path;
+                            theFileInfo.URL = s3client.URLForPath(s3path);
+                            successCount++;
+                            _checkDone();
+                        });
                 }
 
                 function _checkDone()

@@ -72,17 +72,15 @@ describe('authentication.test.js',
         it('Fetch Facebook AccessToken', //    -> context.accessTokenData
             function(done) {
                 _getAccessToken( 
-                        function success(jsonData)
-                        {
-                            // console.log(jsonData);
-                            context.accessTokenData = jsonData;
-                            done();
-                        }
-                    ,   function error(e)
-                        {
-                            console.error(e.stack);
-                            throw e;
-                        } );
+                    function(err, jsonData)
+                    {
+                        if (err)
+                            throw err;
+                            
+                        // console.log(jsonData);
+                        context.accessTokenData = jsonData;
+                        done();
+                    });
             });
 
         it('new FacebookAccess', //         -> context.fbAccess
@@ -130,7 +128,7 @@ describe('authentication.test.js',
 /* aux ============================================================== */
 
 
-function _getAccessToken( success_f /* jsonData */, error_f )
+function _getAccessToken( callback /* (err, jsonData) */ )
 {
     fs.readFile(admin.k.AccessTokenCacheFilePath,
         function (err, data) {
@@ -176,27 +174,29 @@ function _getAccessToken( success_f /* jsonData */, error_f )
 
     function _useAuth(jsonData)
     {
-        success_f(jsonData);
+        callback(null, jsonData);
     }
 
     function _miss() {
         _getAccessTokenWithExternalApp( 
-                function success(jsonData) 
-                {
-                    _useAuth(jsonData)
+            function(err, jsonData)
+            {
+                if (err)
+                    callback(err);
+                    
+                _useAuth(jsonData)
 
-                    var cache = {};
-                    cache.date = new Date();
-                    cache.payload = jsonData;
+                var cache = {};
+                cache.date = new Date();
+                cache.payload = jsonData;
 
-                    fs.writeFile(admin.k.AccessTokenCacheFilePath, JSON.stringify(cache) );
-                }
-            ,   error_f );
+                fs.writeFile(admin.k.AccessTokenCacheFilePath, JSON.stringify(cache) );
+            });
     }
 }
 
 
-function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
+function _getAccessTokenWithExternalApp( callback /* (err, jsonData) */ )
 {
     var app = spawn('/tmp/sym/Release/Facebook Login.app/Contents/MacOS/Facebook Login');
 
@@ -205,9 +205,8 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
                 try {
                     var jsonData = JSON.parse(data);
-                
-                    if (success_f)
-                        success_f(jsonData);            
+                  
+                  callback(null, jsonData);
                 }
                 catch(e)
                 {
@@ -216,25 +215,20 @@ function _getAccessTokenWithExternalApp( success_f /* jsonData */, error_f )
 
                     console.error('**** Data:');
                     console.error(data.toString());         
-
-                    if (error_f)
-                        error_f(e);
+                  
+                    callback(e);
                 }
             });
 
     app.stderr.on('data',
         function (data) {
-            console.log('stderr: ' + data);
-
-            if (error_f)
-                error_f(data);
-        
+            console.error('stderr: ' + data);
+            callback( new Error(data) );
         });
 
-    app.on('exit', function (code) {
-        assert(code == 0, 'Facebook Login exited with ' + code);
-
-        // console.log('child process exited with code ' + code);
-    }); 
+    app.on('exit',
+        function (code) {
+            assert(code == 0, 'Facebook Login exited with ' + code);
+        });
 }
 

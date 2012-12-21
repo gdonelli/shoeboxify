@@ -50,7 +50,7 @@ describe('fb.js',
     } );
 
 fbTest.processFacebookObject =
-    function(graphPath, proccess_f)
+    function(graphPath, callback)
     {
         var q = new OperationQueue(1);
         
@@ -75,7 +75,7 @@ fbTest.processFacebookObject =
         // Process
         q.add(
             function ProcessOperation(doneOp) {
-                proccess_f(q.context.object);
+                callback(q.context.object);
                 doneOp();
             });
 

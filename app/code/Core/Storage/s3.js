@@ -213,18 +213,15 @@ s3.getInfoForURLs =
 
 // http://docs.amazonwebservices.com/AmazonS3/latest/API/RESTObjectPUT.html
 /*
- * success_f(ponse)
- * error_f(ErrorObj), ErrorObj.response
  */
 
 s3.writeJSON = 
-	function( client, object, filePath, success_f /* (reponse) */,  error_f /* (error) */ ) 
+	function( client, object, filePath, callback /* (err, reponse) */)
     {
         _s3_assert_client(client);
         assert(object != undefined, " object is undefined");
         _s3_assert_path(filePath);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var string = JSON.stringify(object);
         var questToS3 = client.put(filePath,    {
@@ -238,18 +235,17 @@ s3.writeJSON =
             function(ponse) {
                 if (ponse.statusCode == 200)
                 {
-                    success_f(ponse);
+                    callback(null, ponse);
                 }
                 else
                 {
-                    var e = new Error('Failed with statusCode: ' + ponse.statusCode);
-                    e.response = ponse;
-                    error_f(e);
+                    var err = new Error('Failed with statusCode: ' + ponse.statusCode);
+                    err.response = ponse;
+                    callback(err);
                 }
             });
         
-        questToS3.on('error', 
-            function(e) { error_f(e); } );
+        questToS3.on('error', callback);
 
         questToS3.end(string);
 
@@ -266,7 +262,7 @@ s3.writeJSON =
  /* _using_deleteMultiple */
  
 s3.remove =
-    function( client, filePath_or_arrayOfPaths, callback /* (err, reponse) */)
+    function(client, filePath_or_arrayOfPaths, callback /* (err, reponse) */ )
     {
         _s3_assert_client(client);
         assert(filePath_or_arrayOfPaths != undefined, 'filePath_or_arrayOfPaths ios undefined' );
@@ -308,7 +304,7 @@ s3.remove =
 function _copyStreamToS3(   client 
                         ,   srcStream,  srcStreamLength,    srcMIMEType
                         ,   pathOnS3
-                        ,   success_f,  error_f,    progress_f )
+                        ,   callback )
 {
     var written = 0;
     var total = 0;
@@ -324,21 +320,21 @@ function _copyStreamToS3(   client
         headers['Content-Type'] = srcMIMEType;
 
     var putStream = client.putStream(srcStream, pathOnS3, headers, 
-        function(err, streamPonse){
-    
+        function(err, streamPonse) {  
             streamPonse.on('end',
                 function() {
-                    // console.log('streamPonse.on[end] written:' + written + ' total:' + total );
-
                     if  ( written == total && total != 0 ) 
                     {
-                        success_f( Math.round(total) );
+                        callback( null, Math.round(total) );
+
                     }
                     else
                     {
-                        error_f( new Error(1, 'Couldnt complete file (' + fileURL + ') streaming to S3:'+filePath) );
                         srcStream.destroy();
                         streamPonse.destroy();
+                        
+                        var err = new Error(1, 'Couldnt write stream to S3:' + pathOnS3);
+                        callback(err);
                     }
                 });
 
@@ -348,33 +344,25 @@ function _copyStreamToS3(   client
         function(progressObj) {
             written = progressObj.written;
             total   = progressObj.total;
-            // console.log('stream->progressObj.percent: ' + progressObj.percent );
 
-            if (progress_f)
-                progress_f(progressObj);
         });
 
     putStream.on('error', 
-        function(error) {
-            console.log('stream->error: ' + error);
+        function(err) {
+            console.log('stream->error: ' + err);
+            callback(err);
         });
+    
+    return putStream;
 }
 
-/*
- *  success_f(total_byte_written)
- *  error_f( Error_obj )
- *  progress_f( p ), p: {written, total, percent}
- *  
- */
-
-s3.copyURL = 
-    function( client, remoteURL, pathOnS3, success_f, error_f, progress_f )
+s3.copyURL =
+    function(client, remoteURL, pathOnS3, callback /* (err, num_byte_written) */ )
     {
         _s3_assert_client(client);
         _s3_assert_path(pathOnS3);
         a.assert_http_url(remoteURL);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         var quest = httpx.requestURL(remoteURL, {},
             function handleResponseStream(ponse) {
@@ -382,40 +370,41 @@ s3.copyURL =
                 if (ponse.statusCode != 200)
                 {
                     var errMessage = 'GET ' + remoteURL + ' failed, statusCode:' + ponse.statusCode;
+                    var err =  new Error(errMessage)
+                    err.code = ponse.statusCode;
                     
-                    return error_f( new Error(ponse.statusCode, errMessage) );
+                    return callback(err);
                 }
 
                 var ponseLength = ponse.headers['content-length'];
                 var ponseType   = ponse.headers['content-type'];
 
-                _copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, success_f, error_f, progress_f);
+                _copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, callback);
             });
 
         quest.end();
     };
 
 s3.copyFile = 
-    function( client, localPath, pathOnS3, success_f, error_f, progress_f )
+    function(client, localPath, pathOnS3, callback  /* (err, num_byte_written) */ )
     {
         _s3_assert_client(client);
         _s3_assert_path(pathOnS3);
         _s3_assert_path(localPath);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_f(callback);
 
         fs.stat(localPath, 
             function(err, stats) {
 
                 if (err)
-                    return error_f(err);
+                    return callback(err);
 
                 var fileSize = stats.size;
                 var fileType = mime.lookup(localPath);
 
                 var fileStream = fs.createReadStream(localPath);
 
-                _copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, success_f, error_f, progress_f);
+                _copyStreamToS3(client, fileStream, fileSize, fileType, pathOnS3, callback);
             } );
     }
 

@@ -88,8 +88,6 @@ describe('storage.js',
 
                                 copyObject = theCopy;
 
-                                // console.log(copyObject);
-
                                 done();
                             });
                     });
@@ -98,9 +96,11 @@ describe('storage.js',
                     function(done) {
                         _copyFB( test_resources.kOldPhotoId,
                             function(err, copy) {
-                                a.assert_def(err);
-                                done();
-                            }, true );
+                                if (err)
+                                    return done();
+                                throw new Error('should fail');
+                            },
+                            true );
 
                     });
 
@@ -134,61 +134,59 @@ describe('storage.js',
 
                 function _checkSizeFacebookObject(graphPath, done)
                 {
-                    fbTest.processFacebookObject(
-                        graphPath
-                        ,   function(object) {
-                                assert(object.error == undefined, 'cannot fetch fb object');
+                    fbTest.processFacebookObject( graphPath,
+                        function(object) {
+                            assert(object.error == undefined, 'cannot fetch fb object');
 
-                                var imageDict = storage.private.getImageDictionaryForFacebookPhoto(object);
-                                var allKeys = Object.keys(imageDict);
+                            var imageDict = storage.private.getImageDictionaryForFacebookPhoto(object);
+                            var allKeys = Object.keys(imageDict);
 
-                                assert( allKeys.length > 5, 'expected more images ' + allKeys );
+                            assert( allKeys.length > 5, 'expected more images ' + allKeys );
 
-                                var original;
+                            var original;
 
-                                for (var key in imageDict)
+                            for (var key in imageDict)
+                            {
+                                var entry = imageDict[key];
+
+                                if (entry.original == true)
                                 {
-                                    var entry = imageDict[key];
+                                    a.assert_def(entry.size);
+                                    a.assert_def(entry.size.width);
+                                    a.assert_def(entry.size.height);
 
-                                    if (entry.original == true)
-                                    {
-                                        a.assert_def(entry.size);
-                                        a.assert_def(entry.size.width);
-                                        a.assert_def(entry.size.height);
-
-                                        assert( original == undefined, 'original was already found!' )
-                                        original = entry;
-                                    }
-
+                                    assert( original == undefined, 'original was already found!' )
+                                    original = entry;
                                 }
 
-                                a.assert_def(original);
+                            }
 
-                                for (var key in imageDict)
-                                {
-                                    var entry = imageDict[key];
+                            a.assert_def(original);
 
-                                    assert( (entry.size.width * entry.size.height) <=
-                                            (original.size.width * original.size.height),
-                                            'original is not bigger entry'  );
-                                }
+                            for (var key in imageDict)
+                            {
+                                var entry = imageDict[key];
 
-                                done();
-                            } );                
+                                assert( (entry.size.width * entry.size.height) <=
+                                        (original.size.width * original.size.height),
+                                        'original is not bigger entry'  );
+                            }
+
+                            done();
+                        } );                
                 }
                 
                 function _copyFB( graphPath, callback, forceFail)
                 {
-                    fbTest.processFacebookObject(
-                                graphPath
-                            ,   function process(fbObject) { 
-                                    var q = storage.copyFacebookPhoto(  test_resources.kTestUserId
-                                                                    ,   mongo.newObjectId()
-                                                                    ,   fbObject
-                                                                    ,   callback );
-                                    if (forceFail)
-                                        q.context.failure = true;
-                                });
+                    fbTest.processFacebookObject(graphPath,
+                    	function process(fbObject) {
+                            var q = storage.copyFacebookPhoto(  test_resources.kTestUserId
+                                                            ,   mongo.newObjectId()
+                                                            ,   fbObject
+                                                            ,   callback );
+                            if (forceFail)
+                                q.context.failure = true;
+                        });
                 }
 
             } );
