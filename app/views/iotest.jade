@@ -1,0 +1,21 @@
+extends layout
+
+
+block extra-head
+    script(src='/socket.io/socket.io.js')
+    script(src='/script/iotest.js')
+
+
+block content
+    h1= title
+
+    div
+        button(onclick='socketioClick()') socket.io
+        span#sio-timeField [ms]
+
+    br
+
+    div
+        button(onclick='ajaxClick()') ajax
+        span#ajax-timeField [ms]
+

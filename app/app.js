@@ -65,6 +65,8 @@ routeutil.addRoutesFromModule(app, 'view',      { user:  true } );
 routeutil.addRoutesFromModule(app, 'usertest',  { user:  true } );
 routeutil.addRoutesFromModule(app, 'service',   { user:  true } );
 
+routeutil.addRoutesFromModule(app, 'sandbox',   { user:  true } );
+
 
 // HTTP Server =======
 
@@ -80,9 +82,14 @@ var io = socketio.listen(server);
 
 io.sockets.on('connection',
     function (socket) {
-        socket.emit('news', { hello: 'world' });
-        socket.on('my other event',
-            function (data) {
-                console.log(data);
+        
+        //socket.emit('hello', { id : 'Ciao Bambino!' });
+        
+        socket.on('iotest',
+            function (data)
+            {
+                socket.emit( 'back', data );
             });
         });
+
+

@@ -146,13 +146,15 @@ usertest.route.myphotos =
         var user = User.fromRequest(quest);
         var fbAccess = user.getFacebookAccess();
 
-        LoadPhotos( 'me/photos', 100 );     
-    
+        LoadPhotos( 'me/photos', 100 );
+
+        /* aux ==== */
+
         function LoadPhotos( path, maxDepth)
         {
             if (maxDepth <=0)
             {
-                return endResponse();
+                return _endResponse();
             }
 
             fb.graph(fbAccess, path,
@@ -174,13 +176,17 @@ usertest.route.myphotos =
                         // ponse.write('<div>' + next + '</div>\n');
                         if (next)
                             LoadPhotos( next, maxDepth - 1);
+                        else
+                            _endResponse();
                     }
-                    
-                    ponse.end('</body></html>');
                 });
-
         }
-
+        
+        function _endResponse()
+        {
+            ponse.end('</body></html>');
+        }
+        
         function WriteIMGwithData(data)
         {           
             a.assert_array(data);
@@ -195,73 +201,6 @@ usertest.route.myphotos =
             }
         }
     };
-
-
-// drop
-
-usertest.path.drop = /*basePath +*/ '/drop';
-
-usertest.route.drop =
-    function(quest, ponse)
-    {
-        ponse.render('drop');
-    }
-
-
-// shoeboxified
-
-usertest.path.shoeboxified = basePath + '/shoeboxified';
-
-usertest.route.shoeboxified =
-    function(quest, ponse)
-    {
-        ponse.writeHead(200, {'Content-Type': 'text/html'});
-        ponse.write('<html><body>');
-
-        var photoManager = PhotoManager.fromRequest(quest);
-        
-        var q = new OperationQueue(1);
-        
-        q.debug=true;
-        
-        q.context = {};
-        
-        q.add(
-            function FetchPhotosOperation(doneOp){
-                photoManager.getPhotos(
-                    function(err, photos)
-                    {
-                        if(err) {
-                            ponse.write(common.objectToHTML(err, graphURL));
-                            ponse.end('</body></html>');
-                            q.abort(err);
-                        }
-                     
-                        q.context.photos = photos;
-                        doneOp();
-                    });
-            });
-
-        q.add(
-            function ComposePageOperation(doneOp){
-              
-                q.context.photos.forEach(
-                	function(photo)
-                    {
-                        var cpObject =  photo.getCopyObject();
-                        ponse.write('<img src="' + cpObject.picture + '" ' +
-                                    's:photoid="' + photo.getId() + '"></img>');
-                    });
-
-                ponse.end('</body></html>');
-                doneOp();
-            });
-        
-        
-        
-
-    };
-
 
 
 /* ======== */

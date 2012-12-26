@@ -97,3 +97,14 @@ view.route.shoeboxified_id =
         }
     };
 
+
+
+view.path.drop = /*basePath +*/ '/drop';
+
+view.route.drop =
+    function(quest, ponse)
+    {
+        ponse.render('drop');
+    }
+
+

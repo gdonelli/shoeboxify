@@ -300,16 +300,19 @@ admin.route.intense =
         for ( var i=0; i<maxCount; i++ )
         {
             imageshop.safeResample( iphoneImagePath, imageshop.k.DefaultResampleOptions,
-                function success(err, path, size)
+                function(err, path, size)
                 {
-                    if (err) {
+                    if (err)
+                    {
                         ponse.write( err.message + ' code: '+ err.code + '<br>' );
-                        isDone();
                     }
-               
-                    assert(size.width == 2048, 'image width expected to be 2048');                                  
-                    ponse.write(path + '<br>');
-                    fs.unlink(path);
+                    else
+                    {
+                        assert(size.width == 2048, 'image width expected to be 2048');
+                        ponse.write(path + '<br>');
+                        fs.unlink(path);
+                    }
+                    
                     isDone();
                 });
         }

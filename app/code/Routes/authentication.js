@@ -129,7 +129,7 @@ authentication.route.loginResponse =
                     if (sourceInState)
                         q.context.source = handy.Base64toASCII(sourceInState);
 
-                    console.log(q.context.source);
+                    console.log('q.context.source: ' + q.context.source);
                 }
 
                 doneOp();
