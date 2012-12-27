@@ -18,15 +18,15 @@ var app = express();
 
 
 // Session
-var sessionSecret   = identity.sessionSecret();
-var cookieParser	= express.cookieParser(sessionSecret);
+
+var cookieParser    = express.cookieParser( identity.sessionSecret() );
 var sessionKey      = 'express.sid';
 var sessionStore    = new MongoStore({
                                     cookie: { maxAge: 60000 * 60 }
                                 ,   url: identity.sessionDatabaseURL()
                                 ,   auto_reconnect: true
-                                });
-                                     
+                            });
+
 app.configure(
     function(){
         app.set('port', process.env.PORT || 3000);
@@ -72,7 +72,7 @@ routeutil.addRoutesFromModule(app, 'view',      { auth : 'user' } );
 routeutil.addRoutesFromModule(app, 'usertest',  { auth : 'user' } );
 routeutil.addRoutesFromModule(app, 'service',   { auth : 'user' } );
 
-routeutil.addRoutesFromModule(app, 'sandbox' ,  { /* user:  true */ }  );
+routeutil.addRoutesFromModule(app, 'sandbox' ,  { auth : 'user' }  );
 
 // ======================
 // HTTP Server ==========
@@ -93,34 +93,60 @@ sio.sockets.on('connection',
     function (socket) {
         socket.session = socket.handshake.session;
 
-        console.log('socket.session:');
-        console.log(socket.session);
+        socket.join(socket.handshake.sessionID);
+
+        console.log('socket.handshake:');
+        console.log(socket.handshake);
         
         socket.on('iotest',
             function (data)
             {
-                console.log('socket.session:');
-                console.log(socket.session);
+//                console.log('socket.session:');
+//                console.log(socket.session);
                 
                 socket.emit( 'back', data );
             });
         });
+
+sio.configure('development',
+    function () {
+        sio.set('log level', 3);
+    });
 
 // Setup Session for socket.io
 sio.set('authorization',
     function(data, accept) {
         cookieParser(data, {},
             function(err) {
-                if (err) {
+                if (err)
+                {
+                    console.error('cookieParser failed with error:');
+                    console.error(err);
                     accept(err, false);
-                } else {
+                }
+                else
+                {
                     sessionStore.get(data.signedCookies[sessionKey],
-                        function(err, session) {
-                            if (err || !session) {
-                                accept('Session error', false);
-                            } else {
-                                data.session = session;
-                                accept(null, true);
+                        function(err, session)
+                        {
+                            if (err || !session)
+                            {
+                                console.error('Cannot find session in the sessionStore:');
+                                console.error(err);
+                                accept(err, false);
+                            }
+                            else
+                            {
+                                if ( session.hasOwnProperty('user') )
+                                {
+                                    data.session = session;
+                                    accept(null, true);
+                                }
+                                else
+                                {
+//                                    console.error('Cannot find session in the sessionStore:');
+                                    accept(new Error('session has no user property'), false);
+                                }
                             }
                         });
                 }

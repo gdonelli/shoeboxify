@@ -3,24 +3,9 @@ var     assert  = require("assert")
     ,   a       = use('a')
     ;
 
-exports.FacebookAccess = FacebookAccess;
+var Class = exports;
 
-exports.FacebookAccess.fromRequest =
-    function(quest)
-    {
-        a.assert_def(quest);
-        a.assert_def(quest.session);
-        a.assert_def(quest.session.user);
-        var sessionUser = quest.session.user;
-
-        var result = new FacebookAccess(    sessionUser._facebookAccess._token, 
-                                            sessionUser._facebookAccess._expires );
-
-        FacebookAccess.assert(result);
-        
-        return result;
-    };
-
+Class.FacebookAccess = FacebookAccess;
 
 function FacebookAccess(token, expires)
 {
@@ -33,7 +18,33 @@ function FacebookAccess(token, expires)
     return this;
 }
 
-exports.FacebookAccess.assert = 
+Class.FacebookAccess.resurrect =
+    function(fbAccess)
+    {
+        a.assert_def(fbAccess._token);
+        a.assert_def(fbAccess._expires);
+
+        var result = new FacebookAccess(fbAccess._token, fbAccess._expires);
+
+        return result;
+    };
+
+Class.FacebookAccess.fromRequest =
+    function(quest)
+    {
+        a.assert_def(quest);
+        a.assert_def(quest.session);
+        a.assert_def(quest.session.user);
+        var sessionUser = quest.session.user;
+
+        var result = Class.FacebookAccess.resurrect(sessionUser._facebookAccess);
+
+        FacebookAccess.assert(result);
+        
+        return result;
+    };
+
+Class.FacebookAccess.assert =
     function(fbAccess)
     {
        a.assert_def(fbAccess, 'fbAccess');

@@ -419,12 +419,7 @@ function _returnResponseWithMessage(ponse, message)
     ponse.end('</body></html>');
 }
 
-
-/* ======================================================== */
-/* ======================================================== */
-/* ====================== Middleware ====================== */
-/* ======================================================== */
-/* ======================================================== */
+// Request Info
 
 authentication.isUserRequest =
     function(quest)
@@ -446,12 +441,16 @@ authentication.isAdminRequest =
     };
 
 
+// Middleware
+
 authentication.userSessionMiddleware =
     function(quest, ponse, next)
-    {       
+    {
+        a.assert_def(quest.session);
+        
         if ( quest.session.hasOwnProperty('user') )
         {
-            quest.session.user = _createUserForRequest(quest);
+            quest.session.user = User.resurrect(quest.session.user);
             
             return next();
         }
@@ -461,26 +460,7 @@ authentication.userSessionMiddleware =
         }
         else
         {
-            return authentication.redirectToLogin(quest, ponse);
-        }
-
-        /* aux ==== */
-        function _createUserForRequest(quest)
-        {
-            a.assert_def(quest);
-            a.assert_def(quest.session);
-            a.assert_def(quest.session.user);
-
-            var result = new User();
-
-            result._facebookAccess = FacebookAccess.fromRequest(quest);
-
-            var questUser = quest.session.user;
-            result._me = questUser._me;
-
-            User.assert(result);
-            
-            return result; 
+            return _redirectToLogin(quest, ponse);
         }
     };
 
@@ -502,17 +482,18 @@ authentication.adminSessionMiddleware =
         }
     };
 
-authentication.redirectToLogin =
-    function(quest, ponse)
-    {
-        var encodedURL = handy.ASCIItoBase64(quest.url);
-        var redirectURL = authentication.path.login + '?source=' + encodedURL;
+function _redirectToLogin(quest, ponse)
+{
+    var encodedURL = handy.ASCIItoBase64(quest.url);
+    var redirectURL = authentication.path.login + '?source=' + encodedURL;
 
-        ponse.redirect(redirectURL);
+    ponse.redirect(redirectURL);
 
-        console.log('AUTH-Redirect: ' + redirectURL);
-    }
+    console.log('AUTH-Redirect: ' + redirectURL);
+}
 
+
+// aux ----
 
 authentication.sanitizeObject = 
     function(quest, ponse, object)
@@ -530,7 +511,7 @@ authentication.sanitizeObject =
 
             if (type == 'OAuthException')
             {
-                authentication.redirectToLogin(quest, ponse);
+                _redirectToLogin(quest, ponse);
                 return false;
             }
         }

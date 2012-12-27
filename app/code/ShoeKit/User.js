@@ -35,7 +35,25 @@ function User(fbAccess, callback /* (err, user) */ )
 
 // The user object is built by the session handler middleware
 
-exports.User.fromRequest =
+Class.User.resurrect =
+    function(user)
+    {
+        a.assert_def(user,          'user'          );
+        a.assert_def(user._facebookAccess,  'user._facebookAccess');
+        a.assert_def(user._me ,     'user._me'      );
+        a.assert_def(user._me.id,   'user._me.id'   );
+        
+        var result = new User();
+
+        result._facebookAccess = FacebookAccess.resurrect(user._facebookAccess);
+        result._me = user._me;
+        
+        assert(false, 'error');
+        
+        return result;
+    }
+
+Class.User.fromRequest =
     function(quest)
     {
         a.assert_def(quest);
@@ -44,7 +62,7 @@ exports.User.fromRequest =
         return a.assert_def(quest.session.user);
     };
 
-exports.User.assert = 
+Class.User.assert = 
     function(user)
     {
         a.assert_def(user,          'user'          );
