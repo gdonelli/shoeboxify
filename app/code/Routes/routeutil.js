@@ -76,7 +76,7 @@ routeutil.addRoutesFromModule =
                     app.get(path_i, route_i);
                 }
 
-                console.log('   |=> ' + path_i + opt);
+                console.log('   GET ' + path_i + opt);
             });
 
     };

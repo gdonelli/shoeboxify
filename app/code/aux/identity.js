@@ -2,43 +2,6 @@
 
 ========[   App identity properties and secrets   ]========
 
-Facebook App:
-            identity.appID 
-            identity.appSecret
-            identity.appPermissions
-Session:
-            identity.sessionSecret
-            identity.sessionDatabaseName
-            identity.sessionDatabaseURL
-S3:
-            identity.s3.host
-            identity.s3.user.R.key 
-            identity.s3.user.R.secret
-            identity.s3.user.RW.key
-            identity.s3.user.RW.secret
-            identity.s3.bucket.test
-            identity.s3.bucket.production
-Mongo:
-            identity.dbServerHost
-            identity.dbServerPort
-            identity.dbServerUsername
-            identity.dbServerPassword
-            identity.dbName
-Email:
-            identity.emailAddress
-            identity.SMTPUser
-            identity.SMTPPassword
-            identity.SMTPHost
-Other:
-            identity.adminId
-Image Limits:
-            identity.maxImageAreaToProcess
-            identity.maxImageDimension
-
-
-
-===========================================================
-
 */
 
 
@@ -93,8 +56,12 @@ identity.nodeflyId =
 /* ===================================================== */
 /* ===================================================== */
 
-identity.sessionSecret = 
+identity.sessionSecret =
     function()  {   return _env('SESSION_SECRET');  };
+
+identity.sessionKey =
+    function()  {   return 'shoeboxify.session.id'; };
+
 
 identity.sessionDatabaseName =
     function()  {   return _env('SESSION_DB_NAME'); };

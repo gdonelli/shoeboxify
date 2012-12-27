@@ -37,7 +37,24 @@ var     assert  = require('assert')
 var service = exports;
 
 service.path  = {}; 
-service.route = {}; 
+service.route = {};
+
+service.event  = {};
+service.socket = {};
+
+
+service.event.objectForURL = 'objectForURL';
+
+service.socket.objectForURL =
+    function(socket, data, response_f)
+    {
+        console.log('service.io.objectForURL data:');
+        console.log(data);
+        
+        a.assert_f(response_f);
+        
+        response_f( 'ciao bimba' );
+    }
 
 /* ====================================================== */
 /* ====================================================== */

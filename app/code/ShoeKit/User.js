@@ -48,9 +48,16 @@ Class.User.resurrect =
         result._facebookAccess = FacebookAccess.resurrect(user._facebookAccess);
         result._me = user._me;
         
-        assert(false, 'error');
-        
         return result;
+    }
+
+Class.User.fromSocket =
+    function(socket)
+    {
+        a.assert_def(socket);
+        a.assert_def(socket.session);
+        
+        return a.assert_def(socket.session.user);
     }
 
 Class.User.fromRequest =

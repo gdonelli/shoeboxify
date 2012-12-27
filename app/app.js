@@ -4,11 +4,11 @@ require('./first'); // Setup 'use' command
 var     express = require('express')
     ,   http    = require('http')
     ,   path    = require('path')
-    ,   socketio= require('socket.io')
     ;
 
 var     identity    = use('identity')
     ,   routeutil   = use('routeutil')
+    ,   io          = use('io')
     ;
 
 
@@ -20,7 +20,7 @@ var app = express();
 // Session
 
 var cookieParser    = express.cookieParser( identity.sessionSecret() );
-var sessionKey      = 'express.sid';
+
 var sessionStore    = new MongoStore({
                                     cookie: { maxAge: 60000 * 60 }
                                 ,   url: identity.sessionDatabaseURL()
@@ -39,47 +39,59 @@ app.configure(
         
         // Session
         app.use(cookieParser);
-        app.use(express.session({   key:    sessionKey
-                                ,   store:  sessionStore
-                                }));
+        app.use(express.session({   key:    identity.sessionKey()
+                                ,   store:  sessionStore			}));
 
         app.use(app.router);
         app.use(require('stylus').middleware(__dirname + '/public'));
         app.use(express.static(path.join(__dirname, 'public')));
+
+/*
+        app.use(
+            function(err, req, res, next) {
+                console.error(err);
+                res.send('Fail Whale, yo.');
+            });
+*/
+            
     });
+
+express.errorHandler.title = 'bug@shoeboxify.com'
 
 app.configure('development',
     function(){
-        app.use(express.errorHandler());
+        app.use( express.errorHandler() );
     });
 
-app.settings['x-powered-by'] = false;
+
+//console.log(express.errorHandler.toString());
+
+//app.settings['x-powered-by'] = false;
 
 identity.validateEnviroment();
 
 // ======================
 // Express routes =======
 
-// Public
+// Public Routes
 routeutil.addRoutesFromModule(app, 'index');
 routeutil.addRoutesFromModule(app, 'authentication');
 
-// Admin
-routeutil.addRoutesFromModule(app, 'admin',     { auth : 'admin' } );
+// Admin Routes
+routeutil.addRoutesFromModule(app, 'admin',     { auth: 'admin' } );
 
-// User
-routeutil.addRoutesFromModule(app, 'view',      { auth : 'user' } );
-routeutil.addRoutesFromModule(app, 'usertest',  { auth : 'user' } );
-routeutil.addRoutesFromModule(app, 'service',   { auth : 'user' } );
-
-routeutil.addRoutesFromModule(app, 'sandbox' ,  { auth : 'user' }  );
+// User Routes
+routeutil.addRoutesFromModule(app, 'view',      { auth: 'user' } );
+routeutil.addRoutesFromModule(app, 'usertest',  { auth: 'user' } );
+routeutil.addRoutesFromModule(app, 'service',   { auth: 'user' } );
+routeutil.addRoutesFromModule(app, 'sandbox' ,  { auth: 'user' } );
 
 // ======================
 // HTTP Server ==========
 
-var server = http.createServer(app);
+var expressServer = http.createServer(app);
 
-server.listen(app.get('port'),
+expressServer.listen(app.get('port'),
     function(){
         console.log("Shoeboxify listening on port " + app.get('port'));
     });
@@ -87,70 +99,15 @@ server.listen(app.get('port'),
 // ======================
 // Socket.io  ===========
 
-var sio = socketio.listen(server);
+io.setup(expressServer, cookieParser, sessionStore);
 
-sio.sockets.on('connection',
-    function (socket) {
-        socket.session = socket.handshake.session;
 
-        socket.join(socket.handshake.sessionID);
-
-        console.log('socket.handshake:');
-        console.log(socket.handshake);
-        
-        socket.on('iotest',
-            function (data)
-            {
-//                console.log('socket.session:');
-//                console.log(socket.session);
-                
-                socket.emit( 'back', data );
-            });
-        });
-
-sio.configure('development',
-    function () {
-        sio.set('log level', 3);
+io.event('io-latency',
+    function (socket, data, response) {
+        console.log(data);
+        response(data);
     });
 
-// Setup Session for socket.io
-sio.set('authorization',
-    function(data, accept) {
-        cookieParser(data, {},
-            function(err) {
-                if (err)
-                {
-                    console.error('cookieParser failed with error:');
-                    console.error(err);
-                    accept(err, false);
-                }
-                else
-                {
-                    sessionStore.get(data.signedCookies[sessionKey],
-                        function(err, session)
-                        {
-                            if (err || !session)
-                            {
-                                console.error('Cannot find session in the sessionStore:');
-                                console.error(err);
-                                accept(err, false);
-                            }
-                            else
-                            {
-                                if ( session.hasOwnProperty('user') )
-                                {
-                                    data.session = session;
-                                    accept(null, true);
-                                }
-                                else
-                                {
-//                                    console.error('Cannot find session in the sessionStore:');
-                                    accept(new Error('session has no user property'), false);
-                                }
-                            }
-                        });
-                }
-            });
-    });
+io.addRoutesFromModule('service');
 
 
