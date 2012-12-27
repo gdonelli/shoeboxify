@@ -80,7 +80,7 @@ service.route.facebookObjectForURL =
                 a.assert_f(exit_f);
 
                 service.facebookObjectForURL(
-                        FacebookAccess.fromRequest(quest)
+                        User.fromRequest(quest).getFacebookAccess()
                     ,   input
                     ,   function success(o) {
                             exit_f({     status: 0
@@ -125,7 +125,7 @@ service.facebookObjectForURL =
         if (!fbId)
             return error_f( new Error('Cannot find facebook object from URL') );
 
-        fb.graph(fbAccess, fbId,
+        fb.get(fbAccess, fbId,
             function success(err, fbObject)
             {
                 if(err)

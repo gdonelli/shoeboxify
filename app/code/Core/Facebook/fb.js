@@ -2,7 +2,7 @@
 
 ==================[   Facebook API   ]==================
 
-            fb.graph    Facebook Graph API
+            fb.get    Facebook Graph API
             fb.batch    Batch Graph API requests
             
 ========================================================
@@ -21,11 +21,13 @@ var     assert  = require('assert')
 
 var fb = exports;
 
-fb.graph = 
+
+fb.get =
     function( fbAccess, path, callback /* (err, fbObject) */ )
     {
-        return _graphCall( fbAccess, 'GET', path, callback );
-    }
+        return fb.graphAPI( fbAccess, 'GET', path, callback );
+    };
+
 
 fb.batch =
     function( fbAccess, paths, callback /* (err, fbObject) */ )
@@ -64,105 +66,105 @@ fb.batch =
         outQuest.write( 'batch=' + JSON.stringify(batchAPI) ) ;
         
         outQuest.end();
-    }
-
-
+    };
 
 
 /* aux === */
 
-function _graphCall(fbAccess, method, path, callback /* (err, fbObject) */ )
-{
-    a.assert_f(callback);
-    FacebookAccess.assert(fbAccess);
-
-    var questOptions = { method: method };
-
-    // This is full URL graph request
-    if (path.startsWith('http'))
+fb.graphAPI = 
+    function (fbAccess, method, path, callback /* (err, fbObject) */ )
     {
-        var urlElements = url.parse(path);
+        a.assert_f(callback);
+        FacebookAccess.assert(fbAccess);
 
-        questOptions['hostname']    = urlElements['hostname'];
-        questOptions['path']        = urlElements['path'];
-    }
-    else
-    {
-        // if there is no leading / we will add it
-        var questPath = ( path.startsWith('/') ? '' : '/');
-        questPath += path;
-        questPath += (path.indexOf('?') < 0 ? '?' : '&');
-        questPath += 'access_token='+ fbAccess.getToken();
+        var questOptions = { method: method };
 
-        questOptions.hostname   = 'graph.facebook.com';
-        questOptions.path       = questPath;
-    }
+        // This is full URL graph request
+        if (path.startsWith('http'))
+        {
+            var urlElements = url.parse(path);
 
-    // console.log('questOptions: ' + JSON.stringify(questOptions) );
+            questOptions['hostname']    = urlElements['hostname'];
+            questOptions['path']        = urlElements['path'];
+        }
+        else
+        {
+            // if there is no leading / we will add it
+            var questPath = ( path.startsWith('/') ? '' : '/');
+            questPath += path;
+            questPath += (path.indexOf('?') < 0 ? '?' : '&');
+            questPath += 'access_token='+ fbAccess.getToken();
 
-    var apiQuest = https.request( questOptions, _processGraphResponse );
+            questOptions.hostname   = 'graph.facebook.com';
+            questOptions.path       = questPath;
+        }
 
-    _setupErrorHander(apiQuest);
+        // console.log('questOptions: ' + JSON.stringify(questOptions) );
 
-    apiQuest.end();
-    
-    /* ============================== */
+        var apiQuest = https.request( questOptions, _processGraphResponse );
 
-    function _setupErrorHander(apiQuest)
-    {
-        apiQuest.on('error', 
-            function(e)
-            {
-                console.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
+        _setupErrorHander(apiQuest);
 
-                callback(e);
-            });         
-    }
+        apiQuest.end();
+        
+        /* ============================== */
 
-    function _processGraphResponse(apiQuest)
-    {
-        var bufferString = '';
-
-        apiQuest.on('data',
-            function (chunk) {
-                bufferString += chunk;
-            } );
-
-        apiQuest.on('end',
-            function () {
-                try
+        function _setupErrorHander(apiQuest)
+        {
+            apiQuest.on('error', 
+                function(e)
                 {
-                    var jsonObject = JSON.parse(bufferString);
+                    console.error('**** ERROR: Graph Request Failed for path: ' + path + " err:" + e);
 
-                    if (jsonObject.error)
+                    callback(e);
+                });         
+        }
+
+        function _processGraphResponse(apiQuest)
+        {
+            var bufferString = '';
+
+            apiQuest.on('data',
+                function (chunk) {
+                    bufferString += chunk;
+                } );
+
+            apiQuest.on('end',
+                function () {
+                    try
                     {
-                        var e = new Error(jsonObject.error.message);
-                        e.type = jsonObject.error.type;
-                        e.code = jsonObject.error.code;
+                        var jsonObject = JSON.parse(bufferString);
 
+                        if (jsonObject.error)
+                        {
+                            var e = new Error(jsonObject.error.message);
+                            e.type = jsonObject.error.type;
+                            e.code = jsonObject.error.code;
+
+                            callback(e);
+                        }
+                        else
+                        {
+                            callback(null, jsonObject);
+                        }
+                    }
+                    catch(e)
+                    {
+                        console.error('**** Caught exception while processing Graph response');
+                        console.error('**** Exception:' + e);
+
+                        console.error('**** Stacktrace:');
+                        console.error(e.stack);
+
+                        console.error('**** Buffer String:');
+                        var bufferToShow = (bufferString.length > 256 ? bufferString.substring(0, 256) : bufferString );
+
+                        console.error('**** ' + bufferToShow + '...');
+                        
                         callback(e);
                     }
-                    else
-                    {
-                        callback(null, jsonObject);
-                    }
-                }
-                catch(e)
-                {
-                    console.error('**** Caught exception while processing Graph response');
-                    console.error('**** Exception:' + e);
+                } );
+        }
+    };
 
-                    console.error('**** Stacktrace:');
-                    console.error(e.stack);
-
-                    console.error('**** Buffer String:');
-                    var bufferToShow = (bufferString.length > 256 ? bufferString.substring(0, 256) : bufferString );
-
-                    console.error('**** ' + bufferToShow + '...');
-                    
-                    callback(e);
-                }
-            } );
-    }
-}
 

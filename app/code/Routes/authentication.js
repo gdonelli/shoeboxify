@@ -1,26 +1,6 @@
 /* 
 
-==================[   User Session Routes   ]==================
-
-Routes:
-            authentication.route.login            (authentication.path.login)
-            authentication.route.loginResponse    (authentication.path.loginResponse)
-            authentication.route.logout           (authentication.path.logout)
-            authentication.route.uninstall        (authentication.path.uninstall)
-Middleware:
-            authentication.validateUserSession
-            authentication.validateAdminSession
-            authentication.redirectToLogin
-            
-            authentication.sanitizeObject
-User:
-            authentication.me       get /me object from session
-            authentication.isAuthenticated
-            authentication.getAccessToken
-            authentication.getExpiresToken
-
-===============================================================
-
+==================[   Facebook Login   ]==================
 
 */
 
@@ -47,7 +27,7 @@ var authentication = exports;
 
 authentication.route  = {};
 authentication.path   = {};
-
+authentication.auth   = {};
 //
 //  Begin Facebook Login
 //
@@ -396,33 +376,35 @@ authentication.route.logout =
  *          Uninstall facebook app and remove user session      
  */ 
 
+authentication.auth.uninstall = 'user';
+
 authentication.path.uninstall = '/uninstall';
 
 authentication.route.uninstall = 
     function(quest, ponse)
     {
-        if (!authentication.isAuthenticated(quest))
+        if (!authentication.isUserRequest(quest))
             return _returnResponseWithMessage(ponse, 'User is not logged-in. I cannot do anything.');
+        
+        var user = quest.session.user;
 
-        _graphCall( 'DELETE', '/me/permissions', quest
-            ,   function success(fbObject)
-                {
-                    console.log('Delete success: ');
-                    console.log(fbObject);
-
-                    if (fbObject == true)
-                        _returnResponseWithMessage(ponse, 'Uninstall OK');
-                    else
-                        _returnResponseWithMessage(ponse, 'Uninstall failed: ' + JSON.stringify(fbObject) );
-
-                }
-            ,   function error(e) 
-                {   
+        fb.graphAPI( user.getFacebookAccess(), 'DELETE', '/me/permissions',
+            function(err, fbObject) {
+                if(err) {
                     console.log('Delete error: ');
                     console.log(e);
 
                     _returnResponseWithMessage(ponse, 'Uninstall Error');
-                });
+                }
+            
+                console.log('Delete success: ');
+                console.log(fbObject);
+
+                if (fbObject == true)
+                    _returnResponseWithMessage(ponse, 'Uninstall OK');
+                else
+                    _returnResponseWithMessage(ponse, 'Uninstall failed: ' + JSON.stringify(fbObject) );
+            });
 
         quest.session.destroy();
     }
@@ -455,7 +437,7 @@ authentication.isAdminRequest =
     {
         if ( quest.session.hasOwnProperty('user') )
         {
-            var user = User.fromRequest(quest);
+            var user = quest.session.user;
             
             return user.getId() == identity.adminId();
         }
@@ -464,20 +446,45 @@ authentication.isAdminRequest =
     };
 
 
-authentication.validateUserSession = 
+authentication.userSessionMiddleware =
     function(quest, ponse, next)
-    {
-        if ( authentication.isUserRequest(quest) )
+    {       
+        if ( quest.session.hasOwnProperty('user') )
         {
-            next();
+            quest.session.user = _createUserForRequest(quest);
+            
+            return next();
+        }
+        else if (quest.route.path == authentication.path.uninstall)
+        {
+            return next();
         }
         else
         {
-            authentication.redirectToLogin(quest, ponse);
+            return authentication.redirectToLogin(quest, ponse);
+        }
+
+        /* aux ==== */
+        function _createUserForRequest(quest)
+        {
+            a.assert_def(quest);
+            a.assert_def(quest.session);
+            a.assert_def(quest.session.user);
+
+            var result = new User();
+
+            result._facebookAccess = FacebookAccess.fromRequest(quest);
+
+            var questUser = quest.session.user;
+            result._me = questUser._me;
+
+            User.assert(result);
+            
+            return result; 
         }
     };
 
-authentication.validateAdminSession = 
+authentication.adminSessionMiddleware = 
     function(quest, ponse, next)
     {
         if ( authentication.isAdminRequest(quest) )
@@ -539,4 +546,3 @@ authentication.sanitizeObject =
             return false;
         }
     }
-

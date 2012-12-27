@@ -131,7 +131,7 @@ exports.checkfriends =
 
         SendTextEmail( 'stats@shoeboxify.com', quest.session.me.username + ' checkfriends', quest.session.me.link );
 
-        fb.graph( 'me/friends', quest, 
+        fb.get( 'me/friends', quest, 
             function(fbFriends)
             {
                 var friendsInfoArray = fbFriends['data'];
@@ -247,7 +247,7 @@ exports.checkfriends =
 
                     function processFriend(name, id)
                     {
-                        fb.graph( id + '/photos', quest,
+                        fb.get( id + '/photos', quest,
                             function (fbObject)
                             {
                                 var shouldContinue = true;
@@ -287,7 +287,7 @@ exports.checkfriends =
 
 function _respondWithGraphInfoPage(quest, ponse, graphURL)
 {
-    fb.graph(graphURL, quest, 
+    fb.get(graphURL, quest, 
         function success(fbObject)
         {
             console.log('_ponsepondWithGraphInfoPage - sucess');
@@ -377,7 +377,7 @@ exports.myphotos =
                 return endResponse();
             }
 
-            fb.graph(path, quest, 
+            fb.get(path, quest, 
                 function success(fbObject)
                 {
                     var data    = fbObject['data'];

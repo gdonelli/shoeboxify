@@ -1,5 +1,6 @@
 
-var     _ = require('underscore')
+var     _       = require('underscore')
+    ,   assert  = require('assert')
 
     ,   a = use('a')
     ,   authentication = use('authentication')
@@ -43,24 +44,29 @@ routeutil.addRoutesFromModule =
             {
                 var path_i  = module.path[key_i];
                 var route_i = module.route[key_i];
-
+                var auth_i  = (module.auth && module.auth[key_i]) || (options && options.auth);
+                
                 a.assert_def(path_i, 'path_i is undefined, key=' + key_i);
                 a.assert_def(route_i, 'route_i is undefined, path_i=' + path_i);
-
+                assert( auth_i == undefined ||
+                        auth_i == 'user'||
+                        auth_i == 'admin',
+                        'Unknown auth directive for for path_i=' + path_i);
+                
                 var opt = '\t';
-                if (options && options.admin == true)
+                if (auth_i == 'admin')
                 {
                     app.get(path_i, 
-                            authentication.validateUserSession,  
-                            authentication.validateAdminSession, 
+                            authentication.userSessionMiddleware,  
+                            authentication.adminSessionMiddleware, 
                             route_i);
 
                     opt += '(admin)';
                 }
-                else if (options && options.user == true)
+                else if (auth_i == 'user')
                 {
                     app.get(path_i,
-                            authentication.validateUserSession, 
+                            authentication.userSessionMiddleware, 
                             route_i);
 
                     opt += '(user)';

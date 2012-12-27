@@ -18,7 +18,7 @@ describe('fb.js',
             function(done) {
                 var fbAcccess = authenticationTest.getFacebookAccess();
 
-                fb.graph(fbAcccess, '/me',
+                fb.get(fbAcccess, '/me',
                     function(err, meObject) {
                         if (err)
                             throw err;
@@ -34,7 +34,7 @@ describe('fb.js',
          it( 'wrong credentials',
             function(done) {
                 var badAccess = new FacebookAccess('x', 'y');                
-                fb.graph(badAccess, '/me',
+                fb.get(badAccess, '/me',
                     function(err, meObject) {
                         if (err){
                             a.assert_def(err.code);
@@ -62,7 +62,7 @@ fbTest.processFacebookObject =
             function FetchMeOperation(doneOp) {
                 var fbAcccess = authenticationTest.getFacebookAccess();
 
-                fb.graph(fbAcccess, graphPath,
+                fb.get(fbAcccess, graphPath,
                     function(err, meObject) {
                         if (err)
                             throw err;

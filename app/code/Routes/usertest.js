@@ -157,7 +157,7 @@ usertest.route.myphotos =
                 return _endResponse();
             }
 
-            fb.graph(fbAccess, path,
+            fb.get(fbAccess, path,
                 function(err, fbObject)
                 {
                     if (err)
@@ -218,7 +218,7 @@ function _respondWithGraphInfoPage(quest, ponse, graphURL)
     var user = User.fromRequest(quest);
     var fbAccess = user.getFacebookAccess();
     
-    fb.graph(fbAccess, graphURL,
+    fb.get(fbAccess, graphURL,
         function(err, fbObject)
         {
             if (err) {

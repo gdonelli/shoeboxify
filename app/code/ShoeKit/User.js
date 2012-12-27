@@ -33,32 +33,25 @@ function User(fbAccess, callback /* (err, user) */ )
 // Class Methods
 //
 
+// The user object is built by the session handler middleware
+
 exports.User.fromRequest =
     function(quest)
     {
         a.assert_def(quest);
         a.assert_def(quest.session);
-        a.assert_def(quest.session.user);
-
-        var result = new User();
-
-        result._facebookAccess = FacebookAccess.fromRequest(quest);
-
-        var questUser = quest.session.user;
-        result._me = questUser._me;
-
-        User.assert(result);
         
-        return result; 
-    }
+        return a.assert_def(quest.session.user);
+    };
 
 exports.User.assert = 
     function(user)
     {
-        a.assert_def(user,                  'user'          );
+        a.assert_def(user,          'user'          );
         a.assert_def(user._facebookAccess,  'user._facebookAccess');
-        a.assert_def(user._me ,             'user._me'      );
-        a.assert_def(user._me.id,           'user._me.id'   );
+        a.assert_def(user._me ,     'user._me'      );
+        a.assert_def(user._me.id,   'user._me.id'   );
+        a.assert_f(user.getId,      'user.getId');
     }
 
 //
@@ -79,7 +72,7 @@ User.prototype._init =
         q.add( 
             function FetchMeOperation(doneOp)
             {
-                fb.graph(that.getFacebookAccess(), '/me',
+                fb.get(that.getFacebookAccess(), '/me',
                     function(err, fbObject) {
                         if (err)
                             return q.abort(err);
