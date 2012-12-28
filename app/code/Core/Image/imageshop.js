@@ -176,7 +176,7 @@ imageshop.resample =
 
                     callback(tooBigError);
                     
-                    console.log('tooBigError');
+                    //console.log('tooBigError');
                 }
                 else if (   options
                         &&  options[imageshop.k.MaxDimensionKey]

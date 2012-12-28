@@ -19,7 +19,7 @@ describe('service.js',
                     {
                         var sourceURL = "https://sphotos-a.xx.fbcdn.net/hphotos-ash3/73827_622511435310_614274492_n.jpg";
 
-                        service.facebookObjectForURL( 
+                        service.getFacebookObjectForURL( 
                                 authenticationTest.getFacebookAccess()
                             ,   sourceURL
                             ,   function object(o) {
@@ -41,7 +41,7 @@ describe('service.js',
                     {
                         var sourceURL = "https://www.facebook.com/photo.php?fbid=10152170979900707&set=a.10150267612520707.502570.554390706&type=1";
 
-                        service.facebookObjectForURL( 
+                        service.getFacebookObjectForURL( 
                                 authenticationTest.getFacebookAccess()
                             ,   sourceURL
                             ,   function object(o) {
@@ -64,7 +64,7 @@ describe('service.js',
                         // my profile pict
                         var sourceURL = "https://fbcdn-photos-a.akamaihd.net/hphotos-ak-ash3/524874_10152170979900707_270531713_s.jpg";
 
-                        service.facebookObjectForURL( 
+                        service.getFacebookObjectForURL( 
                                 authenticationTest.getFacebookAccess()
                             ,   sourceURL
                             ,   function object(o) {
@@ -86,7 +86,7 @@ describe('service.js',
                     {
                         var sourceURL = "https://fbcdn-photos-a.akamaihd.net/hphotos-ak-ash3/524874_XXXXXXXXXXX_270531713_s.jpg";
 
-                        service.facebookObjectForURL( 
+                        service.getFacebookObjectForURL( 
                                 authenticationTest.getFacebookAccess()
                             ,   sourceURL
                             ,   function object(o) {
