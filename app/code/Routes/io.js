@@ -48,7 +48,7 @@ io.setup =
 
         ioserver.configure('development',
             function () {
-                ioserver.set('log level', 3);
+                ioserver.set('log level', 1);
             });
 
         // Setup Session for socket.io
@@ -107,7 +107,26 @@ function _socketListen(socket)
             socket.on(key,
                 function(data, fn)
                 {
-                    eventRoutes[key](socket, data, fn);
+                    try {
+                        eventRoutes[key](socket, data, fn);
+                    }
+                    catch(err) {
+                        console.error('Error in socket.io event: `' + key + '`');
+                        console.error(err.stack);
+                      
+                        if (fn) {
+                            var errObject = {};
+                      
+                            if (err.name)
+                                errObject.name = err.name;
+                            if (err.message)
+                                errObject.message = err.message;
+                            if (err.stack)
+                                errObject.stack = err.stack;
+                      
+                            fn( { error: errObject });
+                        }
+                    }
                 });
         });
 }
@@ -119,8 +138,7 @@ io.addRoutesFromModule =
     function(moduleName)
     {
         a.assert_def(moduleName,     'moduleName is undefined');
-        console.log(moduleName);
-     
+    
         var module = use(moduleName);
 
         a.assert_def(module,        'module is undefined');
@@ -145,6 +163,8 @@ io.addRoutesFromModule =
                 return module.event[a].length - module.event[b].length;
             });
         
+        console.log(moduleName);
+        
         moduleKeys.forEach(
             function (key_i)
             {
@@ -155,6 +175,8 @@ io.addRoutesFromModule =
                 a.assert_def(socket_i);
                 
                 io.event(event_i, socket_i);
+                
+                console.log('   ' + event_i + '\t\t(socket.io)');
             });
     };
 

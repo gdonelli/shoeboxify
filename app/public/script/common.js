@@ -201,9 +201,11 @@ var _common = (function ()
 
 common = new _common();
 
-if (exports)
+try
 {
-	exports.objectToHTML = common.objectToHTML;
+    if (exports)
+    {
+        exports.objectToHTML = common.objectToHTML;
+    }
 }
-
-
+catch(e) { /* we are in the browser */}

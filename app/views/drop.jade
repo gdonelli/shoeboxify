@@ -1,39 +1,40 @@
 doctype 5
 html
-	head
-		title Drop
-		link(rel='stylesheet', href='/style/drop.css')
+    head
+        title Drop
+        link(rel='stylesheet', href='/style/drop.css')
 
-		script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js")
-		script(src="/script/common.js")
-		script(src="/script/drop.js")
-		script(src="/script/ui.js")
-		
-		script
-			$('body').ready(
-				function()
-				{
-					// var target = 
-					// InstallDropListener( document.body /* document.getElementById("body") */ );
+        script(src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js")
+        script(src="/script/common.js")
+        script(src="/script/drop.js")
+        script(src="/script/ui.js")
+        script(src="/script/serviceAPI.js")
+        script(src="/socket.io/socket.io.js")
 
-					console.log($("html")[0]);
+        script
+            var serviceAPI = new ServiceAPI();
 
-					InstallDropListener( $("html")[0] );
+            $('body').ready(
+                function()
+                {
+                    // console.log($("html")[0]);
 
-					ClearUI();
-				});
+                    InstallDropListener( $("html")[0] );
 
-	body
-		h1 Drag from Facebook and drop below
+                    ClearUI();
+                });
 
-		#droparea
-			img#dropimage
+    body
+        h1 Drag from Facebook and drop below
 
-		#button-area
-			button(onclick='ClearButtonAction()') Clear
-			button#shoeboxify(onclick='ShoeboxifyButtonAction()') Shoeboxify
-			div#elapsedTime
+        #droparea
+            img#dropimage
 
-		#sourceURL
-		#facebookObjectID
-		#objectInfo
+        #button-area
+            button(onclick='ClearButtonAction()') Clear
+            button#shoeboxify(onclick='ShoeboxifyButtonAction()') Shoeboxify
+            div#elapsedTime
+
+        #sourceURL
+        #facebookObjectID
+        #objectInfo

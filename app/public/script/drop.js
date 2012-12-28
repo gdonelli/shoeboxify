@@ -125,51 +125,47 @@ function InstallDropListener( target )
 		window.droppedURL = droppedURL;
 		$('#sourceURL').text(droppedURL);
 		$('#shoeboxify').removeAttr('disabled');
-
-		serviceUI.facebookObjectForURL(droppedURL
-			,	function success(ponse) {
-
-					// Source
-					var ponseSource = ponse['source'];
-					
-					if (!ponseSource)
-						ponseSource = '???';
-
-					$('#sourceURL').text(ponseSource);
-
-					var objectToShow;
-
-					if (ponse.fb_object)
-						objectToShow = ponse.fb_object; 
-					else if (ponse.placeholder)
-					{
-						objectToShow = ponse.placeholder;
-						$('#droparea').css('background-color', 'yellow');
-					}
-
-					var objectID = objectToShow.id;
-					if (!objectID)
-						objectID = '#?' 
-					$('#facebookObjectID').text(objectID);
-
-					$('#objectInfo').html( common.objectToHTML(objectToShow, 'Facebook Object') );
-					
-					if (objectToShow.picture)
-						$('#dropimage').attr('src', objectToShow.picture );
-
-					$('#shoeboxify').removeAttr('disabled');
-				}
-			,	function error(error) 
-				{
-					$('#droparea').css('background-color', '#AA3333');
-		
+        
+        serviceAPI.getFacebookObjectForURL(droppedURL,
+            function(err, ponse)
+            {
+                if (err) {
+                    $('#droparea').css('background-color', '#AA3333');
 					ui.error('ponse with error:');
-					ui.error(error);
+					ui.error(err);
+					$('#objectInfo').html( common.objectToHTML( err, 'Error response') );
+                    return;
+                }
 
-					$('#objectInfo').html( common.objectToHTML( error, 'Error response') );
+                // Source
+                var ponseSource = ponse['source'];
+                if (!ponseSource)
+                    ponseSource = '???';
 
-				} );
+                $('#sourceURL').text(ponseSource);
 
+                var objectToShow;
+
+                if (ponse.fb_object)
+                    objectToShow = ponse.fb_object; 
+                else if (ponse.placeholder) {
+                    objectToShow = ponse.placeholder;
+                    $('#droparea').css('background-color', 'yellow');
+                }
+
+                var objectID = objectToShow.id;
+                if (!objectID)
+                    objectID = '#?' 
+                $('#facebookObjectID').text(objectID);
+
+                $('#objectInfo').html( common.objectToHTML(objectToShow, 'Facebook Object') );
+                
+                if (objectToShow.picture)
+                    $('#dropimage').attr('src', objectToShow.picture );
+
+                $('#shoeboxify').removeAttr('disabled');
+            });
+        
 		return false;
 	}
 
@@ -244,28 +240,31 @@ function ShoeboxifyButtonAction()
 	$('#shoeboxify').css('background-color', '');
 	
 	ui.log('ShoeboxifyButtonAction');
-
-	serviceUI.shoeboxifyURL
-	//serviceUI.facebookObjectForURL
-	(window.droppedURL
-		,	function success(ponse) {
-				console.log('ponse:');
-				console.log(ponse);
-
-				$('#shoeboxify').css('background-color', 'green');
-				$('#shoeboxify').removeAttr('disabled');
-
-				$('#elapsedTime').text( ponse.meta.time + 'ms');
-
-				$('#objectInfo').html( common.objectToHTML(ponse.data, 'Shoeboxify Entry') );
-			}
-		,	function error(error) {
-				console.log('error:');
-				console.log(error);
+    
+    var then = new Date();
+    
+    serviceAPI.shoeboxifyURL(window.droppedURL,
+        function(err, ponse)
+        {
+            if (err){
+                console.log('error:');
+				console.log(err);
 			
 				$('#shoeboxify').css('background-color', 'red');
 				$('#shoeboxify').removeAttr('disabled');
+				$('#objectInfo').html( common.objectToHTML(err, 'Shoeboxify Entry') );
 
-				$('#objectInfo').html( common.objectToHTML(error, 'Shoeboxify Entry') );
-			} );
+                return;
+            }
+            
+            var now = new Date();
+            
+            console.log('ponse:');
+            console.log(ponse);
+
+            $('#shoeboxify').css('background-color', 'green');
+            $('#shoeboxify').removeAttr('disabled');
+            $('#elapsedTime').text( (now - then) + 'ms');
+            $('#objectInfo').html( common.objectToHTML(ponse.data, 'Shoeboxify Entry') );
+        });
 }

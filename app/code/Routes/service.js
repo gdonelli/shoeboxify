@@ -43,30 +43,8 @@ service.event  = {};
 service.socket = {};
 
 
-service.event.objectForURL = 'objectForURL';
-
-service.socket.objectForURL =
-    function(socket, data, response_f)
-    {
-        console.log('service.io.objectForURL data:');
-        console.log(data);
-        
-        a.assert_f(response_f);
-        
-        response_f( 'ciao bimba' );
-    }
-
-/* ====================================================== */
-/* ====================================================== */
-/* ====================[   Routes   ]==================== */
-/* ====================================================== */
-/* ====================================================== */
-
-/*  API:    objectForURL
- *  URL:    /o4u
- *  args:   ?u=<url>
- *
- *  example: /o4u?u=https://www.facebook...
+/* 
+ *  data:   { url: <url> }
  *
  *  returns json:
  *      {
@@ -85,45 +63,46 @@ service.socket.objectForURL =
  *      }
  */
 
-service.path.facebookObjectForURL = '/service/facebookObjectForURL';
+service.event.getFacebookObjectForURL = 'service.getFacebookObjectForURL';
 
-service.route.facebookObjectForURL = 
-    function(quest, ponse)
+service.socket.getFacebookObjectForURL =
+    function(socket, data, next /* (data) */)
     {
-        _sevice_processInputURL(quest, ponse, 
-            function(input, exit_f)
-            {
-                a.assert_def(input);
-                a.assert_f(exit_f);
+        console.log('service.io.objectForURL data:');
+        console.log(data);
 
-                service.facebookObjectForURL(
-                        User.fromRequest(quest).getFacebookAccess()
-                    ,   input
-                    ,   function success(o) {
-                            exit_f({     status: 0
-                                ,   fb_object: o
-                                ,      source: input   
-                            });
-                        }
-                    ,   function placeholder(p) {
-                            exit_f({       status: 0
-                                ,   placeholder: p
-                                ,        source: input   
-                            });
-                        }
-                    ,   function error(e) {
-                            exit_f({  status: (e.code ? e.code : 2)
-                                ,    error: 'objectForURL failed: ' + e.message
-                                ,   source: input   
-                            });
-                        } );
+        var inputURL = data['url'];
+        
+        a.assert_def(inputURL, 'inputURL');
+        a.assert_f(next, 'next');
+        
+        service.getFacebookObjectForURL(
+                User.fromSocket(socket).getFacebookAccess()
+            ,   inputURL
+            ,   function success(o) {
+                    next({     status: 0
+                        ,   fb_object: o
+                        ,      source: inputURL   
+                    });
+                }
+            ,   function placeholder(p) {
+                    next({       status: 0
+                        ,   placeholder: p
+                        ,        source: inputURL   
+                    });
+                }
+            ,   function error(e) {
+                    next({  status: (e.code ? e.code : 2)
+                        ,    error: 'objectForURL failed: ' + e.message
+                        ,   source: inputURL   
+                    });
+                } );
 
-            });
     }
 
 service.O_AUTH_ERROR_CODE = 190;
 
-service.facebookObjectForURL = 
+service.getFacebookObjectForURL = 
     function(   fbAccess
             ,   inputURL
             ,   object_f        /* (fb_object) */
@@ -183,132 +162,33 @@ service.facebookObjectForURL =
     };
 
 
-/*  API:    shoeboxifyURL
- *  URL:    /service/shoeboxifyURL
- *  args:   ?u=<url>
- *
- *  example: /service/shoeboxifyURL?u=https://www.facebook...
- *
- */
 
-service.path.shoeboxifyURL = '/service/shoeboxifyURL';
+service.event.shoeboxifyURL = 'service.shoeboxifyURL';
 
-service.route.shoeboxifyURL =
-    function(quest, ponse)
+service.socket.shoeboxifyURL =
+    function(socket, data, next /* (data) */)
     {
-        _sevice_processInputURL(quest, ponse, 
-            function(inputURL, exit_f)
-            {
-                var user = User.fromRequest(quest);
-
-                service.shoeboxifyURL(
-						user
-                    ,   inputURL
-                    ,   function success(r, options)
-                        {
-                            exit_f({    status: 0
-                                    ,   source: inputURL
-                                    ,     data: r });
-                        }
-                    ,   function error(e)
-                        {
-                            exit_f({    status: 1
-                                    ,   source: inputURL
-                                    ,    error: 'shoeboxifyURL failed ' + e });             
-                        } );
-            } );
-    };
-
-
-service.shoeboxifyURL =
-    function(user, theURL, success_f /* (entry, meta) */, error_f  /* (error) */ )
-    {
-        a.assert_http_url(theURL);
-        a.assert_f(success_f);
-        a.assert_f(error_f);
+        a.assert_def(data, 'data');
+        a.assert_f(next, 'next');
+        var inputURL = data['url'];
+        a.assert_def(inputURL, 'inputURL');
         
+        var user = User.fromSocket(socket);
         var photoManager = new PhotoManager(user);
         
-        photoManager.addPhotoFromURL(theURL,
+        photoManager.addPhotoFromURL(inputURL,
             function(err, photo) {
                 if (err)
-                    error_f(err);
-        
-                success_f(photo, {});
+                {
+                    next({	status: 1
+                        ,   source: inputURL
+                        ,    error: 'shoeboxifyURL failed ' + e } );
+                }
+                else
+                {
+                    next({  status: 0
+                        ,   source: inputURL
+                        ,     data: photo } );
+                }
             });
     };
-
-
-/*
-    process_f (input, exit_f)
-
-    should pass to exit_f something like:
-        {
-            status: 0 (succcess) | > 0 (error)
-        ,   source: url...
-        ,     data: <something>
-        }
-*/
-
-function _sevice_processInputURL(   quest
-                                ,   ponse
-                                ,   process_f /* (input, exit_f) */
-                                )
-{
-    a.assert_def(quest);
-    a.assert_def(ponse);
-    a.assert_f(process_f);
-
-    var startDate = new Date();
-
-    var urlElements = url.parse(quest.url, true);
-    var urlQuery = urlElements['query'];
-
-    ponse.writeHead(200, { 'Content-Type': 'application/json' } );
-
-    // console.log(quest.url);
-
-    var jsonResult;
-
-    if ( !urlQuery || urlQuery['u'].length <= 0 )
-    {
-        _exit({     status: 1
-                ,   source: quest.url
-                ,    error: 'malformed request ?u= is empty'
-            });
-
-        console.error('urlQuery is malformed');
-
-        return;
-    }
-
-    var input = urlQuery['u'];
-
-    if ( !authentication.isUserRequest(quest) )
-    {
-        _exit({ status: 403
-            ,   source: input
-            ,   error:  'User is not logged-in'
-            });
-    }
-    else
-    {
-        process_f(input, _exit);
-    }
-
-    /* ======================================= */
-
-    function _exit(result)
-    {
-        a.assert_def(result);
-        a.assert_obj(result);
- 
-        if (result.meta == undefined)
-            result.meta = {};
-       
-        result.meta.time = handy.elapsedTimeSince(startDate);
-
-        ponse.end( JSON.stringify(result) );
-    }
-    
-}
