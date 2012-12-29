@@ -243,28 +243,43 @@ function ShoeboxifyButtonAction()
     
     var then = new Date();
     
-    serviceAPI.shoeboxifyURL(window.droppedURL,
-        function(err, ponse)
+    var progressEmitter =
+        serviceAPI.shoeboxifyURL(window.droppedURL,
+            function(err, ponse)
+            {
+                if (err){
+                    console.log('error:');
+                    console.log(err);
+                
+                    $('#shoeboxify').css('background-color', 'red');
+                    $('#shoeboxify').removeAttr('disabled');
+                    $('#objectInfo').html( common.objectToHTML(err, 'Shoeboxify Entry') );
+
+                    return;
+                }
+                
+                var now = new Date();
+                
+                console.log('ponse:');
+                console.log(ponse);
+
+                $('#shoeboxify').css('background-color', 'green');
+                $('#shoeboxify').removeAttr('disabled');
+                $('#elapsedTime').text( (now - then) + 'ms');
+                $('#objectInfo').html( common.objectToHTML(ponse.data, 'Shoeboxify Entry') );
+                
+                $('#progressBar').css('display', 'none');
+            });
+    
+    progressEmitter.on('progress',
+        function(data)
         {
-            if (err){
-                console.log('error:');
-				console.log(err);
-			
-				$('#shoeboxify').css('background-color', 'red');
-				$('#shoeboxify').removeAttr('disabled');
-				$('#objectInfo').html( common.objectToHTML(err, 'Shoeboxify Entry') );
-
-                return;
-            }
+            console.log('progress data:');
+            console.log(data);
             
-            var now = new Date();
+            var widthValue = data.percentage * 100 + '%';
+            $('#bar').width(widthValue);
             
-            console.log('ponse:');
-            console.log(ponse);
-
-            $('#shoeboxify').css('background-color', 'green');
-            $('#shoeboxify').removeAttr('disabled');
-            $('#elapsedTime').text( (now - then) + 'ms');
-            $('#objectInfo').html( common.objectToHTML(ponse.data, 'Shoeboxify Entry') );
+            $('#progressBar').css('display', 'block');
         });
 }

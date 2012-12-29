@@ -31,7 +31,7 @@ describe('PhotoManager.js',
                 it( 'PhotoManager.addPhotoWithFacebookId one',
                     function(done)
                     {
-                        photoManager.addPhotoWithFacebookId(test_resources.kSteveJobsPhotoId,
+                        var emitter = photoManager.addPhotoWithFacebookId(test_resources.kSteveJobsPhotoId,
                             function(err, newPhoto)
                             {
                                 if (err)
@@ -49,6 +49,12 @@ describe('PhotoManager.js',
                                 a.assert_def( photo.getSourceObject(),  'photo.getSourceObject()' );
                                 
                                 done();
+                            });
+                   
+                        emitter.on('progress',
+                            function(data) {
+                                a.assert_def(data, 'data');
+                                a.assert_def(data.percentage, 'data.percentage');
                             });
                     });
 
@@ -89,6 +95,20 @@ describe('PhotoManager.js',
                                 done();
                             } );
                     });
+
+                it( 'PhotoManager.addPhotoWithFacebookId fail',
+                    function(done)
+                    {
+                        photoManager.addPhotoWithFacebookId( '10200427572197705',
+                            function(err, newPhoto)
+                            {
+                                if (err)
+                                    done();
+                                else
+                                    throw new Error('should fail');
+                            });
+                    });
+
 
                 it( 'PhotoManager.getPhotos',
                     function(done)

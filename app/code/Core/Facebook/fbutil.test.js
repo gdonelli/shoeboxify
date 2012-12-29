@@ -29,6 +29,17 @@ describe('fbutil.js',
                 assert(id == expected, 'wrong id: ' + id + ' expected: ' + expected);
             } );
 
+        it( 'bonny link',
+            function()
+            {
+                var link = 'https://fbcdn-sphotos-h-a.akamaihd.net/hphotos-ak-snc7/v/566064_10152370502085125_471417010_n.jpg?oh=a045253851d9f41c434c5c02616b34b7&oe=50E06A34&__gda__=1356890142_cb6deb5649a8ffde52f75e9a83485c81';
+                var id = fbutil.facebookIdForURL(link);
+                var expected = '10152370502085125';
+
+                assert(id == expected, 'wrong id: ' + id + ' expected: ' + expected);
+            } );
+        
+        
         it( 'wrong link',
             function()
             {

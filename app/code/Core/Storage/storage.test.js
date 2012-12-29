@@ -184,6 +184,14 @@ describe('storage.js',
                                                             ,   mongo.newObjectId()
                                                             ,   fbObject
                                                             ,   callback );
+                            
+                            if (q) {
+                                q.on('progress',
+                                    function(data) {
+                                        a.assert_def(data.percentage);
+                                    });                            
+                            }
+                            
                             if (forceFail)
                                 q.context.failure = true;
                         });

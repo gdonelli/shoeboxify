@@ -68,8 +68,8 @@ service.event.getFacebookObjectForURL = 'service.getFacebookObjectForURL';
 service.socket.getFacebookObjectForURL =
     function(socket, data, next /* (data) */)
     {
-        console.log('service.io.objectForURL data:');
-        console.log(data);
+//        console.log('service.io.objectForURL data:');
+//        console.log(data);
 
         var inputURL = data['url'];
         
@@ -166,29 +166,36 @@ service.getFacebookObjectForURL =
 service.event.shoeboxifyURL = 'service.shoeboxifyURL';
 
 service.socket.shoeboxifyURL =
-    function(socket, data, next /* (data) */)
+    function(socket, inputData, next /* (data) */)
     {
-        a.assert_def(data, 'data');
+        a.assert_def(inputData, 'inputData');
         a.assert_f(next, 'next');
-        var inputURL = data['url'];
+        var inputURL = inputData['url'];
         a.assert_def(inputURL, 'inputURL');
         
         var user = User.fromSocket(socket);
         var photoManager = new PhotoManager(user);
         
-        photoManager.addPhotoFromURL(inputURL,
-            function(err, photo) {
-                if (err)
-                {
-                    next({	status: 1
-                        ,   source: inputURL
-                        ,    error: 'shoeboxifyURL failed ' + e } );
-                }
-                else
-                {
-                    next({  status: 0
-                        ,   source: inputURL
-                        ,     data: photo } );
-                }
-            });
+        var progressEmitter =
+            photoManager.addPhotoFromURL(inputURL,
+                function(err, photo) {
+                    if (err) {
+                        next({  status: 1
+                            ,   source: inputURL
+                            ,   error:  'shoeboxifyURL failed ' + e } );
+                    }
+                    else {
+                        next({  status: 0
+                            ,   source: inputURL
+                            ,   data:   photo   } );
+                    }
+                });
+        
+        // Emit progess with a given event name
+        if (inputData.progressEvent) {
+            progressEmitter.on('progress',
+                function(progressData) {
+                    socket.volatile.emit(inputData.progressEvent, progressData);
+                });
+        }
     };

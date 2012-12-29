@@ -25,6 +25,9 @@ var     assert  = require('assert')
 
 exports.OperationQueue = OperationQueue;
 
+// OperationQueue inherits from EventEmitter
+util.inherits(OperationQueue, events.EventEmitter);
+
 function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context)
 {
     if (opt_maxConcurrent)
@@ -40,12 +43,10 @@ function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context)
     if (opt_initialFunctions) {
         this._addAll(opt_initialFunctions);
     }
-
+    
+    // super constructor
     events.EventEmitter.call(this);
 }
-
-
-util.inherits(OperationQueue, events.EventEmitter);
 
 
 OperationQueue.prototype._addAll =
@@ -73,6 +74,12 @@ OperationQueue.prototype.abort =
         e.stacktrace = e.stack;
 
         this.emit("abort", e);
+        
+        if (this.debug  == true ||
+            this.assert == true) {
+            console.log('OperationQueue will abort, here\'s the error stack:');
+            console.log( e.stack );
+        }
     }
 
 
@@ -121,12 +128,6 @@ OperationQueue.prototype._start =
                 }
                 catch(e) 
                 {
-                    if (that.debug  == true || 
-                        that.assert == true){
-                        console.log('OperationQueue will abort, error:');
-                        console.log( e.stack );
-                    }
-
                     that.abort(e);
                 }
             });

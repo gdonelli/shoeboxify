@@ -36,13 +36,18 @@ storage.copyFacebookPhoto =
         a.assert_def(photoId,   'photoId');
         a.assert_obj(fbPhotoObject);
         a.assert_f(callback);
+
+        // Copy all images to S3
+        var q = new OperationQueue(20);
         
         if ( !_isFacebookPhotoObject(fbPhotoObject) ) {
             var err = new Error('Object is not a valid Facebook Photo');
             err.code = storage.kInvalidObjectError;
-            return process.nextTick( function() { callback(err) } );
+            process.nextTick( function() { callback(err) } );
+            
+            return q;
         }
-
+        
         var imageDictionary = _getImageDictionaryForFacebookPhoto(fbPhotoObject);
     
         var s3client = s3.production.clientRW();
@@ -55,37 +60,30 @@ storage.copyFacebookPhoto =
                 return imageDictionary[a].size.width - imageDictionary[b].size.width;
             });
 
-        // Copy all images to S3
-        var copyQ = new OperationQueue(10); 
-        copyQ.context = {};
-        copyQ.context.failure = false;
-        
-//        copyQ.debug = true;
-        
+        q.context = {};
+        q.context.failure = false;
+              
         for ( var i=0; i<imageURLs.length; i++ )
         {
             var srcURL    = imageURLs[i];
             var imageInfo = imageDictionary[srcURL];
 
             (function (srcURL, imageInfo, i) { /* force closure */
-                copyQ.add(
+                q.add(
                     function CopyImageToS3Operation(doneOp)
                     {
                         var options = { size:imageInfo.size, index:i }; 
                         var dstPath = _imageDestinationPath(userId, photoId, (imageInfo.original == true), options);
 
-                        s3.copyURL( s3client, srcURL, dstPath,
-                            function(err, total) {
-                            
-//                                console.log('s3.copyURL - callback');
-                                
+                        var stream = s3.copyURL( s3client, srcURL, dstPath,
+                            function(err, total)
+                            {
                                 if (err) {
                                     console.error('s3.copyURL failed');
                                     console.error(e.stack);
-                                    copyQ.context.failure = true;
+                                    q.context.failure = true;
                                 }
-                                else
-                                {
+                                else {
                                     var s3copyURL = s3client.URLForPath(dstPath);
                                     imageInfo.copyPath = dstPath;
                                     imageInfo.copyURL = s3copyURL;
@@ -95,22 +93,32 @@ storage.copyFacebookPhoto =
                                 
                                 doneOp();
                             });
+                          
+                          stream.on('progress',
+                            function(data) {
+                                imageInfo.progress = {
+                                        written:    data.written,
+                                        total:      data.total
+                                    };
+                                    
+                                var progress = _calculateProgess(imageDictionary);
+                                q.emit('progress', { percentage: progress } );
+                            });
                     });
             }) (srcURL, imageInfo, i);
         }
-
+               
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         // !!!      TODO: write fb object as info.json  
         // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        // copyQ.context.failure = true;        
+        // q.context.failure = true;        
 
         // Once all the copy operations complete
-        copyQ.wait( 
+        q.wait(
             function() {
-//              console.log('copyQ done');
-                
-                if (copyQ.context.failure)
+   
+                if (q.context.failure)
                 {
                     _rollback( 
                         function() { 
@@ -121,17 +129,16 @@ storage.copyFacebookPhoto =
                 else
                 {
                     var copyObject = _getCopyObject();
-
                     callback(null, copyObject);
                 }
 
             });
 
 
-        return copyQ; // return Q for unit testing pourposes.
+        return q; // return Q for unit testing pourposes.
 
         /* aux ==== */
-
+        
         function _rollback(done)
         {
             var allPathsCopied = [];
@@ -167,8 +174,7 @@ storage.copyFacebookPhoto =
             result.source = imageDictionary[fbPhotoObject.source].copyURL;
             result.images = [];
 
-            for (var index in fbPhotoObject.images)
-            {
+            for (var index in fbPhotoObject.images) {
                 var imageInfo = fbPhotoObject.images[index];
 
                 result.images[index] = {};
@@ -177,6 +183,25 @@ storage.copyFacebookPhoto =
 
             return result;
         }
+        
+        function _calculateProgess()
+        {
+            var stateArray =
+                _.map(Object.keys(imageDictionary),
+                    function(key) {
+                        var imageInfo = imageDictionary[key];
+                        if (!imageInfo.progress)
+                            return 0;
+                        else
+                            return imageInfo.progress.written / imageInfo.progress.total;
+                    });
+
+            var sumState = _.reduce(stateArray, function(memo, num){ return memo + num; }, 0);
+            var percentage = sumState/stateArray.length;
+
+            return percentage;
+        }
+
     };
 
 storage.deleteFilesInCopyObject = 

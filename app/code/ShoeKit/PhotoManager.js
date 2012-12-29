@@ -1,5 +1,6 @@
 
-var     assert  = require("assert")
+var     assert       = require("assert")
+    ,   EventEmitter = require('events').EventEmitter
 
     ,   a   = use("a")
 
@@ -52,9 +53,26 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         var fbAccess= this._user.getFacebookAccess();
         
         var that = this;
-
+        
         var q = new OperationQueue(1);
-
+        
+        var startTime = new Date();
+        var then      = startTime;
+        var progressIndex = 0;
+        
+        function _emitProgress(title, percentage) {
+            var now = new Date();
+            
+            q.emit('progress',  {   step:   progressIndex
+                                ,   delta:  (now - then)
+                                ,   time:   (now - startTime)
+                                ,	title:	title
+                                ,   percentage: percentage
+                                } );
+            then = now;
+            progressIndex++;
+        }
+        
         q.context = {};
 //        q.debug = true;
 
@@ -65,6 +83,8 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         q.add(
             function CheckForDuplicateOperation(doneOp)
             {
+                _emitProgress('Zero', 0.00);
+
                 photodb.getPhotoWithFacebookId(userId, fbId,
                     function(err, entry)
                     {
@@ -73,12 +93,16 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         
                         if (entry != null)
                         {
+                            _emitProgress('CheckForDuplicateOperation-DupFound', 1.00 );
+
                             // We have the picture in the db already
                             var photo = Photo.fromEntry(entry);
                             callback(null, photo);
-                            q.purge();                                  
+                            q.purge();
                         }
-
+                        else
+                            _emitProgress('CheckForDuplicateOperation', 0.05 );
+                            
                         doneOp();
                     } );
             });
@@ -100,7 +124,9 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                             _abort('fbObject:' + fbId + ' is not an photo');    
                         else 
                         {
-                            q.context.facebookObject = fbObject;                    
+                            q.context.facebookObject = fbObject;
+                       
+                            _emitProgress('FetchFacebookObjectOperation', 0.10 );
                             doneOp();
                         }
                     });
@@ -122,16 +148,29 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                 assert( q.context.facebookObject.id == fbId,    
                        'q.context.facebookObject.id:' + q.context.facebookObject.id + ' != fbId:' + fbId );
 
-                storage.copyFacebookPhoto( userId
-                    ,	photo.getId()
-                    ,   q.context.facebookObject
-                    ,   function(err, theCopy) {
+                var progressEmitter =
+                    storage.copyFacebookPhoto(userId, photo.getId(), q.context.facebookObject,
+                        function(err, theCopy) {
                             if (err)
                                 return _abort('storage.copyFacebookPhoto failed for ' + fbId, err);
                                                         
                             q.context.copyObject = theCopy;
+                            
+                            _emitProgress('MakeCopyInStorage-Done', 0.95 );
                             doneOp();
                         });
+              
+                progressEmitter.on('progress',
+                    function(data) {
+                        var base  = 0.10;
+                        var delta = 0.83;
+                        var progess = base + delta * data.percentage;
+                        
+//                        console.log('progess: ' + progess);
+                        
+                        _emitProgress('MakeCopyInStorage-Progress', progess);
+                    });
+              
             });
 
         //
@@ -162,6 +201,8 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         }
                  
                         q.context.insertedPhoto = insertedPhoto;
+                        
+                        _emitProgress('InsertPhotoInDatabaseOperation', 0.98 );
                         doneOp();
                     } );
             });
@@ -169,8 +210,11 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         q.add(
             function Finish(doneOp)
             {
+                _emitProgress('Done', 1.00);
+              
                 Photo.assert(q.context.insertedPhoto);
                 callback(null, q.context.insertedPhoto );
+
                 doneOp();
             });
 
@@ -184,7 +228,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
 
             if (srcError) {
                 error.source = srcError;
-                console.error(srcError.stack);
+//              console.error(srcError.stack);
             }
 
             q.abort(error);
@@ -208,6 +252,8 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                             callback(abortErr);
                         });
                 }
+                else
+                    callback(abortErr);
             });
         
         return q;

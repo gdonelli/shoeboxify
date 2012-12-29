@@ -137,11 +137,18 @@ fb.graphAPI =
 
                         if (jsonObject.error)
                         {
-                            var e = new Error(jsonObject.error.message);
-                            e.type = jsonObject.error.type;
-                            e.code = jsonObject.error.code;
+                            var err;
+                            if (jsonObject.error.message)
+                            {
+                            	err = new Error(jsonObject.error.message);
+                            }
+                            else
+                                err = new Error('fb api failed');
+                        
+                            err.type = jsonObject.error.type;
+                            err.code = jsonObject.error.code;
 
-                            callback(e);
+                            callback(err);
                         }
                         else
                         {

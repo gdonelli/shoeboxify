@@ -51,3 +51,19 @@ a {
   text-align: left;
   overflow: hidden;
 }
+#progressBar {
+  width: 200px;
+  height: 22px;
+  position: relative;
+  display: none;
+  background-color: #fff;
+  border: 1px solid #000;
+  margin-top: 16px;
+  margin-left: 50%;
+  left: -100px;
+}
+#progressBar #bar {
+  background-color: #d3d3d3;
+  width: 33%;
+  height: 100%;
+}

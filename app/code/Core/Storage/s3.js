@@ -22,9 +22,11 @@ var     assert  = require('assert')
     ,   knox    = require('knox')
     ,   path    = require('path')
     ,   url     = require('url')
-    ,   fs      = require("fs")
-    ,   mime    = require("mime")
-    ,   _       = require("underscore")
+    ,   fs      = require('fs')
+    ,   mime    = require('mime')
+    ,   _       = require('underscore')
+
+    ,	EventEmitter = require('events').EventEmitter
 
     ,   a       = use('a')
     ,   handy   = use('handy')
@@ -344,7 +346,6 @@ function _copyStreamToS3(   client
         function(progressObj) {
             written = progressObj.written;
             total   = progressObj.total;
-
         });
 
     putStream.on('error', 
@@ -363,7 +364,9 @@ s3.copyURL =
         _s3_assert_path(pathOnS3);
         a.assert_http_url(remoteURL);
         a.assert_f(callback);
-
+        
+        var progressEmitter = new EventEmitter();
+        
         var quest = httpx.requestURL(remoteURL, {},
             function handleResponseStream(ponse) {
 
@@ -379,10 +382,17 @@ s3.copyURL =
                 var ponseLength = ponse.headers['content-length'];
                 var ponseType   = ponse.headers['content-type'];
 
-                _copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, callback);
+                var stream = _copyStreamToS3(client, ponse, ponseLength, ponseType, pathOnS3, callback);
+                
+                stream.on('progress',
+                    function(data) {
+                        progressEmitter.emit('progress', data);
+                    } );
             });
 
         quest.end();
+        
+        return progressEmitter;
     };
 
 s3.copyFile = 
