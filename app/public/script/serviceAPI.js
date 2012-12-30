@@ -56,3 +56,9 @@ ServiceAPI.prototype.shoeboxifyURL =
     {
         return this._peformService( 'service.shoeboxifyURL', { url: url }, callback );
     };
+
+ServiceAPI.prototype.removePhoto =
+    function(photoId, callback /* (err, ponse) */)
+    {
+        return this._peformService( 'service.removePhoto', { photoId: photoId }, callback );
+    };

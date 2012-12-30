@@ -36,25 +36,29 @@ Class.Photo.k = function(constantName) {
         return use.lib.k(Class.Photo, constantName);
     }
 
-function Photo(photoId, fbObject, copyObject)
+// possible inputs:
+//  	- (true): creates a new Photo
+//      - (id, sourceObject, copyObject)
+//		- (stringId): creates a photo with a 
+
+function Photo( arg0Id, sourceObject, copyObject)
 {
-	if (photoId == true)
-		this.setId( mongo.newObjectId() );
-	else if (typeof photoId == 'object')
-		this.setId(photoId);
-	else if (photoId == undefined) {}
-	else
-		throw new Error('dont know what to do with photoId');
-
-	if (fbObject)
-		this.setSourceObject(fbObject);
-		
-	if (copyObject)
-		this.setCopyObject(copyObject);
-
-	return this;
-};
-
+    if (arg0Id) {
+        if (arg0Id === true)
+            this.setId( mongo.newObjectId() );
+        else if (typeof argId === 'string')
+            this.setId( mongo.newObjectId(arg0Id) );
+        else
+            this.setId(arg0Id);
+    }
+    
+    if (sourceObject)
+        this.setSourceObject(sourceObject);
+    
+    if (copyObject)
+        this.setCopyObject(copyObject);
+    
+}
 
 //
 // Class

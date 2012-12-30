@@ -223,10 +223,11 @@ mongo.drop =
 /* ====================================================== */
 
 mongo.newObjectId =
-    function()
+    function(value)
     {
         return new ObjectID();
     }
+
 
 mongo.LongFromString =
     function(string)

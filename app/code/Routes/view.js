@@ -45,6 +45,8 @@ view.route.shoeboxified =
                     photos.forEach(
                         function(photo) {
                             var cpObject = photo.getCopyObject();
+                            
+                            
                             ponse.write('<img src="' + cpObject.picture + '" ');
                             ponse.write('onclick="view(\'' + photo.getId() + '\')" ');
                             ponse.write('></img>\n');

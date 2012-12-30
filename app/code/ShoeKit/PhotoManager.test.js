@@ -51,11 +51,20 @@ describe('PhotoManager.js',
                                 done();
                             });
                    
+                        var progressWasSent = false;
+                   
                         emitter.on('progress',
                             function(data) {
                                 a.assert_def(data, 'data');
                                 a.assert_def(data.percentage, 'data.percentage');
+                                progressWasSent = true;
                             });
+                   
+                        setTimeout(
+                            function() {
+                                assert(progressWasSent, 'progress data was not sent');
+                            }, 100);
+
                     });
 
                 it( 'PhotoManager.addPhotoWithFacebookId same',

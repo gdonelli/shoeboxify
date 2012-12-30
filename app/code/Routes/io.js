@@ -46,9 +46,9 @@ io.setup =
                 _socketListen(socket);
             });
 
-        ioserver.configure('development',
+        ioserver.configure( /*'development', */
             function () {
-                ioserver.set('log level', 1);
+                ioserver.set('log level', 0);
             });
 
         // Setup Session for socket.io

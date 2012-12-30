@@ -28,8 +28,9 @@ var     assert  = require('assert')
 
     ,	authentication = use('authentication')
 
-    ,   User = use('User')
-    ,   FacebookAccess	= use('FacebookAccess')
+    ,   User    = use('User')
+    ,   Photo   = use('Photo')
+    ,   FacebookAccess  = use('FacebookAccess')
     ,   PhotoManager 	= use('PhotoManager')
 
     ;
@@ -66,15 +67,13 @@ service.socket = {};
 service.event.getFacebookObjectForURL = 'service.getFacebookObjectForURL';
 
 service.socket.getFacebookObjectForURL =
-    function(socket, data, next /* (data) */)
+    function(socket, inputData /* { url:... } */, next /* (data) */)
     {
-//        console.log('service.io.objectForURL data:');
-//        console.log(data);
-
-        var inputURL = data['url'];
-        
-        a.assert_def(inputURL, 'inputURL');
+        a.assert_def(socket, 'socket');
+        a.assert_def(inputData, 'inputData');
         a.assert_f(next, 'next');
+        var inputURL = inputData['url'];
+        a.assert_def(inputURL, 'inputURL');
         
         service.getFacebookObjectForURL(
                 User.fromSocket(socket).getFacebookAccess()
@@ -165,9 +164,23 @@ service.getFacebookObjectForURL =
 
 service.event.shoeboxifyURL = 'service.shoeboxifyURL';
 
+
+function _forwardProgressEvents(queue, inputData)
+{
+    // Emit progess with a given event name
+    if (inputData.progressEvent) {
+        queue.on('progress',
+            function(progressData) {
+                socket.volatile.emit(inputData.progressEvent, progressData);
+            });
+    }
+}
+
+
 service.socket.shoeboxifyURL =
-    function(socket, inputData, next /* (data) */)
+    function(socket, inputData /* { url:... } */, next /* (data) */)
     {
+        a.assert_def(socket, 'socket');
         a.assert_def(inputData, 'inputData');
         a.assert_f(next, 'next');
         var inputURL = inputData['url'];
@@ -176,26 +189,52 @@ service.socket.shoeboxifyURL =
         var user = User.fromSocket(socket);
         var photoManager = new PhotoManager(user);
         
-        var progressEmitter =
-            photoManager.addPhotoFromURL(inputURL,
-                function(err, photo) {
-                    if (err) {
-                        next({  status: 1
-                            ,   source: inputURL
-                            ,   error:  'shoeboxifyURL failed ' + e } );
-                    }
-                    else {
-                        next({  status: 0
-                            ,   source: inputURL
-                            ,   data:   photo   } );
-                    }
-                });
+        var q = photoManager.addPhotoFromURL(inputURL,
+            function(err, photo) {
+                if (err) {
+                    next({  status: 1
+                        ,   source: inputURL
+                        ,   error:  'shoeboxifyURL failed: ' + err.message } );
+                }
+                else {
+                    next({  status: 0
+                        ,   source: inputURL
+                        ,   data:   photo   } );
+                }
+            });
         
-        // Emit progess with a given event name
-        if (inputData.progressEvent) {
-            progressEmitter.on('progress',
-                function(progressData) {
-                    socket.volatile.emit(inputData.progressEvent, progressData);
-                });
-        }
+        _forwardProgressEvents(q, inputData);
     };
+
+
+
+service.event.removePhoto = 'service.removePhoto';
+
+service.socket.removePhoto =
+    function(socket, inputData /* { photoId:... } */, next /* (data) */ )
+    {
+        a.assert_def(socket, 'socket');
+        a.assert_def(inputData, 'inputData');
+        a.assert_f(next, 'next');
+        var photoId = inputData['photoId'];
+        a.assert_def(photoId, 'photoId');
+        
+        var photoToRemove = new Photo(photoId);
+        
+        var q = photoManager.removePhoto(photoToRemove,
+            function(err, photo) {
+                if (err) {
+                    next({  status: 1
+                        ,   source: photoId
+                        ,   error:  'removePhoto failed: ' + err.message } );
+                }
+                else {
+                    next({  status: 0
+                        ,   source: photoId
+                         } );
+                }
+            });
+        
+        _forwardProgressEvents(q, inputData);
+    }
+

@@ -43,6 +43,7 @@ Class.PhotoManager.fromRequest =
         return new PhotoManager(user);
     }
 
+
 PhotoManager.prototype.addPhotoWithFacebookId = 
     function(fbId, callback /* (err, photo) */)
     {
@@ -56,22 +57,6 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         
         var q = new OperationQueue(1);
         
-        var startTime = new Date();
-        var then      = startTime;
-        var progressIndex = 0;
-        
-        function _emitProgress(title, percentage) {
-            var now = new Date();
-            
-            q.emit('progress',  {   step:   progressIndex
-                                ,   delta:  (now - then)
-                                ,   time:   (now - startTime)
-                                ,	title:	title
-                                ,   percentage: percentage
-                                } );
-            then = now;
-            progressIndex++;
-        }
         
         q.context = {};
 //        q.debug = true;
@@ -83,7 +68,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
         q.add(
             function CheckForDuplicateOperation(doneOp)
             {
-                _emitProgress('Zero', 0.00);
+                q.emitProgress(0.00);
 
                 photodb.getPhotoWithFacebookId(userId, fbId,
                     function(err, entry)
@@ -93,17 +78,18 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         
                         if (entry != null)
                         {
-                            _emitProgress('CheckForDuplicateOperation-DupFound', 1.00 );
-
                             // We have the picture in the db already
                             var photo = Photo.fromEntry(entry);
-                            callback(null, photo);
+                            
+                            process.nextTick( function() {
+                                    callback(null, photo);
+                                });
+                            
                             q.purge();
+                            doneOp(1.00);
                         }
                         else
-                            _emitProgress('CheckForDuplicateOperation', 0.05 );
-                            
-                        doneOp();
+                            doneOp(0.05);
                     } );
             });
 
@@ -126,8 +112,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         {
                             q.context.facebookObject = fbObject;
                        
-                            _emitProgress('FetchFacebookObjectOperation', 0.10 );
-                            doneOp();
+                            doneOp(0.10 );
                         }
                     });
             });
@@ -156,8 +141,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                                                         
                             q.context.copyObject = theCopy;
                             
-                            _emitProgress('MakeCopyInStorage-Done', 0.95 );
-                            doneOp();
+                            doneOp(0.95);
                         });
               
                 progressEmitter.on('progress',
@@ -168,7 +152,7 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                         
 //                        console.log('progess: ' + progess);
                         
-                        _emitProgress('MakeCopyInStorage-Progress', progess);
+                        q.emitProgress('MakeCopyInStorage-Progress', progess);
                     });
               
             });
@@ -202,20 +186,17 @@ PhotoManager.prototype.addPhotoWithFacebookId =
                  
                         q.context.insertedPhoto = insertedPhoto;
                         
-                        _emitProgress('InsertPhotoInDatabaseOperation', 0.98 );
-                        doneOp();
+                        doneOp(0.98);
                     } );
             });
 
         q.add(
             function Finish(doneOp)
             {
-                _emitProgress('Done', 1.00);
+                doneOp(1.00);
               
                 Photo.assert(q.context.insertedPhoto);
                 callback(null, q.context.insertedPhoto );
-
-                doneOp();
             });
 
         /* aux ==================== */
@@ -314,7 +295,9 @@ PhotoManager.prototype.removePhoto =
             function FindPhotoOperation(doneOp)
             {
                 var photoId = photo.getId();
-
+              
+                q.emitProgress('FindPhotoOperation', 0.0);
+              
                 photodb.getPhotoWithId(userId, photoId,
                     function(err, photo)
                     {
@@ -328,6 +311,7 @@ PhotoManager.prototype.removePhoto =
                         }
                         else {
                             q.context.photo = photo;
+                            q.emitProgress('FindPhotoOperation', 0.3);
                             doneOp();
                         }
                     });
@@ -349,7 +333,11 @@ PhotoManager.prototype.removePhoto =
                         if (err)
                             q.abort(e);
                         else
+                        {
+                            q.emitProgress('FindPhotoOperation', 0.6);
                             doneOp();
+                        }
+                            
                     } );
             });
 
@@ -365,7 +353,10 @@ PhotoManager.prototype.removePhoto =
                         if (err)
                             return q.abort(err);
                         else
+                        {
+                            q.emitProgress('FindPhotoOperation', 0.9);
                             doneOp();
+                        }
                     });
 
             });
@@ -377,8 +368,11 @@ PhotoManager.prototype.removePhoto =
             function EndOperation(doneOp)
             {
                 callback();
+                q.emitProgress('FindPhotoOperation', 1);
                 doneOp();
             });
+        
+        return q;
     };
 
 PhotoManager.prototype.getPhotoWithId =

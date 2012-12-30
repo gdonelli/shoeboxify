@@ -37,7 +37,7 @@ function OperationQueue(opt_maxConcurrent, opt_initialFunctions, opt_context)
     this._maxConcurrent = opt_maxConcurrent || null;
     this._backlog = [];
 
-    this.context_ = opt_context || global;
+    this._context = opt_context || global;
     this._waiters = [];
 
     if (opt_initialFunctions) {
@@ -108,8 +108,13 @@ OperationQueue.prototype.waitCount =
 OperationQueue.prototype._start = 
     function(callback) {
         this._concurrent++;
-        var context = this.context_;
-        var boundFinish = this._finish.bind(this);
+        var context = this._context;
+        
+        var doneWrapper = function(percentage) {
+                this._finish(callback.name, percentage);
+            };
+        
+        var boundFinish = doneWrapper.bind(this);
 
         var that = this;
 
@@ -121,8 +126,6 @@ OperationQueue.prototype._start =
                     if (that.debug == true)
                         console.log('[ ' + callback.name + ' ] - Running');
 
-                    // console.log('boundFinish:');
-                    // console.log(boundFinish);
 
                     callback.call(context, boundFinish);
                 }
@@ -136,9 +139,18 @@ OperationQueue.prototype._start =
 
 /** @private */
 OperationQueue.prototype._finish = 
-    function() {
+    function(title, percentage) // optional
+    {
         this._concurrent--;
-
+        
+        // emit progress if given
+        if (typeof title       == 'string' &&
+        	typeof percentage == 'number') {
+            this.emitProgress( title, percentage );
+            
+//            console.log( title + ': ' + percentage );
+        }
+        
         if (this._backlog.length)
         {
             this._start(this._backlog.shift());
@@ -150,7 +162,7 @@ OperationQueue.prototype._finish =
 
             waiters.forEach(
                 function(waiter) {
-                    waiter.call(this.context_);
+                    waiter.call(this._context);
                 }, this);
         }
     };
@@ -161,11 +173,80 @@ OperationQueue.prototype.wait =
     {
         if (!this._concurrent)
         {
-            callback.call(this.context_);
+            callback.call(this._context);
         } 
         else
         {
             this._waiters.push(callback);
         }
+    };
+
+OperationQueue.prototype._emitProgress =
+    function(title, percentage)
+    {
+        // Lazy init
+        var now = new Date();
+        
+        if (percentage <= 0) {
+            if (!this.context)
+                this.context = {};
+            
+            this.context.progress = {
+                    startTime:  now
+                ,   then:       now
+                ,   step:       0
+                };
+            
+//            console.log('this.context.progress init');
+        }
+
+        assert(this.context != undefined, 'queue.context has not been initialized, emitProgress(0) was not called');
+        assert(this.context.progress != undefined, 'queue.context.progress has not been initialized, emitProgress(0) was not called');
+        
+        var progress = {
+                step:       this.context.progress.step
+            ,   delta:      (now - this.context.progress.then)
+            ,   time:       (now - this.context.progress.startTime)
+            ,   percentage: percentage
+            };
+
+        if (title)
+            progress.title = title;
+        
+        this.emit('progress', progress);
+        
+        this.context.progress.step++;
+    };
+
+OperationQueue.prototype.emitProgress =
+    function(arg0, arg1)
+    {
+        var title;
+        var percentage;
+
+        // Get proper arguments
+        switch (arguments.length) {
+            case 1:
+                percentage = arg0;
+                break;
+
+            case 2:
+                title = arg0;
+                percentage = arg1;
+                break;
+                
+            default:
+                throw new Error('wrong arguments');
+        }
+        
+        // Validate types
+        if (title)
+            assert(typeof title == 'string', 'title should be a string is: ' + typeof title);
+        else if (percentage == 0)
+            title = 'Zero';
+        
+        assert(typeof percentage == 'number', 'percentage should be a number: ' + typeof percentage);
+        
+        this._emitProgress(title, percentage);
     };
 
