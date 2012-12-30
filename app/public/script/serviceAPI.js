@@ -62,3 +62,10 @@ ServiceAPI.prototype.removePhoto =
     {
         return this._peformService( 'service.removePhoto', { photoId: photoId }, callback );
     };
+
+ServiceAPI.prototype.getPhotos =
+    function( callback /* (err, ponse) */ )
+    {
+        return this._peformService( 'service.getPhotos', {}, callback );
+    };
+

@@ -101,7 +101,15 @@ view.path.drop = /*basePath +*/ '/drop';
 view.route.drop =
     function(quest, ponse)
     {
-        ponse.render('drop');
+        var mainModule = require.main.filename;
+        
+        var mainModuleDir = path.dirname(mainModule);
+        
+        var dropPath = mainModuleDir + '/public/page/drop/drop.jade'
+        
+        console.log('dropPath: ' + dropPath);
+        
+        ponse.render( dropPath );
     }
 
 

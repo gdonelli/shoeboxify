@@ -160,32 +160,21 @@ service.getFacebookObjectForURL =
 
     };
 
-
+// =======================
+//  service.shoeboxifyURL
+// =======================
 
 service.event.shoeboxifyURL = 'service.shoeboxifyURL';
-
-
-function _forwardProgressEvents(queue, inputData)
-{
-    // Emit progess with a given event name
-    if (inputData.progressEvent) {
-        queue.on('progress',
-            function(progressData) {
-                socket.volatile.emit(inputData.progressEvent, progressData);
-            });
-    }
-}
-
 
 service.socket.shoeboxifyURL =
     function(socket, inputData /* { url:... } */, next /* (data) */)
     {
-        a.assert_def(socket, 'socket');
+        a.assert_def(socket,    'socket');
         a.assert_def(inputData, 'inputData');
-        a.assert_f(next, 'next');
+        a.assert_f  (next,      'next');
         var inputURL = inputData['url'];
-        a.assert_def(inputURL, 'inputURL');
-        
+        a.assert_def(inputURL,  'inputURL');
+
         var user = User.fromSocket(socket);
         var photoManager = new PhotoManager(user);
         
@@ -194,30 +183,37 @@ service.socket.shoeboxifyURL =
                 if (err) {
                     next({  status: 1
                         ,   source: inputURL
-                        ,   error:  'shoeboxifyURL failed: ' + err.message } );
+                        ,   error:  'shoeboxifyURL failed: ' + err.message
+                        ,   stack:  err.stack
+                        });
+                        
+                    console.log(err.stack);
                 }
                 else {
                     next({  status: 0
                         ,   source: inputURL
-                        ,   data:   photo   } );
+                        ,   data:   photo
+                        });
                 }
             });
         
-        _forwardProgressEvents(q, inputData);
+        _forwardProgressFromQueueToSocket(q, socket, inputData);
     };
 
-
+// =====================
+//  service.removePhoto
+// =====================
 
 service.event.removePhoto = 'service.removePhoto';
 
 service.socket.removePhoto =
     function(socket, inputData /* { photoId:... } */, next /* (data) */ )
     {
-        a.assert_def(socket, 'socket');
+        a.assert_def(socket,    'socket');
         a.assert_def(inputData, 'inputData');
-        a.assert_f(next, 'next');
+        a.assert_f  (next,      'next');
         var photoId = inputData['photoId'];
-        a.assert_def(photoId, 'photoId');
+        a.assert_def(photoId,   'photoId');
         
         var photoToRemove = new Photo(photoId);
         
@@ -235,6 +231,47 @@ service.socket.removePhoto =
                 }
             });
         
-        _forwardProgressEvents(q, inputData);
+        _forwardProgressFromQueueToSocket(q, socket, inputData);
     }
 
+// ===================
+//  service.getPhotos
+// ===================
+
+service.event.getPhotos = 'service.getPhotos';
+
+service.socket.getPhotos =
+    function(socket, inputData /* {} */, next /* (data) */ )
+    {
+        a.assert_def(socket, 'socket');
+        a.assert_f  (next,   'next');
+        
+        var q = photoManager.getPhotos(
+            function(err, photos) {
+                if (err) {
+                    next({  status: 1
+                        ,   error:  'getPhotos failed: ' + err.message  } );
+                }
+                else {
+                    next({  status: 0
+                        ,   data: photos    } );
+                }
+            });
+    }
+
+// aux ====
+
+function _forwardProgressFromQueueToSocket(queue, socket, inputData)
+{
+    a.assert_def(queue,    'socket');
+    a.assert_def(socket,    'socket');
+    a.assert_def(inputData, 'inputData');
+
+    // Emit progess with a given event name
+    if (inputData.progressEvent) {
+        queue.on('progress',
+            function(progressData) {
+                socket.volatile.emit(inputData.progressEvent, progressData);
+            });
+    }
+}
