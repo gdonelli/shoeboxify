@@ -215,6 +215,9 @@ service.socket.removePhoto =
         var photoId = inputData['photoId'];
         a.assert_def(photoId,   'photoId');
         
+        var user = User.fromSocket(socket);
+        var photoManager = new PhotoManager(user);
+
         var photoToRemove = new Photo(photoId);
         
         var q = photoManager.removePhoto(photoToRemove,
@@ -241,20 +244,35 @@ service.socket.removePhoto =
 service.event.getPhotos = 'service.getPhotos';
 
 service.socket.getPhotos =
-    function(socket, inputData /* {} */, next /* (data) */ )
+    function(socket, inputData /* { } */, next /* (data) */ )
     {
         a.assert_def(socket, 'socket');
         a.assert_f  (next,   'next');
+
+        var user = User.fromSocket(socket);
+        var photoManager = new PhotoManager(user);
         
-        var q = photoManager.getPhotos(
+        photoManager.getPhotos(
             function(err, photos) {
                 if (err) {
                     next({  status: 1
                         ,   error:  'getPhotos failed: ' + err.message  } );
                 }
-                else {
+                else
+                {
+                    var data = _.map(photos,
+                        function(photo) {
+                            var kCopyObjectKey = Photo.k('CopyObjectKey');
+                            
+                            var result      = photo;
+                            var result      = _.pick(result, ['_id', kCopyObjectKey ] );
+                            result[kCopyObjectKey]  =  _.pick(result[kCopyObjectKey], 'picture');
+                            
+                            return result;
+                        });
+                    
                     next({  status: 0
-                        ,   data: photos    } );
+                        ,   data: data    } );
                 }
             });
     }

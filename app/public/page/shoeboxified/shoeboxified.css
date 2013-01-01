@@ -1,0 +1,35 @@
+body {
+  color: #263c4a;
+  background-color: #fffbf1;
+  padding: 50px;
+  text-align: center;
+  font-weight: 400;
+  font-stretch: normal;
+  font-size: 12px;
+  font-family: "HelveticaNeue", "Helvetica Neue", "HelveticaNeueRoman", "HelveticaNeue-Roman", "Helvetica Neue Roman", "Trebuchet MS", "Tahoma", "Helvetica", sans-serif;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+a {
+  color: #00b7ff;
+}
+#loading {
+  margin: 32px;
+  font-size: 22px;
+  color: #d3d3d3;
+  text-align: center;
+}
+#photos {
+  margin: 16px;
+/* background-color: gray */
+}
+.photo {
+  display: inline-block;
+/* margin: 8px; */
+  width: 150px;
+  height: 150px;
+  background-color: #ff0;
+  text-align: center;
+  overflow: hidden;
+}

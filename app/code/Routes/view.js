@@ -24,6 +24,17 @@ view.path.shoeboxified = '/shoeboxified';
 view.route.shoeboxified =
     function(quest, ponse)
     {
+        var mainModule = require.main.filename;
+        var mainModuleDir = path.dirname(mainModule);
+        var pagePath = mainModuleDir + '/public/page/shoeboxified/shoeboxified.jade'
+        
+        ponse.render( pagePath );
+    }
+
+
+view.route._OFF_shoeboxified =
+    function(quest, ponse)
+    {
         ponse.writeHead(200, {'Content-Type': 'text/html'});
 
         ponse.write('<html>');
@@ -102,14 +113,10 @@ view.route.drop =
     function(quest, ponse)
     {
         var mainModule = require.main.filename;
-        
         var mainModuleDir = path.dirname(mainModule);
+        var pagePath = mainModuleDir + '/public/page/drop/drop.jade'
         
-        var dropPath = mainModuleDir + '/public/page/drop/drop.jade'
-        
-        console.log('dropPath: ' + dropPath);
-        
-        ponse.render( dropPath );
+        ponse.render( pagePath );
     }
 
 
